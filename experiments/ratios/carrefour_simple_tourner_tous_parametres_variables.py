@@ -35,7 +35,7 @@ if __name__ == '__main__':
                                             e = Experiment(f'exp_carrefour_simple_tourner_{i}',
                                                            network=network.simple_crossroad_turn_network,
                                                            routes=network.simple_crossroad_turn_routes,
-                                                           additionals=network.no_additionals)
+                                                           detectors=network.no_detectors)
                                             
                                             e.set_variable('default_len', 100)
                                             e.set_variable('w_e_len', len_horizontal)

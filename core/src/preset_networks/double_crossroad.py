@@ -1,5 +1,5 @@
 import sys, os
-from core.src.components import Network, Routes, Additional
+from core.src.components import Network, Routes, DetectorBuilder
 tools = os.path.join(os.environ['SUMO_HOME'], 'tools')
 sys.path.append(tools)
 import traci
@@ -266,17 +266,16 @@ class TwoCrossroadsNetwork:
 
 
 
-    ### Additionals ###
-    def no_additionals(self, config):
+    ### Detectors ###
+    def no_detectors(self, config):
         """
-        Fonction qui n'ajoute aucun élément additionnels à un réseau.
+        Fonction qui n'ajoute aucun détecteurs à un réseau.
 
         :param config: Configuration du réseau routier
-        :return: Retourne un objet Additional vide
+        :return: Retourne un objet Detector vide
         """
 
-        additional = Additional()
-        return additional
+        return DetectorBuilder()
 
     def detecteurs_numeriques_double_carrefour(self, config):
         """
@@ -284,23 +283,23 @@ class TwoCrossroadsNetwork:
         de sorte à simuler une communication entre les deux.
 
         :param config: Configuration du réseau routier
-        :return: Retourne un objet Additional représentant les détecteurs mentionnés
+        :return: Retourne un objet Detector représentant les détecteurs mentionnés
         """
 
-        additional = Additional()
+        detectors = DetectorBuilder()
 
         # Premier carrefour
-        additional.add_laneAreaDetector(id="wc1", lane="edge_wc1_0")
-        additional.add_laneAreaDetector(id="s1c1", lane="edge_s1c1_0")
-        additional.add_laneAreaDetector(id="n1c1", lane="edge_n1c1_0")
-        additional.add_laneAreaDetector(id="c2c1", lane="edge_c2c1_0")
+        detectors.add_laneAreaDetector(id="wc1", lane="edge_wc1_0")
+        detectors.add_laneAreaDetector(id="s1c1", lane="edge_s1c1_0")
+        detectors.add_laneAreaDetector(id="n1c1", lane="edge_n1c1_0")
+        detectors.add_laneAreaDetector(id="c2c1", lane="edge_c2c1_0")
         # Deuxième carrefour
-        additional.add_laneAreaDetector(id="c1c2", lane="edge_c1c2_0")
-        additional.add_laneAreaDetector(id="ec2", lane="edge_ec2_0")
-        additional.add_laneAreaDetector(id="n2c2", lane="edge_n2c2_0")
-        additional.add_laneAreaDetector(id="s2c2", lane="edge_s2c2_0")
+        detectors.add_laneAreaDetector(id="c1c2", lane="edge_c1c2_0")
+        detectors.add_laneAreaDetector(id="ec2", lane="edge_ec2_0")
+        detectors.add_laneAreaDetector(id="n2c2", lane="edge_n2c2_0")
+        detectors.add_laneAreaDetector(id="s2c2", lane="edge_s2c2_0")
 
-        return additional
+        return detectors
 
     def detecteurs_booleens_double_carrefour(self, config):
         """
@@ -311,23 +310,23 @@ class TwoCrossroadsNetwork:
         :return: Retourne un objet Additional représentant les détecteurs mentionnés
         """
 
-        additional = Additional()
+        detectors = DetectorBuilder()
 
         detector_length = config["boolean_detector_length"]
         lane_len = config['default_len']
 
         # Premier carrefour
-        additional.add_laneAreaDetector(id="wc1", lane="edge_wc1_0", pos=(lane_len - detector_length - 7.2))
-        additional.add_laneAreaDetector(id="s1c1", lane="edge_s1c1_0", pos=(lane_len - detector_length - 7.2))
-        additional.add_laneAreaDetector(id="n1c1", lane="edge_n1c1_0", pos=(lane_len - detector_length - 7.2))
-        additional.add_laneAreaDetector(id="c2c1", lane="edge_c2c1_0", pos=(lane_len - detector_length - 7.2 * 2))
+        detectors.add_laneAreaDetector(id="wc1", lane="edge_wc1_0", pos=(lane_len - detector_length - 7.2))
+        detectors.add_laneAreaDetector(id="s1c1", lane="edge_s1c1_0", pos=(lane_len - detector_length - 7.2))
+        detectors.add_laneAreaDetector(id="n1c1", lane="edge_n1c1_0", pos=(lane_len - detector_length - 7.2))
+        detectors.add_laneAreaDetector(id="c2c1", lane="edge_c2c1_0", pos=(lane_len - detector_length - 7.2 * 2))
         # Deuxième carrefour
-        additional.add_laneAreaDetector(id="c1c2", lane="edge_c1c2_0", pos=(lane_len - detector_length - 7.2 * 2))
-        additional.add_laneAreaDetector(id="ec2", lane="edge_ec2_0", pos=(lane_len - detector_length - 7.2))
-        additional.add_laneAreaDetector(id="n2c2", lane="edge_n2c2_0", pos=(lane_len - detector_length - 7.2))
-        additional.add_laneAreaDetector(id="s2c2", lane="edge_s2c2_0", pos=(lane_len - detector_length - 7.2))
+        detectors.add_laneAreaDetector(id="c1c2", lane="edge_c1c2_0", pos=(lane_len - detector_length - 7.2 * 2))
+        detectors.add_laneAreaDetector(id="ec2", lane="edge_ec2_0", pos=(lane_len - detector_length - 7.2))
+        detectors.add_laneAreaDetector(id="n2c2", lane="edge_n2c2_0", pos=(lane_len - detector_length - 7.2))
+        detectors.add_laneAreaDetector(id="s2c2", lane="edge_s2c2_0", pos=(lane_len - detector_length - 7.2))
 
-        return additional
+        return detectors
 
 
 

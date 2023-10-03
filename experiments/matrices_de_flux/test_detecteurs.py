@@ -20,10 +20,10 @@ if __name__ == '__main__':
 
     network = OneCrossroadNetwork()
 
-    e = Experiment('test_detecteurs', 
-                    network=network.simple_crossroad_fully_connected_network,
-                    routes=network.simple_crossroad_fully_connected_multi_flow,
-                    additionals=network.detecteurs_numeriques_simple_carrefour)
+    e = Experiment('test_detecteurs',
+                   network=network.simple_crossroad_fully_connected_network,
+                   routes=network.simple_crossroad_fully_connected_multi_flow,
+                   detectors=network.detecteurs_numeriques_simple_carrefour)
 
     # Variables de réseau
     e.set_variable('default_len', lane_length)

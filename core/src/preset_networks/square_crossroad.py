@@ -1,6 +1,6 @@
 import numpy as np
 import sys, os
-from core.src.components import Network, Routes, Additional
+from core.src.components import Network, Routes, DetectorBuilder
 tools = os.path.join(os.environ['SUMO_HOME'], 'tools')
 sys.path.append(tools)
 import traci
@@ -386,16 +386,15 @@ class SquareNetwork:
 
     ### Additionals ###
 
-    def no_additionals(self, config):
+    def no_detectors(self, config):
         """
-        Fonction qui n'ajoute aucun élément additionnels à un réseau.
+        Fonction qui n'ajoute aucun détecteur à un réseau.
 
         :param config: Configuration du réseau routier
-        :return: Retourne un objet Additional vide
+        :return: Retourne un objet DetectorBuilder vide
         """
 
-        additional = Additional()
-        return additional
+        return DetectorBuilder()
 
     def detecteurs_numeriques_reseau_carre(self, config):
         """
@@ -403,10 +402,10 @@ class SquareNetwork:
         de sorte à simuler une communication entre carrefours voisins.
 
         :param config: Configuration du réseau routier
-        :return: Retourne un objet Additional représentant les détecteurs mentionnés
+        :return: Retourne un objet DetectorBuilder représentant les détecteurs mentionnés
         """
 
-        additional = Additional()
+        detectors = DetectorBuilder()
 
         nb_roads_by_side = config["nb_roads_by_side"]
 
@@ -422,30 +421,30 @@ class SquareNetwork:
                 if not est_un_coin:
                     if y not in [0, nb_roads_by_side + 1]:
                         if x < nb_roads_by_side:
-                            additional.add_laneAreaDetector(id=f'detector_x{x}-y{y}_x{x + 1}-y{y}',
+                            detectors.add_laneAreaDetector(id=f'detector_x{x}-y{y}_x{x + 1}-y{y}',
                                                             lane=f'edge_x{x}-y{y}_x{x + 1}-y{y}_0')
                         if x > 1:
-                            additional.add_laneAreaDetector(id=f'detector_x{x}-y{y}_x{x - 1}-y{y}',
+                            detectors.add_laneAreaDetector(id=f'detector_x{x}-y{y}_x{x - 1}-y{y}',
                                                             lane=f'edge_x{x}-y{y}_x{x - 1}-y{y}_0')
                     if x not in [0, nb_roads_by_side + 1]:
                         if y < nb_roads_by_side:
-                            additional.add_laneAreaDetector(id=f'detector_x{x}-y{y}_x{x}-y{y + 1}',
+                            detectors.add_laneAreaDetector(id=f'detector_x{x}-y{y}_x{x}-y{y + 1}',
                                                             lane=f'edge_x{x}-y{y}_x{x}-y{y + 1}_0')
                         if y > 1:
-                            additional.add_laneAreaDetector(id=f'detector_x{x}-y{y}_x{x}-y{y - 1}',
+                            detectors.add_laneAreaDetector(id=f'detector_x{x}-y{y}_x{x}-y{y - 1}',
                                                             lane=f'edge_x{x}-y{y}_x{x}-y{y - 1}_0')
 
-        return additional
+        return detectors
 
     def detecteurs_booleens_reseau_carre(self, config):
         """
         Fonction qui ajoute des détecteurs booleens entre les carrefours d'un réseau carré.
 
         :param config: Configuration du réseau routier
-        :return: Retourne un objet Additional représentant les détecteurs mentionnés
+        :return: Retourne un objet DetectorBuilder représentant les détecteurs mentionnés
         """
 
-        additional = Additional()
+        detectors = DetectorBuilder()
 
         nb_roads_by_side = config["nb_roads_by_side"]
 
@@ -465,43 +464,43 @@ class SquareNetwork:
                     if y not in [0, nb_roads_by_side + 1]:
                         if x < nb_roads_by_side:
                             if x == 0:
-                                additional.add_laneAreaDetector(id=f'detector_x{x}-y{y}_x{x + 1}-y{y}',
+                                detectors.add_laneAreaDetector(id=f'detector_x{x}-y{y}_x{x + 1}-y{y}',
                                                                 lane=f'edge_x{x}-y{y}_x{x + 1}-y{y}_0',
                                                                 pos=(lane_len - detector_length - 7.2))
                             else:
-                                additional.add_laneAreaDetector(id=f'detector_x{x}-y{y}_x{x + 1}-y{y}',
+                                detectors.add_laneAreaDetector(id=f'detector_x{x}-y{y}_x{x + 1}-y{y}',
                                                                 lane=f'edge_x{x}-y{y}_x{x + 1}-y{y}_0',
                                                                 pos=(lane_len - detector_length - 7.2 * 2))
                         if x > 1:
                             if x == nb_roads_by_side + 1:
-                                additional.add_laneAreaDetector(id=f'detector_x{x}-y{y}_x{x - 1}-y{y}',
+                                detectors.add_laneAreaDetector(id=f'detector_x{x}-y{y}_x{x - 1}-y{y}',
                                                                 lane=f'edge_x{x}-y{y}_x{x - 1}-y{y}_0',
                                                                 pos=(lane_len - detector_length - 7.2))
                             else:
-                                additional.add_laneAreaDetector(id=f'detector_x{x}-y{y}_x{x - 1}-y{y}',
+                                detectors.add_laneAreaDetector(id=f'detector_x{x}-y{y}_x{x - 1}-y{y}',
                                                                 lane=f'edge_x{x}-y{y}_x{x - 1}-y{y}_0',
                                                                 pos=(lane_len - detector_length - 7.2 * 2))
                     if x not in [0, nb_roads_by_side + 1]:
                         if y < nb_roads_by_side:
                             if y == 0:
-                                additional.add_laneAreaDetector(id=f'detector_x{x}-y{y}_x{x}-y{y + 1}',
+                                detectors.add_laneAreaDetector(id=f'detector_x{x}-y{y}_x{x}-y{y + 1}',
                                                                 lane=f'edge_x{x}-y{y}_x{x}-y{y + 1}_0',
                                                                 pos=(lane_len - detector_length - 7.2))
                             else:
-                                additional.add_laneAreaDetector(id=f'detector_x{x}-y{y}_x{x}-y{y + 1}',
+                                detectors.add_laneAreaDetector(id=f'detector_x{x}-y{y}_x{x}-y{y + 1}',
                                                                 lane=f'edge_x{x}-y{y}_x{x}-y{y + 1}_0',
                                                                 pos=(lane_len - detector_length - 7.2 * 2))
                         if y > 1:
                             if y == nb_roads_by_side + 1:
-                                additional.add_laneAreaDetector(id=f'detector_x{x}-y{y}_x{x}-y{y - 1}',
+                                detectors.add_laneAreaDetector(id=f'detector_x{x}-y{y}_x{x}-y{y - 1}',
                                                                 lane=f'edge_x{x}-y{y}_x{x}-y{y - 1}_0',
                                                                 pos=(lane_len - detector_length - 7.2))
                             else:
-                                additional.add_laneAreaDetector(id=f'detector_x{x}-y{y}_x{x}-y{y - 1}',
+                                detectors.add_laneAreaDetector(id=f'detector_x{x}-y{y}_x{x}-y{y - 1}',
                                                                 lane=f'edge_x{x}-y{y}_x{x}-y{y - 1}_0',
                                                                 pos=(lane_len - detector_length - 7.2 * 2))
 
-        return additional
+        return detectors
 
 
 

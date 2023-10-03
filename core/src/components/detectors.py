@@ -1,26 +1,29 @@
 import xml.etree.ElementTree as ET
 
-class Additional:
+class DetectorBuilder:
     """
-    Classe impémentant les éléments de configuration additionnels d'une simulation SUMO.
+    The class detector 
     """
 
-    def __init__(self, laneAreaDetectors={}):
-        self.laneAreaDetectors = laneAreaDetectors
+    def __init__(self):
+        """
+        Init of class.
+        """
+        self.laneAreaDetectors = {}
 
     def build(self, filenames):
         """
-        Construit les éléments additionnels du réseau dans le fichier passé en paramètre.
-        :param filename: Fichier où construire les éléments additonnels
+        Build all Detector objects in the .
+        :param filenames: Fichier où construire les détecteurs
         """
         xml_additional = ET.Element('additional')
         self.build_laneAreaDetectors(xml_additional)
         tree = ET.ElementTree(xml_additional)
-        tree.write(filenames['additionals'])
+        tree.write(filenames['detectors'])
 
     def add_laneAreaDetector(self, id, lane, pos=0, end_pos=-0.1, freq=100000, file="detectors.out"):
         """
-        Ajoute un Detecteur E2 aux éléments additionnels
+        Ajoute un Detecteur E2 aux détecteurs
         :param id: Identifiant du détecteur
         :param lane: Voie sur laquelle placer le détecteur
         :param pos: Point de départ du détecteur sur la voie

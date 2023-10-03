@@ -1,5 +1,5 @@
 import sys, os
-from core.src.components import Network, Routes, Additional
+from core.src.components import Network, Routes, DetectorBuilder
 tools = os.path.join(os.environ['SUMO_HOME'], 'tools')
 sys.path.append(tools)
 import traci
@@ -274,16 +274,15 @@ class OneCrossroadNetwork:
 
     ### Additionals ###
 
-    def no_additionals(self, config):
+    def no_detectors(self, config):
         """
-        Fonction qui n'ajoute aucun élément additionnels à un réseau.
+        Fonction qui n'ajoute aucun détecteur à un réseau.
 
         :param config: Configuration du réseau routier
-        :return: Retourne un objet Additional vide
+        :return: Retourne un objet DetectorBuilder vide
         """
 
-        additional = Additional()
-        return additional
+        return DetectorBuilder()
 
     def detecteurs_numeriques_simple_carrefour(self, config):
         """
@@ -291,17 +290,17 @@ class OneCrossroadNetwork:
         à carrefour unique.
 
         :param config: Configuration du réseau routier
-        :return: Retourne un objet Additional représentant les détecteurs mentionnés
+        :return: Retourne un objet DetectorBuilder représentant les détecteurs mentionnés
         """
 
-        additional = Additional()
+        detectors = DetectorBuilder()
 
-        additional.add_laneAreaDetector(id="wc", lane="edge_wc_0")
-        additional.add_laneAreaDetector(id="sc", lane="edge_sc_0")
-        additional.add_laneAreaDetector(id="nc", lane="edge_nc_0")
-        additional.add_laneAreaDetector(id="ec", lane="edge_ec_0")
+        detectors.add_laneAreaDetector(id="wc", lane="edge_wc_0")
+        detectors.add_laneAreaDetector(id="sc", lane="edge_sc_0")
+        detectors.add_laneAreaDetector(id="nc", lane="edge_nc_0")
+        detectors.add_laneAreaDetector(id="ec", lane="edge_ec_0")
 
-        return additional
+        return detectors
 
     def detecteurs_booleens_simple_carrefour(self, config):
         """
@@ -309,20 +308,20 @@ class OneCrossroadNetwork:
         à carrefour unique.
 
         :param config: Configuration du réseau routier
-        :return: Retourne un objet Additional représentant les détecteurs mentionnés
+        :return: Retourne un objet DetectorBuilder représentant les détecteurs mentionnés
         """
 
-        additional = Additional()
+        detectors = DetectorBuilder()
 
         detector_length = config["boolean_detector_length"]
         lane_len = config['default_len']
 
-        additional.add_laneAreaDetector(id="wc", lane="edge_wc_0", pos=(lane_len - detector_length - 7.2))
-        additional.add_laneAreaDetector(id="sc", lane="edge_sc_0", pos=(lane_len - detector_length - 7.2))
-        additional.add_laneAreaDetector(id="nc", lane="edge_nc_0", pos=(lane_len - detector_length - 7.2))
-        additional.add_laneAreaDetector(id="ec", lane="edge_ec_0", pos=(lane_len - detector_length - 7.2))
+        detectors.add_laneAreaDetector(id="wc", lane="edge_wc_0", pos=(lane_len - detector_length - 7.2))
+        detectors.add_laneAreaDetector(id="sc", lane="edge_sc_0", pos=(lane_len - detector_length - 7.2))
+        detectors.add_laneAreaDetector(id="nc", lane="edge_nc_0", pos=(lane_len - detector_length - 7.2))
+        detectors.add_laneAreaDetector(id="ec", lane="edge_ec_0", pos=(lane_len - detector_length - 7.2))
 
-        return additional
+        return detectors
 
 
 

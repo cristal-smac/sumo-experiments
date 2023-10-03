@@ -24,10 +24,10 @@ if __name__ == '__main__':
 
     network = SquareNetwork()
 
-    e = Experiment(f'test_reseau_fully_connected', 
-                    network=network.square_crossroad_network,
-                    routes=network.square_crossroad_routes,
-                    additionals=network.no_additionals)
+    e = Experiment(f'test_reseau_fully_connected',
+                   network=network.square_crossroad_network,
+                   routes=network.square_crossroad_routes,
+                   detectors=network.no_detectors)
 
 
     load_vector, coeff_matrix = import_flows_parameters_from_csv(params_file)

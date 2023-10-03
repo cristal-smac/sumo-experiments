@@ -26,7 +26,7 @@ if __name__ == '__main__':
         e = Experiment(f'exp_carrefour_simple_flux_variables_egaux_temps_fixe{i}',
                        network=network.simple_crossroad_network,
                        routes=network.simple_crossroad_routes,
-                       additionals=network.no_additionals)
+                       detectors=network.no_detectors)
 
         e.set_variable('stop_generation_time', 900)
         e.set_variable('w_e_flow', n_vehicles_h)

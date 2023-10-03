@@ -10,7 +10,7 @@ class Experiment:
     """
     Classe qui représente un expérience à réaliser avec SUMO
     """
-    def __init__(self, name, network, routes, additionals):
+    def __init__(self, name, network, routes, detectors):
         """
         Constructeur de la classe Experiment
         :param name: Nom de l'expérience
@@ -20,7 +20,7 @@ class Experiment:
         """
         self.network = network
         self.routes = routes
-        self.additionals = additionals
+        self.detectors = detectors
         self.name = name
         self.config = {'nom_exp':name}
         self.files = {}
@@ -32,7 +32,7 @@ class Experiment:
         self.generateFileNames()
         self.routes(self.config).build(self.files)
         self.network(self.config).build(self.files)
-        self.additionals(self.config).build(self.files)
+        self.detectors(self.config).build(self.files)
         os.system(f'$SUMO_HOME/bin/netconvert -n {self.files["nodes"]} -e {self.files["edges"]} -x {self.files["connections"]} -i {self.files["trafic_light_programs"]} -t {self.files["types"]} -o {self.files["network"]}')
         args = self.buildArguments()
         if gui:
@@ -59,7 +59,7 @@ class Experiment:
         self.generateFileNames()
         self.routes(self.config).build(self.files)
         self.network(self.config).build(self.files)
-        self.additionals(self.config).build(self.files)
+        self.detectors(self.config).build(self.files)
         os.system(f'$SUMO_HOME/bin/netconvert -n {self.files["nodes"]} -e {self.files["edges"]} -x {self.files["connections"]} -i {self.files["trafic_light_programs"]} -t {self.files["types"]} -o {self.files["network"]}')
         args = self.buildArguments()
 
@@ -102,7 +102,7 @@ class Experiment:
         args = ''
         args += f'-n {self.files["network"]} '
         args += f'-r {self.files["routes"]} '
-        args += f'-a {self.files["additionals"]} '
+        args += f'-a {self.files["detectors"]} '
         args += f'--summary {self.files["summaryxml"]} '
         args += f'--queue-output {self.files["queuexml"]} '
         if 'simulation_duration' in self.config:
@@ -196,7 +196,8 @@ class Experiment:
             'trafic_light_programs': f'{self.name}.ttl.xml',
             'routes': f'{self.name}.rou.xml',
             'network': f'{self.name}.net.xml',
-            'additionals': f'{self.name}.det.xml',
+            'detectors': f'{self.name}.det.xml',
+            'detectors': f'{self.name}.det.xml',
             'summaryxml': f'summary_{self.name}.xml',
             'summarycsv': f'summary_{self.name}.csv',
             'queuexml': f'queue_{self.name}.xml',

@@ -16,10 +16,10 @@ if __name__ == "__main__":
 
     network = OneCrossroadNetwork()
 
-    e = Experiment('test_multi_flux', 
-                    network=network.simple_crossroad_fully_connected_network,
-                    routes=network.simple_crossroad_fully_connected_multi_flow,
-                    additionals=network.no_additionals)
+    e = Experiment('test_multi_flux',
+                   network=network.simple_crossroad_fully_connected_network,
+                   routes=network.simple_crossroad_fully_connected_multi_flow,
+                   detectors=network.no_detectors)
 
     e.set_variable('default_len', lane_length)
     e.set_variable('default_speed', speed_value)
