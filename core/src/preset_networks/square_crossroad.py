@@ -1,6 +1,6 @@
 import numpy as np
 import sys, os
-from core.src.components import Network, Routes, DetectorBuilder
+from core.src.components import NetworkBuilder, RoutesBuilder, DetectorBuilder
 tools = os.path.join(os.environ['SUMO_HOME'], 'tools')
 sys.path.append(tools)
 import traci
@@ -17,10 +17,10 @@ class SquareNetwork:
         Le réseau contient donc `nb_roads_by_side` * `nb_roads_by_side` carrefours tricolores.
         Le paramètre `nb_roads_by_side` doit être mis dans la config sous la forme config['nb_roads_by_side']
         :param config: Configuration du réseau routier
-        :return: Retourne un objet Routes représentant les routes du réseau routier créé
+        :return: Retourne un objet RoutesBuilder représentant les routes du réseau routier créé
         """
 
-        net = Network()
+        net = NetworkBuilder()
 
         nb_roads_by_side = config["nb_roads_by_side"]
 
@@ -152,10 +152,10 @@ class SquareNetwork:
         Le réseau contient donc `nb_roads_by_side` * `nb_roads_by_side` carrefours tricolores.
         Le paramètre `nb_roads_by_side` doit être mis dans la config sous la forme config['nb_roads_by_side']
         :param config: Configuration du réseau routier
-        :return: Retourne un objet Routes représentant les routes du réseau routier créé
+        :return: Retourne un objet RoutesBuilder représentant les routes du réseau routier créé
         """
 
-        net = Network()
+        net = NetworkBuilder()
 
         nb_roads_by_side = config["nb_roads_by_side"]
 
@@ -282,10 +282,10 @@ class SquareNetwork:
         Génère les routes pour un réseau de carrefours carré.
         Le paramètre `nb_roads_by_side` doit être mis dans la config sous la forme config['nb_roads_by_side']
         :param config: Configuration du réseau routier
-        :return: Retourne un objet Routes représentant les routes du réseau routier créé
+        :return: Retourne un objet RoutesBuilder représentant les routes du réseau routier créé
         """
 
-        routes = Routes()
+        routes = RoutesBuilder()
 
         nb_roads_by_side = config["nb_roads_by_side"]
 
@@ -328,10 +328,10 @@ class SquareNetwork:
         Génère les routes pour un réseau de carrefours carré.
         Le paramètre `nb_roads_by_side` doit être mis dans la config sous la forme config['nb_roads_by_side']
         :param config: Configuration du réseau routier
-        :return: Retourne un objet Routes représentant les routes du réseau routier créé
+        :return: Retourne un objet RoutesBuilder représentant les routes du réseau routier créé
         """
 
-        routes = Routes()
+        routes = RoutesBuilder()
 
         nb_roads_by_side = config["nb_roads_by_side"]
         load_vector = config["load_vector"]

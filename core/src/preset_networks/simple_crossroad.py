@@ -1,5 +1,5 @@
 import sys, os
-from core.src.components import Network, Routes, DetectorBuilder
+from core.src.components import NetworkBuilder, RoutesBuilder, DetectorBuilder
 tools = os.path.join(os.environ['SUMO_HOME'], 'tools')
 sys.path.append(tools)
 import traci
@@ -12,11 +12,11 @@ class OneCrossroadNetwork:
         """
         Réseau routier représentant un carrefour
         :param config: Configuration du réseau routier
-        :return: Retourne un objet Network représentant le réseau routier créé
+        :return: Retourne un objet NetworkBuilder représentant le réseau routier créé
         """
 
         # Instanciation du réseau routier
-        net = Network()
+        net = NetworkBuilder()
 
         # Création des noeuds
         net.add_node(id='c', x=0, y=0, type='traffic_light', tl='c')    # Noeud central, croisement
@@ -52,9 +52,9 @@ class OneCrossroadNetwork:
         """
         Réseau routier représentant un carrefour avec possibilité de tourner vers l'ouest ou au sud.
         :param config: Configuration du réseau routier
-        :return: Retourne un objet Network représentant le réseau routier créé
+        :return: Retourne un objet NetworkBuilder représentant le réseau routier créé
         """
-        net = Network()
+        net = NetworkBuilder()
 
         net.add_node(id='c', x=0, y=0, type='traffic_light', tl='c')    # Noeud central, croisement
         net.add_node(id='w', x=-config['w_e_len'], y=0)        # Noeud de l'entrée de la route à l'ouest
@@ -92,11 +92,11 @@ class OneCrossroadNetwork:
         Réseau routier représentant un carrefour
         Les véhciules peuvent arriver et repartir de chacun des voies
         :param config: Configuration du réseau routier
-        :return: Retourne un objet Network représentant le réseau routier créé
+        :return: Retourne un objet NetworkBuilder représentant le réseau routier créé
         """
 
         # Instanciation du réseau routier
-        net = Network()
+        net = NetworkBuilder()
 
         # Création des noeuds
         net.add_node(id='c', x=0, y=0, type='traffic_light', tl='c')    # Noeud central, croisement
@@ -155,10 +155,10 @@ class OneCrossroadNetwork:
         """
         Routes pour un carrefour simple
         :param config: Configuration du réseau routier
-        :return: Retourne un objet Routes représentant les routes du réseau routier créé
+        :return: Retourne un objet RoutesBuilder représentant les routes du réseau routier créé
         """
         # Instanciation des routes
-        routes = Routes()
+        routes = RoutesBuilder()
 
         # Création du type de véhicule
         routes.add_vType(id='car0')
@@ -179,9 +179,9 @@ class OneCrossroadNetwork:
         """
         Routes pour un carrefour avec possibilité de tourner vers l'ouest ou au sud.
         :param config: Configuration du réseau routier
-        :return: Retourne un objet Routes représentant les routes du réseau routier créé
+        :return: Retourne un objet RoutesBuilder représentant les routes du réseau routier créé
         """
-        routes = Routes()
+        routes = RoutesBuilder()
 
         routes.add_vType(id='car0')
 
@@ -197,9 +197,9 @@ class OneCrossroadNetwork:
         """
         Routes pour un carrefour complètement connecté
         :param config: Configuration du réseau routier
-        :return: Retourne un objet Routes représentant les routes du réseau routier créé
+        :return: Retourne un objet RoutesBuilder représentant les routes du réseau routier créé
         """
-        routes = Routes()
+        routes = RoutesBuilder()
 
         routes.add_vType(id='car0')
 
@@ -233,14 +233,14 @@ class OneCrossroadNetwork:
         Enfin, il faut définir config['nb_ticks'] qui définit le nombre de ticks de chaque période.
 
         :param config: Configuration du réseau routier
-        :return: Retourne un objet Routes représentant les routes du réseau routier créé
+        :return: Retourne un objet RoutesBuilder représentant les routes du réseau routier créé
         """
 
         matrice_coeffs = config['coeff_matrix']
         vecteur_charge = config['load_vector']
         nb_ticks = config['nb_ticks']
 
-        routes = Routes()
+        routes = RoutesBuilder()
 
         routes.add_vType(id='car0')
 

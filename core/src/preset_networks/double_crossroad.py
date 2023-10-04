@@ -1,5 +1,5 @@
 import sys, os
-from core.src.components import Network, Routes, DetectorBuilder
+from core.src.components import NetworkBuilder, RoutesBuilder, DetectorBuilder
 tools = os.path.join(os.environ['SUMO_HOME'], 'tools')
 sys.path.append(tools)
 import traci
@@ -13,9 +13,9 @@ class TwoCrossroadsNetwork:
         """
         Réseau routier représentant deux carrefours simples consécutifs
         :param config: Configuration du réseau routier
-        :return: Retourne un objet Network représentant le réseau routier créé
+        :return: Retourne un objet NetworkBuilder représentant le réseau routier créé
         """
-        net = Network()
+        net = NetworkBuilder()
 
         net.add_node(id='c1', x=0, y=0, type='traffic_light', tl='c1')
         net.add_node(id='c2', x=config['middle_len'], y=0, type='traffic_light', tl='c2')
@@ -65,9 +65,9 @@ class TwoCrossroadsNetwork:
         """
         Réseau routier représentant deux carrefours consécutifs. Les véhicules peuvent arriver et ressortir des 6 entrées.
         :param config: Configuration du réseau routier
-        :return: Retourne un objet Network représentant le réseau routier créé
+        :return: Retourne un objet NetworkBuilder représentant le réseau routier créé
         """
-        net = Network()
+        net = NetworkBuilder()
 
         net.add_node(id='c1', x=0, y=0, type='traffic_light', tl='c1')
         net.add_node(id='c2', x=config['default_len'], y=0, type='traffic_light', tl='c2')
@@ -151,9 +151,9 @@ class TwoCrossroadsNetwork:
         """
         Routes pour deux carrefours simples consécutifs
         :param config: Configuration du réseau routier
-        :return: Retourne un objet Routes représentant les routes du réseau routier créé
+        :return: Retourne un objet RoutesBuilder représentant les routes du réseau routier créé
         """
-        routes = Routes()
+        routes = RoutesBuilder()
 
         routes.add_vType(id='car0')
 
@@ -178,14 +178,14 @@ class TwoCrossroadsNetwork:
         Enfin, il faut définir config['nb_ticks'] qui définit le nombre de ticks de chaque période.
 
         :param config: Configuration du réseau routier
-        :return: Retourne un objet Routes représentant les routes du réseau routier créé
+        :return: Retourne un objet RoutesBuilder représentant les routes du réseau routier créé
         """
 
         matrice_coeffs = config['coeff_matrix']
         vecteur_charge = config['load_vector']
         nb_ticks = config['nb_ticks']
 
-        routes = Routes()
+        routes = RoutesBuilder()
 
         routes.add_vType(id='car0')
 
@@ -272,7 +272,7 @@ class TwoCrossroadsNetwork:
         Fonction qui n'ajoute aucun détecteurs à un réseau.
 
         :param config: Configuration du réseau routier
-        :return: Retourne un objet Detector vide
+        :return: Retourne un objet DetectorBuilder vide
         """
 
         return DetectorBuilder()
@@ -283,7 +283,7 @@ class TwoCrossroadsNetwork:
         de sorte à simuler une communication entre les deux.
 
         :param config: Configuration du réseau routier
-        :return: Retourne un objet Detector représentant les détecteurs mentionnés
+        :return: Retourne un objet DetectorBuilder représentant les détecteurs mentionnés
         """
 
         detectors = DetectorBuilder()
@@ -307,7 +307,7 @@ class TwoCrossroadsNetwork:
         Ces détecteurs ne renvoient que la présence d'un véhicule prêt à passer au feu.
 
         :param config: Configuration du réseau routier
-        :return: Retourne un objet Additional représentant les détecteurs mentionnés
+        :return: Retourne un objet DetectorBuilder représentant les détecteurs mentionnés
         """
 
         detectors = DetectorBuilder()

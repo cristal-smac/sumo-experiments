@@ -1,7 +1,7 @@
 import xml.etree.ElementTree as ET
 import os
 
-class Network:
+class NetworkBuilder:
     """
     Classe Network
     Représente un réseau routier utilisable dans le logiciel SUMO
@@ -9,7 +9,7 @@ class Network:
 
     def __init__(self, nodes={}, edges={}, types={}, connections=[], tlprograms={}):
         """
-        Constructeur de la classe Network
+        Constructeur de la classe
         Crée un réseau avec les éléments passés en paramètre.
         Si rien n'est passé en paramètre, crée un réseau vide.
         :param nodes: Noeuds du réseau

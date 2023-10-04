@@ -1,3 +1,3 @@
-from .network import Network
-from .route import Routes
+from .network import NetworkBuilder
+from .route import RoutesBuilder
 from .detectors import DetectorBuilder

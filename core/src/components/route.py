@@ -1,6 +1,6 @@
 import xml.etree.ElementTree as ET
 
-class Routes:
+class RoutesBuilder:
     """
     Classe représentant les routes du réseau routier
     """
