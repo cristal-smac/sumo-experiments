@@ -2,7 +2,14 @@ import xml.etree.ElementTree as ET
 
 class DetectorBuilder:
     """
-    The class detector 
+    The DetectorBuilder class can be used to create a set of detectors that will be added to a road network when
+    creating an experiment. Detectors measure traffic data in real time, enabling the behavior of the network's physical
+    infrastructure to be adapted to the flow of traffic.
+
+    The class is composed of two types of functions:
+    - The 'add_XXX' functions add different types of detectors to the object.
+    - The 'build_XXX' functions are used to build SUMO configuration XML files based on the detectors added to the
+    object beforehand. The build function generates the XML file.
     """
 
     def __init__(self):
@@ -11,33 +18,40 @@ class DetectorBuilder:
         """
         self.laneAreaDetectors = {}
 
-    def build(self, filenames):
+    def build(self, filename):
         """
-        Build all Detector objects in the .
-        :param filenames: Fichier où construire les détecteurs
+        Generate the XML configuration file with all detectors.
+        :param filename: The name of the generated file
+        :type filename: str
         """
         xml_additional = ET.Element('additional')
         self.build_laneAreaDetectors(xml_additional)
         tree = ET.ElementTree(xml_additional)
-        tree.write(filenames['detectors'])
+        tree.write(filename)
 
     def add_laneAreaDetector(self, id, lane, pos=0, end_pos=-0.1, freq=100000, file="detectors.out"):
         """
-        Ajoute un Detecteur E2 aux détecteurs
-        :param id: Identifiant du détecteur
-        :param lane: Voie sur laquelle placer le détecteur
-        :param pos: Point de départ du détecteur sur la voie
-        :param end_pos: Point de fin du détécteur sur la voie
-        :param freq: Fréquence d'activation du détecteur
-        :param file: Nom du fichier de retour des informations des détecteurs
+        Add a E2 detector to the object.
+        :param id: ID of detector
+        :type id: str
+        :param lane: The lane where to place the detector
+        :type lane: str
+        :param pos: The beginning of the detection area on the lane
+        :type pos: float
+        :param end_pos: The end of the detection area on the lane
+        :type end_pos: float
+        :param freq: Detector frequency (Hertz)
+        :type freq: int
+        :param file: The file where the detector will be saved
+        :type file: str
         """
         self.laneAreaDetectors[id] = LaneAreaDetector(id, lane, pos, end_pos, freq, file)
-        return self
 
     def build_laneAreaDetectors(self, xml):
         """
-        Construit les détecteurs dans l'objet XML ElementTree passé en paramètre
-        :param xml_file: Objet XML ElementTree où construire les détecteurs
+        Build all lane area detectors in the XML.
+        :param xml: The XML where to build lane area detectors.
+        :type xml: xml.etree.ElementTree.Element
         """
         for detector in self.laneAreaDetectors:
             self.laneAreaDetectors[detector].build(xml)
@@ -46,18 +60,24 @@ class DetectorBuilder:
 
 class LaneAreaDetector:
     """
-    Classe définissant un détecteur E2 (laneAreaDetector) à intégrer dans une simulation SUMO
+    Class defining an E2 detector to be integrated into a SUMO simulation
     """
 
     def __init__(self, id, lane, pos, end_pos, freq, file):
         """
-        Constructeur de la classe LaneAreaDetector
-        :param id: Identifiant du détecteur
-        :param lane: Voie sur laquelle placer le détecteur
-        :param pos: Point de départ du détecteur sur la voie
-        :param end_pos: Point de fin du détécteur sur la voie
-        :param freq: Fréquence d'activation du détecteur
-        :param file: Nom du fichier de retour des informations des détecteurs
+        Init of class.
+        :param id: ID of detector
+        :type id: str
+        :param lane: The lane where to place the detector
+        :type lane: str
+        :param pos: The beginning of the detection area on the lane
+        :type pos: float
+        :param end_pos: The end of the detection area on the lane
+        :type end_pos: float
+        :param freq: Detector frequency (Hertz)
+        :type freq: int
+        :param file: The file where the detector will be saved
+        :type file: str
         """
         self.id = str(id)
         self.lane = str(lane)
@@ -68,12 +88,16 @@ class LaneAreaDetector:
 
     def build(self, xml):
         """
-        Construit le détecteur dans l'objet XML ElementTree passé en paramètre
-        :param xml: Objet XML ElementTree où construire le détecteur
+        Build the detector in the XML Element.
+        :param xml: XML object where to build the detector
+        :type xml: xml.etree.ElementTree.Element
         """
-        ET.SubElement(xml, 'laneAreaDetector', {'id':self.id,
-                                                'lane':self.lane,
-                                                'pos':self.pos,
-                                                'endPos':self.end_pos,
-                                                'freq':self.freq,
-                                                'file':self.file})
+        ET.SubElement(xml,
+                      'laneAreaDetector',
+                      {'id': self.id,
+                            'lane': self.lane,
+                            'pos': self.pos,
+                            'endPos': self.end_pos,
+                            'freq': self.freq,
+                            'file': self.file}
+                      )
