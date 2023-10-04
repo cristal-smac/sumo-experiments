@@ -1,5 +1,5 @@
 import sys, os
-from core.src.components import NetworkBuilder, RoutesBuilder, DetectorBuilder
+from core.src.components import InfrastructuresBuilder, RoutesBuilder, DetectorBuilder
 tools = os.path.join(os.environ['SUMO_HOME'], 'tools')
 sys.path.append(tools)
 import traci
@@ -16,34 +16,34 @@ class OneCrossroadNetwork:
         """
 
         # Instanciation du réseau routier
-        net = NetworkBuilder()
+        net = InfrastructuresBuilder()
 
         # Création des noeuds
-        net.add_node(id='c', x=0, y=0, type='traffic_light', tl='c')    # Noeud central, croisement
+        net.add_node(id='c', x=0, y=0, type='traffic_light', tl_program='c')    # Noeud central, croisement
         net.add_node(id='w', x=-config['w_e_len'], y=0)        # Noeud de l'entrée de la route à l'ouest
         net.add_node(id='e', x=config['default_len'], y=0)     # Noeud de sortie de la route à l'est
         net.add_node(id='s', x=0, y=-config['s_n_len'])        # Noeud de l'entrée de la route au sud
         net.add_node(id='n', x=0, y=config['default_len'])     # Noeud de sortie de la route au nord
 
         # Création des types de voies
-        net.add_type(id='we', values={'numLanes': '1', 'speed': config['w_e_speed']})
-        net.add_type(id='sn', values={'numLanes': '1', 'speed': config['s_n_speed']})
+        net.add_edge_type(id='we', params={'numLanes': '1', 'speed': config['w_e_speed']})
+        net.add_edge_type(id='sn', params={'numLanes': '1', 'speed': config['s_n_speed']})
 
         # Création des arêtes
-        net.add_edge(id='edge_wc', from_node='w', to_node='c', type='we')
-        net.add_edge(id='edge_ce', from_node='c', to_node='e', type='we')
-        net.add_edge(id='edge_sc', from_node='s', to_node='c', type='sn')
-        net.add_edge(id='edge_cn', from_node='c', to_node='n', type='sn')
+        net.add_edge(id='edge_wc', from_node='w', to_node='c', edge_type='we')
+        net.add_edge(id='edge_ce', from_node='c', to_node='e', edge_type='we')
+        net.add_edge(id='edge_sc', from_node='s', to_node='c', edge_type='sn')
+        net.add_edge(id='edge_cn', from_node='c', to_node='n', edge_type='sn')
 
         # Création des connexions entre les arêtes
         net.add_connection(from_edge='edge_wc', to_edge='edge_ce')
         net.add_connection(from_edge='edge_sc', to_edge='edge_cn')
 
         # Création des feux routiers
-        net.add_traffic_light_program(id='c', programID='c', phases=[{'duration': config['w_e_green_time'], 'state': 'rG'},
-                                                                     {'duration': config['default_yellow_time'], 'state': 'ry'},
-                                                                     {'duration': config['s_n_green_time'], 'state': 'Gr'},
-                                                                     {'duration': config['default_yellow_time'], 'state': 'yr'}])
+        net.add_traffic_light_program(id='c', phases=[{'duration': config['w_e_green_time'], 'state': 'rG'},
+                                                      {'duration': config['default_yellow_time'], 'state': 'ry'},
+                                                      {'duration': config['s_n_green_time'], 'state': 'Gr'},
+                                                      {'duration': config['default_yellow_time'], 'state': 'yr'}])
 
         return net
 
@@ -54,34 +54,34 @@ class OneCrossroadNetwork:
         :param config: Configuration du réseau routier
         :return: Retourne un objet NetworkBuilder représentant le réseau routier créé
         """
-        net = NetworkBuilder()
+        net = InfrastructuresBuilder()
 
-        net.add_node(id='c', x=0, y=0, type='traffic_light', tl='c')    # Noeud central, croisement
+        net.add_node(id='c', x=0, y=0, type='traffic_light', tl_program='c')    # Noeud central, croisement
         net.add_node(id='w', x=-config['w_e_len'], y=0)        # Noeud de l'entrée de la route à l'ouest
         net.add_node(id='e', x=config['default_len'], y=0)     # Noeud de sortie de la route à l'est
         net.add_node(id='s', x=0, y=-config['s_n_len'])        # Noeud de l'entrée de la route au sud
         net.add_node(id='n', x=0, y=config['default_len'])     # Noeud de sortie de la route au nord
 
-        net.add_type(id='we', values={'numLanes': '1', 'speed': config['w_e_speed']})
-        net.add_type(id='sn', values={'numLanes': '1', 'speed': config['s_n_speed']})
+        net.add_edge_type(id='we', params={'numLanes': '1', 'speed': config['w_e_speed']})
+        net.add_edge_type(id='sn', params={'numLanes': '1', 'speed': config['s_n_speed']})
 
-        net.add_edge(id='edge_wc', from_node='w', to_node='c', type='we')
-        net.add_edge(id='edge_ce', from_node='c', to_node='e', type='we')
-        net.add_edge(id='edge_sc', from_node='s', to_node='c', type='sn')
-        net.add_edge(id='edge_cn', from_node='c', to_node='n', type='sn')
+        net.add_edge(id='edge_wc', from_node='w', to_node='c', edge_type='we')
+        net.add_edge(id='edge_ce', from_node='c', to_node='e', edge_type='we')
+        net.add_edge(id='edge_sc', from_node='s', to_node='c', edge_type='sn')
+        net.add_edge(id='edge_cn', from_node='c', to_node='n', edge_type='sn')
 
-        net.add_edge(id='edge_cw', from_node='c', to_node='w', type='we')
-        net.add_edge(id='edge_cs', from_node='c', to_node='s', type='sn')
+        net.add_edge(id='edge_cw', from_node='c', to_node='w', edge_type='we')
+        net.add_edge(id='edge_cs', from_node='c', to_node='s', edge_type='sn')
 
         net.add_connection(from_edge='edge_wc', to_edge='edge_ce')
         net.add_connection(from_edge='edge_sc', to_edge='edge_cn')
         net.add_connection(from_edge='edge_sc', to_edge='edge_cw')
         net.add_connection(from_edge='edge_wc', to_edge='edge_cs')
 
-        net.add_traffic_light_program(id='c', programID='c', phases=[{'duration': config['w_e_green_time'], 'state': 'rrGG'},
-                                                                     {'duration': config['default_yellow_time'], 'state': 'rryy'},
-                                                                     {'duration': config['s_n_green_time'], 'state': 'GGrr'},
-                                                                     {'duration': config['default_yellow_time'], 'state': 'yyrr'}])
+        net.add_traffic_light_program(id='c', phases=[{'duration': config['w_e_green_time'], 'state': 'rrGG'},
+                                                      {'duration': config['default_yellow_time'], 'state': 'rryy'},
+                                                      {'duration': config['s_n_green_time'], 'state': 'GGrr'},
+                                                      {'duration': config['default_yellow_time'], 'state': 'yyrr'}])
 
 
         return net
@@ -96,29 +96,29 @@ class OneCrossroadNetwork:
         """
 
         # Instanciation du réseau routier
-        net = NetworkBuilder()
+        net = InfrastructuresBuilder()
 
         # Création des noeuds
-        net.add_node(id='c', x=0, y=0, type='traffic_light', tl='c')    # Noeud central, croisement
+        net.add_node(id='c', x=0, y=0, type='traffic_light', tl_program='c')    # Noeud central, croisement
         net.add_node(id='w', x=-config['default_len'], y=0)        # Noeud ouest
         net.add_node(id='e', x=config['default_len'], y=0)     # Noeud est
         net.add_node(id='s', x=0, y=-config['default_len'])        # Noeud sud
         net.add_node(id='n', x=0, y=config['default_len'])     # Noeud nord
 
         # Création des types de voies
-        net.add_type(id='default', values={'numLanes': '1', 'speed': config['default_speed']})
+        net.add_edge_type(id='default', params={'numLanes': '1', 'speed': config['default_speed']})
 
         # Création des arêtes vers le centre
-        net.add_edge(id='edge_wc', from_node='w', to_node='c', type='default')
-        net.add_edge(id='edge_sc', from_node='s', to_node='c', type='default')
-        net.add_edge(id='edge_ec', from_node='e', to_node='c', type='default')
-        net.add_edge(id='edge_nc', from_node='n', to_node='c', type='default')
+        net.add_edge(id='edge_wc', from_node='w', to_node='c', edge_type='default')
+        net.add_edge(id='edge_sc', from_node='s', to_node='c', edge_type='default')
+        net.add_edge(id='edge_ec', from_node='e', to_node='c', edge_type='default')
+        net.add_edge(id='edge_nc', from_node='n', to_node='c', edge_type='default')
 
         # Création des arêtes vers la sortie
-        net.add_edge(id='edge_ce', from_node='c', to_node='e', type='default')
-        net.add_edge(id='edge_cn', from_node='c', to_node='n', type='default')
-        net.add_edge(id='edge_cw', from_node='c', to_node='w', type='default')
-        net.add_edge(id='edge_cs', from_node='c', to_node='s', type='default')
+        net.add_edge(id='edge_ce', from_node='c', to_node='e', edge_type='default')
+        net.add_edge(id='edge_cn', from_node='c', to_node='n', edge_type='default')
+        net.add_edge(id='edge_cw', from_node='c', to_node='w', edge_type='default')
+        net.add_edge(id='edge_cs', from_node='c', to_node='s', edge_type='default')
 
 
         # Création des connexions entre les arêtes
@@ -140,10 +140,11 @@ class OneCrossroadNetwork:
         net.add_connection(from_edge='edge_sc', to_edge='edge_cw')
 
         # Création des feux routiers
-        net.add_traffic_light_program(id='c', programID='c', phases=[{'duration': config['default_green_time'], 'state': 'rrrGGGrrrGGG'},
-                                                                     {'duration': config['default_yellow_time'], 'state': 'rrryyyrrryyy'},
-                                                                     {'duration': config['default_green_time'], 'state': 'GGGrrrGGGrrr'},
-                                                                     {'duration': config['default_yellow_time'], 'state': 'yyyrrryyyrrr'}])
+        net.add_traffic_light_program(id='c',
+                                      phases=[{'duration': config['default_green_time'], 'state': 'rrrGGGrrrGGG'},
+                                              {'duration': config['default_yellow_time'], 'state': 'rrryyyrrryyy'},
+                                              {'duration': config['default_green_time'], 'state': 'GGGrrrGGGrrr'},
+                                              {'duration': config['default_yellow_time'], 'state': 'yyyrrryyyrrr'}])
 
         return net
 

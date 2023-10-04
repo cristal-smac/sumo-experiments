@@ -1,6 +1,6 @@
 import numpy as np
 import sys, os
-from core.src.components import NetworkBuilder, RoutesBuilder, DetectorBuilder
+from core.src.components import InfrastructuresBuilder, RoutesBuilder, DetectorBuilder
 tools = os.path.join(os.environ['SUMO_HOME'], 'tools')
 sys.path.append(tools)
 import traci
@@ -20,7 +20,7 @@ class SquareNetwork:
         :return: Retourne un objet RoutesBuilder représentant les routes du réseau routier créé
         """
 
-        net = NetworkBuilder()
+        net = InfrastructuresBuilder()
 
         nb_roads_by_side = config["nb_roads_by_side"]
 
@@ -51,10 +51,10 @@ class SquareNetwork:
                     # Sinon le noeud est un feu tricolore
                     else:
                         net.add_node(id=f'x{x}-y{y}', x=x * config["default_len"] + decalage_x[x],
-                                     y=y * config["default_len"] + decalage_y[y], type='traffic_light', tl=f'x{x}-y{y}')
+                                     y=y * config["default_len"] + decalage_y[y], type='traffic_light', tl_program=f'x{x}-y{y}')
 
         # On ajoute un type de edge au réseau
-        net.add_type(id='default', values={'numLanes': 1, 'speed': config['default_speed']})
+        net.add_edge_type(id='default', params={'numLanes': 1, 'speed': config['default_speed']})
 
         # On ajoute les arrêtes au réseau
         for x in range(nb_roads_by_side + 2):
@@ -70,18 +70,18 @@ class SquareNetwork:
                     if y not in [0, nb_roads_by_side + 1]:
                         if x < nb_roads_by_side + 1:
                             net.add_edge(id=f'edge_x{x}-y{y}_x{x + 1}-y{y}', from_node=f'x{x}-y{y}',
-                                         to_node=f'x{x + 1}-y{y}', type='default')
+                                         to_node=f'x{x + 1}-y{y}', edge_type='default')
                         if x > 0:
                             net.add_edge(id=f'edge_x{x}-y{y}_x{x - 1}-y{y}', from_node=f'x{x}-y{y}',
-                                         to_node=f'x{x - 1}-y{y}', type='default')
+                                         to_node=f'x{x - 1}-y{y}', edge_type='default')
                     # On lie le noeud actuel avec ses voisins haut et bas (si présents et pas sur les bordures)
                     if x not in [0, nb_roads_by_side + 1]:
                         if y < nb_roads_by_side + 1:
                             net.add_edge(id=f'edge_x{x}-y{y}_x{x}-y{y + 1}', from_node=f'x{x}-y{y}',
-                                         to_node=f'x{x}-y{y + 1}', type='default')
+                                         to_node=f'x{x}-y{y + 1}', edge_type='default')
                         if y > 0:
                             net.add_edge(id=f'edge_x{x}-y{y}_x{x}-y{y - 1}', from_node=f'x{x}-y{y}',
-                                         to_node=f'x{x}-y{y - 1}', type='default')
+                                         to_node=f'x{x}-y{y - 1}', edge_type='default')
 
         # On créé les connexions du réseau
         for x in range(nb_roads_by_side + 2):
@@ -137,11 +137,11 @@ class SquareNetwork:
         # On ajoute les programmes de feux tricolores pour chaque carrefour
         for x in range(1, nb_roads_by_side + 1):
             for y in range(1, nb_roads_by_side + 1):
-                net.add_traffic_light_program(id=f'x{x}-y{y}', programID=f'c-x{x}-y{y}',
-                                              phases=[{'duration': config['default_green_time'], 'state': 'rrrGGGrrrGGG'},
-                                                      {'duration': config['default_yellow_time'], 'state': 'rrryyyrrryyy'},
-                                                      {'duration': config['default_green_time'], 'state': 'GGGrrrGGGrrr'},
-                                                      {'duration': config['default_yellow_time'], 'state': 'yyyrrryyyrrr'}])
+                net.add_traffic_light_program(id=f'x{x}-y{y}', phases=[
+                    {'duration': config['default_green_time'], 'state': 'rrrGGGrrrGGG'},
+                    {'duration': config['default_yellow_time'], 'state': 'rrryyyrrryyy'},
+                    {'duration': config['default_green_time'], 'state': 'GGGrrrGGGrrr'},
+                    {'duration': config['default_yellow_time'], 'state': 'yyyrrryyyrrr'}])
 
         return net
 
@@ -155,7 +155,7 @@ class SquareNetwork:
         :return: Retourne un objet RoutesBuilder représentant les routes du réseau routier créé
         """
 
-        net = NetworkBuilder()
+        net = InfrastructuresBuilder()
 
         nb_roads_by_side = config["nb_roads_by_side"]
 
@@ -179,10 +179,10 @@ class SquareNetwork:
                     # Sinon le noeud est un feu tricolore
                     else:
                         net.add_node(id=f'x{x}-y{y}', x=x * config["default_len"], y=y * config["default_len"],
-                                     type='traffic_light', tl=f'x{x}-y{y}')
+                                     type='traffic_light', tl_program=f'x{x}-y{y}')
 
         # On ajoute un type de edge au réseau
-        net.add_type(id='default', values={'numLanes': 1, 'speed': config['default_speed']})
+        net.add_edge_type(id='default', params={'numLanes': 1, 'speed': config['default_speed']})
 
         # On ajoute les arrêtes au réseau
         for x in range(nb_roads_by_side + 2):
@@ -198,18 +198,18 @@ class SquareNetwork:
                     if y not in [0, nb_roads_by_side + 1]:
                         if x < nb_roads_by_side + 1:
                             net.add_edge(id=f'edge_x{x}-y{y}_x{x + 1}-y{y}', from_node=f'x{x}-y{y}',
-                                         to_node=f'x{x + 1}-y{y}', type='default')
+                                         to_node=f'x{x + 1}-y{y}', edge_type='default')
                         if x > 0:
                             net.add_edge(id=f'edge_x{x}-y{y}_x{x - 1}-y{y}', from_node=f'x{x}-y{y}',
-                                         to_node=f'x{x - 1}-y{y}', type='default')
+                                         to_node=f'x{x - 1}-y{y}', edge_type='default')
                     # On lie le noeud actuel avec ses voisins haut et bas (si présents et pas sur les bordures)
                     if x not in [0, nb_roads_by_side + 1]:
                         if y < nb_roads_by_side + 1:
                             net.add_edge(id=f'edge_x{x}-y{y}_x{x}-y{y + 1}', from_node=f'x{x}-y{y}',
-                                         to_node=f'x{x}-y{y + 1}', type='default')
+                                         to_node=f'x{x}-y{y + 1}', edge_type='default')
                         if y > 0:
                             net.add_edge(id=f'edge_x{x}-y{y}_x{x}-y{y - 1}', from_node=f'x{x}-y{y}',
-                                         to_node=f'x{x}-y{y - 1}', type='default')
+                                         to_node=f'x{x}-y{y - 1}', edge_type='default')
 
         # On créé les connexions du réseau
         for x in range(nb_roads_by_side + 2):
@@ -265,11 +265,11 @@ class SquareNetwork:
         # On ajoute les programmes de feux tricolores pour chaque carrefour
         for x in range(1, nb_roads_by_side + 1):
             for y in range(1, nb_roads_by_side + 1):
-                net.add_traffic_light_program(id=f'x{x}-y{y}', programID=f'c-x{x}-y{y}',
-                                              phases=[{'duration': config['default_green_time'], 'state': 'rrrGGGrrrGGG'},
-                                                      {'duration': config['default_yellow_time'], 'state': 'rrryyyrrryyy'},
-                                                      {'duration': config['default_green_time'], 'state': 'GGGrrrGGGrrr'},
-                                                      {'duration': config['default_yellow_time'], 'state': 'yyyrrryyyrrr'}])
+                net.add_traffic_light_program(id=f'x{x}-y{y}', phases=[
+                    {'duration': config['default_green_time'], 'state': 'rrrGGGrrrGGG'},
+                    {'duration': config['default_yellow_time'], 'state': 'rrryyyrrryyy'},
+                    {'duration': config['default_green_time'], 'state': 'GGGrrrGGGrrr'},
+                    {'duration': config['default_yellow_time'], 'state': 'yyyrrryyyrrr'}])
 
         return net
 

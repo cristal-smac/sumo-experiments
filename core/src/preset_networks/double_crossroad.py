@@ -1,5 +1,5 @@
 import sys, os
-from core.src.components import NetworkBuilder, RoutesBuilder, DetectorBuilder
+from core.src.components import InfrastructuresBuilder, RoutesBuilder, DetectorBuilder
 tools = os.path.join(os.environ['SUMO_HOME'], 'tools')
 sys.path.append(tools)
 import traci
@@ -15,10 +15,10 @@ class TwoCrossroadsNetwork:
         :param config: Configuration du réseau routier
         :return: Retourne un objet NetworkBuilder représentant le réseau routier créé
         """
-        net = NetworkBuilder()
+        net = InfrastructuresBuilder()
 
-        net.add_node(id='c1', x=0, y=0, type='traffic_light', tl='c1')
-        net.add_node(id='c2', x=config['middle_len'], y=0, type='traffic_light', tl='c2')
+        net.add_node(id='c1', x=0, y=0, type='traffic_light', tl_program='c1')
+        net.add_node(id='c2', x=config['middle_len'], y=0, type='traffic_light', tl_program='c2')
 
         net.add_node(id='w', x=-config['w_e_len'], y=0)
         net.add_node(id='e', x=config['middle_len'] + config['default_len'], y=0)
@@ -29,34 +29,32 @@ class TwoCrossroadsNetwork:
         net.add_node(id='s2', x=config['middle_len'], y=-config['s2_n2_len'])
         net.add_node(id='n2', x=config['middle_len'], y=config['default_len'])
 
-        net.add_type(id='we', values={'numLanes': '1', 'speed': config['w_e_speed']})
-        net.add_type(id='s1n1', values={'numLanes': '1', 'speed': config['s1_n1_speed']})
-        net.add_type(id='s2n2', values={'numLanes': '1', 'speed': config['s2_n2_speed']})
+        net.add_edge_type(id='we', params={'numLanes': '1', 'speed': config['w_e_speed']})
+        net.add_edge_type(id='s1n1', params={'numLanes': '1', 'speed': config['s1_n1_speed']})
+        net.add_edge_type(id='s2n2', params={'numLanes': '1', 'speed': config['s2_n2_speed']})
 
-        net.add_edge(id='edge_wc1', from_node='w', to_node='c1', type='we')
-        net.add_edge(id='edge_c1c2', from_node='c1', to_node='c2', type='we')
-        net.add_edge(id='edge_c2e', from_node='c2', to_node='e', type='we')
-        net.add_edge(id='edge_s1c1', from_node='s1', to_node='c1', type='s1n1')
-        net.add_edge(id='edge_c1n1', from_node='c1', to_node='n1', type='s1n1')
-        net.add_edge(id='edge_s2c2', from_node='s2', to_node='c2', type='s2n2')
-        net.add_edge(id='edge_c2n2', from_node='c2', to_node='n2', type='s2n2')
+        net.add_edge(id='edge_wc1', from_node='w', to_node='c1', edge_type='we')
+        net.add_edge(id='edge_c1c2', from_node='c1', to_node='c2', edge_type='we')
+        net.add_edge(id='edge_c2e', from_node='c2', to_node='e', edge_type='we')
+        net.add_edge(id='edge_s1c1', from_node='s1', to_node='c1', edge_type='s1n1')
+        net.add_edge(id='edge_c1n1', from_node='c1', to_node='n1', edge_type='s1n1')
+        net.add_edge(id='edge_s2c2', from_node='s2', to_node='c2', edge_type='s2n2')
+        net.add_edge(id='edge_c2n2', from_node='c2', to_node='n2', edge_type='s2n2')
 
         net.add_connection(from_edge='edge_wc1', to_edge='edge_c1c2')
         net.add_connection(from_edge='edge_c1c2', to_edge='edge_c2e')
         net.add_connection(from_edge='edge_s1c1', to_edge='edge_c1n1')
         net.add_connection(from_edge='edge_s2c2', to_edge='edge_c2n2')
 
-        net.add_traffic_light_program(id='c1', programID='c1',
-                                      phases=[{'duration': config['w1_e1_green_time'], 'state': 'rG'},
-                                              {'duration': config['default_yellow_time'], 'state': 'ry'},
-                                              {'duration': config['s1_n1_green_time'], 'state': 'Gr'},
-                                              {'duration': config['default_yellow_time'], 'state': 'yr'}])
+        net.add_traffic_light_program(id='c1', phases=[{'duration': config['w1_e1_green_time'], 'state': 'rG'},
+                                                       {'duration': config['default_yellow_time'], 'state': 'ry'},
+                                                       {'duration': config['s1_n1_green_time'], 'state': 'Gr'},
+                                                       {'duration': config['default_yellow_time'], 'state': 'yr'}])
 
-        net.add_traffic_light_program(id='c2', programID='c2',
-                                      phases=[{'duration': config['w2_e2_green_time'], 'state': 'rG'},
-                                              {'duration': config['default_yellow_time'], 'state': 'ry'},
-                                              {'duration': config['s2_n2_green_time'], 'state': 'Gr'},
-                                              {'duration': config['default_yellow_time'], 'state': 'yr'}])
+        net.add_traffic_light_program(id='c2', phases=[{'duration': config['w2_e2_green_time'], 'state': 'rG'},
+                                                       {'duration': config['default_yellow_time'], 'state': 'ry'},
+                                                       {'duration': config['s2_n2_green_time'], 'state': 'Gr'},
+                                                       {'duration': config['default_yellow_time'], 'state': 'yr'}])
 
         return net
 
@@ -67,10 +65,10 @@ class TwoCrossroadsNetwork:
         :param config: Configuration du réseau routier
         :return: Retourne un objet NetworkBuilder représentant le réseau routier créé
         """
-        net = NetworkBuilder()
+        net = InfrastructuresBuilder()
 
-        net.add_node(id='c1', x=0, y=0, type='traffic_light', tl='c1')
-        net.add_node(id='c2', x=config['default_len'], y=0, type='traffic_light', tl='c2')
+        net.add_node(id='c1', x=0, y=0, type='traffic_light', tl_program='c1')
+        net.add_node(id='c2', x=config['default_len'], y=0, type='traffic_light', tl_program='c2')
 
         net.add_node(id='w', x=-config['default_len'], y=0)
         net.add_node(id='e', x=config['default_len'] * 2, y=0)
@@ -81,26 +79,26 @@ class TwoCrossroadsNetwork:
         net.add_node(id='s2', x=config['default_len'], y=-config['default_len'])
         net.add_node(id='n2', x=config['default_len'], y=config['default_len'])
 
-        net.add_type(id='default', values={'numLanes': '1', 'speed': config['default_speed']})
+        net.add_edge_type(id='default', params={'numLanes': '1', 'speed': config['default_speed']})
 
         # Edge entrant sur le premier carrefour
-        net.add_edge(id='edge_wc1', from_node='w', to_node='c1', type='default')
-        net.add_edge(id='edge_s1c1', from_node='s1', to_node='c1', type='default')
-        net.add_edge(id='edge_n1c1', from_node='n1', to_node='c1', type='default')
-        net.add_edge(id='edge_c2c1', from_node='c2', to_node='c1', type='default')
+        net.add_edge(id='edge_wc1', from_node='w', to_node='c1', edge_type='default')
+        net.add_edge(id='edge_s1c1', from_node='s1', to_node='c1', edge_type='default')
+        net.add_edge(id='edge_n1c1', from_node='n1', to_node='c1', edge_type='default')
+        net.add_edge(id='edge_c2c1', from_node='c2', to_node='c1', edge_type='default')
         # Edge sortant du premier carrefour
-        net.add_edge(id='edge_c1c2', from_node='c1', to_node='c2', type='default')
-        net.add_edge(id='edge_c1n1', from_node='c1', to_node='n1', type='default')
-        net.add_edge(id='edge_c1w', from_node='c1', to_node='w', type='default')
-        net.add_edge(id='edge_c1s1', from_node='c1', to_node='s1', type='default')
+        net.add_edge(id='edge_c1c2', from_node='c1', to_node='c2', edge_type='default')
+        net.add_edge(id='edge_c1n1', from_node='c1', to_node='n1', edge_type='default')
+        net.add_edge(id='edge_c1w', from_node='c1', to_node='w', edge_type='default')
+        net.add_edge(id='edge_c1s1', from_node='c1', to_node='s1', edge_type='default')
         # Edge ebtrant sur le second carrefour
-        net.add_edge(id='edge_ec2', from_node='e', to_node='c2', type='default')
-        net.add_edge(id='edge_s2c2', from_node='s2', to_node='c2', type='default')
-        net.add_edge(id='edge_n2c2', from_node='n2', to_node='c2', type='default')
+        net.add_edge(id='edge_ec2', from_node='e', to_node='c2', edge_type='default')
+        net.add_edge(id='edge_s2c2', from_node='s2', to_node='c2', edge_type='default')
+        net.add_edge(id='edge_n2c2', from_node='n2', to_node='c2', edge_type='default')
         # Edge sortant du second carrefour
-        net.add_edge(id='edge_c2e', from_node='c2', to_node='e', type='default')
-        net.add_edge(id='edge_c2n2', from_node='c2', to_node='n2', type='default')
-        net.add_edge(id='edge_c2s2', from_node='c2', to_node='s2', type='default')
+        net.add_edge(id='edge_c2e', from_node='c2', to_node='e', edge_type='default')
+        net.add_edge(id='edge_c2n2', from_node='c2', to_node='n2', edge_type='default')
+        net.add_edge(id='edge_c2s2', from_node='c2', to_node='s2', edge_type='default')
 
         # Connexion des arêtes du premier carrefour
         net.add_connection(from_edge='edge_wc1', to_edge='edge_c1c2')
@@ -129,13 +127,13 @@ class TwoCrossroadsNetwork:
         net.add_connection(from_edge='edge_ec2', to_edge='edge_c2s2')
         net.add_connection(from_edge='edge_ec2', to_edge='edge_c2c1')
 
-        net.add_traffic_light_program(id='c1', programID='c1',
+        net.add_traffic_light_program(id='c1',
                                       phases=[{'duration': config['default_green_time'], 'state': 'rrrGGGrrrGGG'},
                                               {'duration': config['default_yellow_time'], 'state': 'rrryyyrrryyy'},
                                               {'duration': config['default_green_time'], 'state': 'GGGrrrGGGrrr'},
                                               {'duration': config['default_yellow_time'], 'state': 'yyyrrryyyrrr'}])
 
-        net.add_traffic_light_program(id='c2', programID='c2',
+        net.add_traffic_light_program(id='c2',
                                       phases=[{'duration': config['default_green_time'], 'state': 'GGGrrrGGGrrr'},
                                               {'duration': config['default_yellow_time'], 'state': 'yyyrrryyyrrr'},
                                               {'duration': config['default_green_time'], 'state': 'rrrGGGrrrGGG'},

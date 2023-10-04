@@ -18,16 +18,16 @@ class DetectorBuilder:
         """
         self.laneAreaDetectors = {}
 
-    def build(self, filename):
+    def build(self, filenames):
         """
         Generate the XML configuration file with all detectors.
-        :param filename: The name of the generated file
-        :type filename: str
+        :param filenames: The dictionnary with all filenames for configuration, including detectors file.
+        :type filenames: dict
         """
         xml_additional = ET.Element('additional')
         self.build_laneAreaDetectors(xml_additional)
         tree = ET.ElementTree(xml_additional)
-        tree.write(filename)
+        tree.write(filenames['detectors'])
 
     def add_laneAreaDetector(self, id, lane, pos=0, end_pos=-0.1, freq=100000, file="detectors.out"):
         """

@@ -32,7 +32,7 @@ class Experiment:
         self.generateFileNames()
         self.routes(self.config).build(self.files)
         self.network(self.config).build(self.files)
-        self.detectors(self.config).build(self.files['detectors'])
+        self.detectors(self.config).build(self.files)
         os.system(f'$SUMO_HOME/bin/netconvert -n {self.files["nodes"]} -e {self.files["edges"]} -x {self.files["connections"]} -i {self.files["trafic_light_programs"]} -t {self.files["types"]} -o {self.files["network"]}')
         args = self.buildArguments()
         if gui:
@@ -59,7 +59,7 @@ class Experiment:
         self.generateFileNames()
         self.routes(self.config).build(self.files)
         self.network(self.config).build(self.files)
-        self.detectors(self.config).build(self.files['detectors'])
+        self.detectors(self.config).build(self.files)
         os.system(f'$SUMO_HOME/bin/netconvert -n {self.files["nodes"]} -e {self.files["edges"]} -x {self.files["connections"]} -i {self.files["trafic_light_programs"]} -t {self.files["types"]} -o {self.files["network"]}')
         args = self.buildArguments()
 
