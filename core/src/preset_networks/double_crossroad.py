@@ -1,5 +1,5 @@
 import sys, os
-from core.src.components import InfrastructuresBuilder, RoutesBuilder, DetectorBuilder
+from core.src.components import InfrastructureBuilder, FlowBuilder, DetectorBuilder
 tools = os.path.join(os.environ['SUMO_HOME'], 'tools')
 sys.path.append(tools)
 import traci
@@ -15,7 +15,7 @@ class TwoCrossroadsNetwork:
         :param config: Configuration du réseau routier
         :return: Retourne un objet NetworkBuilder représentant le réseau routier créé
         """
-        net = InfrastructuresBuilder()
+        net = InfrastructureBuilder()
 
         net.add_node(id='c1', x=0, y=0, type='traffic_light', tl_program='c1')
         net.add_node(id='c2', x=config['middle_len'], y=0, type='traffic_light', tl_program='c2')
@@ -65,7 +65,7 @@ class TwoCrossroadsNetwork:
         :param config: Configuration du réseau routier
         :return: Retourne un objet NetworkBuilder représentant le réseau routier créé
         """
-        net = InfrastructuresBuilder()
+        net = InfrastructureBuilder()
 
         net.add_node(id='c1', x=0, y=0, type='traffic_light', tl_program='c1')
         net.add_node(id='c2', x=config['default_len'], y=0, type='traffic_light', tl_program='c2')
@@ -151,7 +151,7 @@ class TwoCrossroadsNetwork:
         :param config: Configuration du réseau routier
         :return: Retourne un objet RoutesBuilder représentant les routes du réseau routier créé
         """
-        routes = RoutesBuilder()
+        routes = FlowBuilder()
 
         routes.add_vType(id='car0')
 
@@ -159,11 +159,11 @@ class TwoCrossroadsNetwork:
         routes.add_route(id='route_s2n2', type='car0', from_edge='edge_s2c2', to_edge='edge_c2n2')
 
         routes.add_flow(id='flow_we', from_edge='edge_wc1', to_edge='edge_c2e', end=config['stop_generation_time'],
-                        vehsPerHour=config['w_e_flow'], vType='car0')
+                        density=config['w_e_flow'], v_type='car0')
         routes.add_flow(id='flow_s1n1', route='route_s1n1', end=config['stop_generation_time'],
-                        vehsPerHour=config['s1_n1_flow'], vType='car0')
+                        density=config['s1_n1_flow'], v_type='car0')
         routes.add_flow(id='flow_s2n2', route='route_s2n2', end=config['stop_generation_time'],
-                        vehsPerHour=config['s2_n2_flow'], vType='car0')
+                        density=config['s2_n2_flow'], v_type='car0')
         return routes
 
 
@@ -183,7 +183,7 @@ class TwoCrossroadsNetwork:
         vecteur_charge = config['load_vector']
         nb_ticks = config['nb_ticks']
 
-        routes = RoutesBuilder()
+        routes = FlowBuilder()
 
         routes.add_vType(id='car0')
 
@@ -195,70 +195,70 @@ class TwoCrossroadsNetwork:
 
             # Flux venant du nord 1
             routes.add_flow(id=f'{i}_flow_n1n2', from_edge='edge_n1c1', to_edge='edge_c2n2', begin=flow_start, end=flow_end,
-                            vehsPerHour=flows[0], vType='car0', distribution='binomial')
+                            density=flows[0], v_type='car0', distribution='binomial')
             routes.add_flow(id=f'{i}_flow_n1e', from_edge='edge_n1c1', to_edge='edge_c2e', begin=flow_start, end=flow_end,
-                            vehsPerHour=flows[1], vType='car0', distribution='binomial')
+                            density=flows[1], v_type='car0', distribution='binomial')
             routes.add_flow(id=f'{i}_flow_n1s2', from_edge='edge_n1c1', to_edge='edge_c2s2', begin=flow_start, end=flow_end,
-                            vehsPerHour=flows[2], vType='car0', distribution='binomial')
+                            density=flows[2], v_type='car0', distribution='binomial')
             routes.add_flow(id=f'{i}_flow_n1s1', from_edge='edge_n1c1', to_edge='edge_c1s1', begin=flow_start, end=flow_end,
-                            vehsPerHour=flows[3], vType='car0', distribution='binomial')
+                            density=flows[3], v_type='car0', distribution='binomial')
             routes.add_flow(id=f'{i}_flow_n1w', from_edge='edge_n1c1', to_edge='edge_c1w', begin=flow_start, end=flow_end,
-                            vehsPerHour=flows[4], vType='car0', distribution='binomial')
+                            density=flows[4], v_type='car0', distribution='binomial')
             # Flux venant du nord 2
             routes.add_flow(id=f'{i}_flow_n2e', from_edge='edge_n2c2', to_edge='edge_c2e', begin=flow_start, end=flow_end,
-                            vehsPerHour=flows[5], vType='car0', distribution='binomial')
+                            density=flows[5], v_type='car0', distribution='binomial')
             routes.add_flow(id=f'{i}_flow_n2s2', from_edge='edge_n2c2', to_edge='edge_c2s2', begin=flow_start, end=flow_end,
-                            vehsPerHour=flows[6], vType='car0', distribution='binomial')
+                            density=flows[6], v_type='car0', distribution='binomial')
             routes.add_flow(id=f'{i}_flow_n2s1', from_edge='edge_n2c2', to_edge='edge_c1s1', begin=flow_start, end=flow_end,
-                            vehsPerHour=flows[7], vType='car0', distribution='binomial')
+                            density=flows[7], v_type='car0', distribution='binomial')
             routes.add_flow(id=f'{i}_flow_n2w', from_edge='edge_n2c2', to_edge='edge_c1w', begin=flow_start, end=flow_end,
-                            vehsPerHour=flows[8], vType='car0', distribution='binomial')
+                            density=flows[8], v_type='car0', distribution='binomial')
             routes.add_flow(id=f'{i}_flow_n2n1', from_edge='edge_n2c2', to_edge='edge_c1n1', begin=flow_start, end=flow_end,
-                            vehsPerHour=flows[9], vType='car0', distribution='binomial')
+                            density=flows[9], v_type='car0', distribution='binomial')
             # Flux venant de l'ouest
             routes.add_flow(id=f'{i}_flow_es2', from_edge='edge_ec2', to_edge='edge_c2s2', begin=flow_start, end=flow_end,
-                            vehsPerHour=flows[10], vType='car0', distribution='binomial')
+                            density=flows[10], v_type='car0', distribution='binomial')
             routes.add_flow(id=f'{i}_flow_es1', from_edge='edge_ec2', to_edge='edge_c1s1', begin=flow_start, end=flow_end,
-                            vehsPerHour=flows[11], vType='car0', distribution='binomial')
+                            density=flows[11], v_type='car0', distribution='binomial')
             routes.add_flow(id=f'{i}_flow_ew', from_edge='edge_ec2', to_edge='edge_c1w', begin=flow_start, end=flow_end,
-                            vehsPerHour=flows[12], vType='car0', distribution='binomial')
+                            density=flows[12], v_type='car0', distribution='binomial')
             routes.add_flow(id=f'{i}_flow_en1', from_edge='edge_ec2', to_edge='edge_c1n1', begin=flow_start, end=flow_end,
-                            vehsPerHour=flows[13], vType='car0', distribution='binomial')
+                            density=flows[13], v_type='car0', distribution='binomial')
             routes.add_flow(id=f'{i}_flow_en2', from_edge='edge_ec2', to_edge='edge_c2n2', begin=flow_start, end=flow_end,
-                            vehsPerHour=flows[14], vType='car0', distribution='binomial')
+                            density=flows[14], v_type='car0', distribution='binomial')
             # Flux venant du sud 2
             routes.add_flow(id=f'{i}_flow_s2s1', from_edge='edge_s2c2', to_edge='edge_c1s1', begin=flow_start, end=flow_end,
-                            vehsPerHour=flows[15], vType='car0', distribution='binomial')
+                            density=flows[15], v_type='car0', distribution='binomial')
             routes.add_flow(id=f'{i}_flow_s2w', from_edge='edge_s2c2', to_edge='edge_c1w', begin=flow_start, end=flow_end,
-                            vehsPerHour=flows[16], vType='car0', distribution='binomial')
+                            density=flows[16], v_type='car0', distribution='binomial')
             routes.add_flow(id=f'{i}_flow_s2n1', from_edge='edge_s2c2', to_edge='edge_c1n1', begin=flow_start, end=flow_end,
-                            vehsPerHour=flows[17], vType='car0', distribution='binomial')
+                            density=flows[17], v_type='car0', distribution='binomial')
             routes.add_flow(id=f'{i}_flow_s2n2', from_edge='edge_s2c2', to_edge='edge_c2n2', begin=flow_start, end=flow_end,
-                            vehsPerHour=flows[18], vType='car0', distribution='binomial')
+                            density=flows[18], v_type='car0', distribution='binomial')
             routes.add_flow(id=f'{i}_flow_s2e', from_edge='edge_s2c2', to_edge='edge_c2e', begin=flow_start, end=flow_end,
-                            vehsPerHour=flows[19], vType='car0', distribution='binomial')
+                            density=flows[19], v_type='car0', distribution='binomial')
             # Flux venant du sud 1
             routes.add_flow(id=f'{i}_flow_s1w', from_edge='edge_s1c1', to_edge='edge_c1w', begin=flow_start, end=flow_end,
-                            vehsPerHour=flows[20], vType='car0', distribution='binomial')
+                            density=flows[20], v_type='car0', distribution='binomial')
             routes.add_flow(id=f'{i}_flow_s1n1', from_edge='edge_s1c1', to_edge='edge_c1n1', begin=flow_start, end=flow_end,
-                            vehsPerHour=flows[21], vType='car0', distribution='binomial')
+                            density=flows[21], v_type='car0', distribution='binomial')
             routes.add_flow(id=f'{i}_flow_s1n2', from_edge='edge_s1c1', to_edge='edge_c2n2', begin=flow_start, end=flow_end,
-                            vehsPerHour=flows[22], vType='car0', distribution='binomial')
+                            density=flows[22], v_type='car0', distribution='binomial')
             routes.add_flow(id=f'{i}_flow_s1e', from_edge='edge_s1c1', to_edge='edge_c2e', begin=flow_start, end=flow_end,
-                            vehsPerHour=flows[23], vType='car0', distribution='binomial')
+                            density=flows[23], v_type='car0', distribution='binomial')
             routes.add_flow(id=f'{i}_flow_s1s2', from_edge='edge_s1c1', to_edge='edge_c2s2', begin=flow_start, end=flow_end,
-                            vehsPerHour=flows[24], vType='car0', distribution='binomial')
+                            density=flows[24], v_type='car0', distribution='binomial')
             # Flux venant de l'est
             routes.add_flow(id=f'{i}_flow_wn1', from_edge='edge_wc1', to_edge='edge_c1n1', begin=flow_start, end=flow_end,
-                            vehsPerHour=flows[25], vType='car0', distribution='binomial')
+                            density=flows[25], v_type='car0', distribution='binomial')
             routes.add_flow(id=f'{i}_flow_wn2', from_edge='edge_wc1', to_edge='edge_c2n2', begin=flow_start, end=flow_end,
-                            vehsPerHour=flows[26], vType='car0', distribution='binomial')
+                            density=flows[26], v_type='car0', distribution='binomial')
             routes.add_flow(id=f'{i}_flow_we', from_edge='edge_wc1', to_edge='edge_c2e', begin=flow_start, end=flow_end,
-                            vehsPerHour=flows[27], vType='car0', distribution='binomial')
+                            density=flows[27], v_type='car0', distribution='binomial')
             routes.add_flow(id=f'{i}_flow_ws2', from_edge='edge_wc1', to_edge='edge_c2s2', begin=flow_start, end=flow_end,
-                            vehsPerHour=flows[28], vType='car0', distribution='binomial')
+                            density=flows[28], v_type='car0', distribution='binomial')
             routes.add_flow(id=f'{i}_flow_ws1', from_edge='edge_wc1', to_edge='edge_c1s1', begin=flow_start, end=flow_end,
-                            vehsPerHour=flows[29], vType='car0', distribution='binomial')
+                            density=flows[29], v_type='car0', distribution='binomial')
 
         return routes
 

@@ -1,6 +1,6 @@
 import numpy as np
 import sys, os
-from core.src.components import InfrastructuresBuilder, RoutesBuilder, DetectorBuilder
+from core.src.components import InfrastructureBuilder, FlowBuilder, DetectorBuilder
 tools = os.path.join(os.environ['SUMO_HOME'], 'tools')
 sys.path.append(tools)
 import traci
@@ -20,7 +20,7 @@ class SquareNetwork:
         :return: Retourne un objet RoutesBuilder représentant les routes du réseau routier créé
         """
 
-        net = InfrastructuresBuilder()
+        net = InfrastructureBuilder()
 
         nb_roads_by_side = config["nb_roads_by_side"]
 
@@ -155,7 +155,7 @@ class SquareNetwork:
         :return: Retourne un objet RoutesBuilder représentant les routes du réseau routier créé
         """
 
-        net = InfrastructuresBuilder()
+        net = InfrastructureBuilder()
 
         nb_roads_by_side = config["nb_roads_by_side"]
 
@@ -285,7 +285,7 @@ class SquareNetwork:
         :return: Retourne un objet RoutesBuilder représentant les routes du réseau routier créé
         """
 
-        routes = RoutesBuilder()
+        routes = FlowBuilder()
 
         nb_roads_by_side = config["nb_roads_by_side"]
 
@@ -317,8 +317,8 @@ class SquareNetwork:
                                     from_edge=liste_entrees[i],
                                     to_edge=liste_sorties[j],
                                     end=config['simulation_duration'],
-                                    vehsPerHour=config['default_flow'],
-                                    vType='car0')
+                                    density=config['default_flow'],
+                                    v_type='car0')
 
         return routes
 
@@ -331,7 +331,7 @@ class SquareNetwork:
         :return: Retourne un objet RoutesBuilder représentant les routes du réseau routier créé
         """
 
-        routes = RoutesBuilder()
+        routes = FlowBuilder()
 
         nb_roads_by_side = config["nb_roads_by_side"]
         load_vector = config["load_vector"]
@@ -375,8 +375,8 @@ class SquareNetwork:
                                         to_edge=liste_sorties[j],
                                         begin=flow_start,
                                         end=flow_end,
-                                        vehsPerHour=flows[compteur],
-                                        vType='car0',
+                                        density=flows[compteur],
+                                        v_type='car0',
                                         distribution="binomial")
                         compteur += 1
 

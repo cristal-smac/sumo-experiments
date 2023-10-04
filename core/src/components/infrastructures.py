@@ -1,14 +1,14 @@
 import xml.etree.ElementTree as ET
 import os
 
-class InfrastructuresBuilder:
+class InfrastructureBuilder:
     """
-    The NetworkBuilder class is used to create the physical infrastructures of a SUMO network. The various
+    The InfrastructureBuilder class is used to create the physical infrastructures of a SUMO network. The various
     infrastructures making up the network are added one by one, before being built using the build function.
 
     The class is composed of two types of functions:
-    - The 'add_XXX' functions add different types of detectors to the object.
-    - The 'build_XXX' functions are used to build SUMO configuration XML files based on the detectors added to the
+    - The 'add_XXX' functions add different types of infrastructures to the object.
+    - The 'build_XXX' functions are used to build SUMO configuration XML files based on the infrastructures added to the
     object beforehand. The build function generates the XML file.
     """
 

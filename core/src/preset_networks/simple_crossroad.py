@@ -1,5 +1,5 @@
 import sys, os
-from core.src.components import InfrastructuresBuilder, RoutesBuilder, DetectorBuilder
+from core.src.components import InfrastructureBuilder, FlowBuilder, DetectorBuilder
 tools = os.path.join(os.environ['SUMO_HOME'], 'tools')
 sys.path.append(tools)
 import traci
@@ -16,7 +16,7 @@ class OneCrossroadNetwork:
         """
 
         # Instanciation du réseau routier
-        net = InfrastructuresBuilder()
+        net = InfrastructureBuilder()
 
         # Création des noeuds
         net.add_node(id='c', x=0, y=0, type='traffic_light', tl_program='c')    # Noeud central, croisement
@@ -54,7 +54,7 @@ class OneCrossroadNetwork:
         :param config: Configuration du réseau routier
         :return: Retourne un objet NetworkBuilder représentant le réseau routier créé
         """
-        net = InfrastructuresBuilder()
+        net = InfrastructureBuilder()
 
         net.add_node(id='c', x=0, y=0, type='traffic_light', tl_program='c')    # Noeud central, croisement
         net.add_node(id='w', x=-config['w_e_len'], y=0)        # Noeud de l'entrée de la route à l'ouest
@@ -96,7 +96,7 @@ class OneCrossroadNetwork:
         """
 
         # Instanciation du réseau routier
-        net = InfrastructuresBuilder()
+        net = InfrastructureBuilder()
 
         # Création des noeuds
         net.add_node(id='c', x=0, y=0, type='traffic_light', tl_program='c')    # Noeud central, croisement
@@ -159,7 +159,7 @@ class OneCrossroadNetwork:
         :return: Retourne un objet RoutesBuilder représentant les routes du réseau routier créé
         """
         # Instanciation des routes
-        routes = RoutesBuilder()
+        routes = FlowBuilder()
 
         # Création du type de véhicule
         routes.add_vType(id='car0')
@@ -169,8 +169,8 @@ class OneCrossroadNetwork:
         routes.add_route(id='route_sn', type='car0', from_edge='edge_sc', to_edge='edge_cn')
 
         # Création des flux
-        routes.add_flow(id='flow_we', route='route_we', end=config['stop_generation_time'], vehsPerHour=config['w_e_flow'], vType='car0')
-        routes.add_flow(id='flow_sn', route='route_sn', end=config['stop_generation_time'], vehsPerHour=config['s_n_flow'], vType='car0')
+        routes.add_flow(id='flow_we', route='route_we', end=config['stop_generation_time'], density=config['w_e_flow'], v_type='car0')
+        routes.add_flow(id='flow_sn', route='route_sn', end=config['stop_generation_time'], density=config['s_n_flow'], v_type='car0')
 
         return routes
 
@@ -182,14 +182,14 @@ class OneCrossroadNetwork:
         :param config: Configuration du réseau routier
         :return: Retourne un objet RoutesBuilder représentant les routes du réseau routier créé
         """
-        routes = RoutesBuilder()
+        routes = FlowBuilder()
 
         routes.add_vType(id='car0')
 
-        routes.add_flow(id='flow_we_straight', from_edge='edge_wc', to_edge='edge_ce', end=config['stop_generation_time'], vehsPerHour=config['w_e_straight_flow'], vType='car0')
-        routes.add_flow(id='flow_we_right', from_edge='edge_wc', to_edge='edge_cs', end=config['stop_generation_time'], vehsPerHour=config['w_e_right_flow'], vType='car0')
-        routes.add_flow(id='flow_sn_straight', from_edge='edge_sc', to_edge='edge_cn', end=config['stop_generation_time'], vehsPerHour=config['s_n_straight_flow'], vType='car0')
-        routes.add_flow(id='flow_sn_left', from_edge='edge_sc', to_edge='edge_cw', end=config['stop_generation_time'], vehsPerHour=config['s_n_left_flow'], vType='car0')
+        routes.add_flow(id='flow_we_straight', from_edge='edge_wc', to_edge='edge_ce', end=config['stop_generation_time'], density=config['w_e_straight_flow'], v_type='car0')
+        routes.add_flow(id='flow_we_right', from_edge='edge_wc', to_edge='edge_cs', end=config['stop_generation_time'], density=config['w_e_right_flow'], v_type='car0')
+        routes.add_flow(id='flow_sn_straight', from_edge='edge_sc', to_edge='edge_cn', end=config['stop_generation_time'], density=config['s_n_straight_flow'], v_type='car0')
+        routes.add_flow(id='flow_sn_left', from_edge='edge_sc', to_edge='edge_cw', end=config['stop_generation_time'], density=config['s_n_left_flow'], v_type='car0')
 
         return routes
 
@@ -200,26 +200,26 @@ class OneCrossroadNetwork:
         :param config: Configuration du réseau routier
         :return: Retourne un objet RoutesBuilder représentant les routes du réseau routier créé
         """
-        routes = RoutesBuilder()
+        routes = FlowBuilder()
 
         routes.add_vType(id='car0')
 
         # Flux venant du nord
-        routes.add_flow(id='flow_ns', from_edge='edge_nc', to_edge='edge_cs', end=config['simulation_duration'], vehsPerHour=config['default_flow'], vType='car0')
-        routes.add_flow(id='flow_ne', from_edge='edge_nc', to_edge='edge_ce', end=config['simulation_duration'], vehsPerHour=config['default_flow'], vType='car0')
-        routes.add_flow(id='flow_nw', from_edge='edge_nc', to_edge='edge_cw', end=config['simulation_duration'], vehsPerHour=config['default_flow'], vType='car0')
+        routes.add_flow(id='flow_ns', from_edge='edge_nc', to_edge='edge_cs', end=config['simulation_duration'], density=config['default_flow'], v_type='car0')
+        routes.add_flow(id='flow_ne', from_edge='edge_nc', to_edge='edge_ce', end=config['simulation_duration'], density=config['default_flow'], v_type='car0')
+        routes.add_flow(id='flow_nw', from_edge='edge_nc', to_edge='edge_cw', end=config['simulation_duration'], density=config['default_flow'], v_type='car0')
         # Flux venant de l'est
-        routes.add_flow(id='flow_es', from_edge='edge_ec', to_edge='edge_cs', end=config['simulation_duration'], vehsPerHour=config['default_flow'], vType='car0')
-        routes.add_flow(id='flow_en', from_edge='edge_ec', to_edge='edge_cn', end=config['simulation_duration'], vehsPerHour=config['default_flow'], vType='car0')
-        routes.add_flow(id='flow_ew', from_edge='edge_ec', to_edge='edge_cw', end=config['simulation_duration'], vehsPerHour=config['default_flow'], vType='car0')
+        routes.add_flow(id='flow_es', from_edge='edge_ec', to_edge='edge_cs', end=config['simulation_duration'], density=config['default_flow'], v_type='car0')
+        routes.add_flow(id='flow_en', from_edge='edge_ec', to_edge='edge_cn', end=config['simulation_duration'], density=config['default_flow'], v_type='car0')
+        routes.add_flow(id='flow_ew', from_edge='edge_ec', to_edge='edge_cw', end=config['simulation_duration'], density=config['default_flow'], v_type='car0')
         # Flux venant du sud
-        routes.add_flow(id='flow_se', from_edge='edge_sc', to_edge='edge_ce', end=config['simulation_duration'], vehsPerHour=config['default_flow'], vType='car0')
-        routes.add_flow(id='flow_sn', from_edge='edge_sc', to_edge='edge_cn', end=config['simulation_duration'], vehsPerHour=config['default_flow'], vType='car0')
-        routes.add_flow(id='flow_sw', from_edge='edge_sc', to_edge='edge_cw', end=config['simulation_duration'], vehsPerHour=config['default_flow'], vType='car0')
+        routes.add_flow(id='flow_se', from_edge='edge_sc', to_edge='edge_ce', end=config['simulation_duration'], density=config['default_flow'], v_type='car0')
+        routes.add_flow(id='flow_sn', from_edge='edge_sc', to_edge='edge_cn', end=config['simulation_duration'], density=config['default_flow'], v_type='car0')
+        routes.add_flow(id='flow_sw', from_edge='edge_sc', to_edge='edge_cw', end=config['simulation_duration'], density=config['default_flow'], v_type='car0')
         # Flux venant de l'ouest
-        routes.add_flow(id='flow_we', from_edge='edge_wc', to_edge='edge_ce', end=config['simulation_duration'], vehsPerHour=config['default_flow'], vType='car0')
-        routes.add_flow(id='flow_wn', from_edge='edge_wc', to_edge='edge_cn', end=config['simulation_duration'], vehsPerHour=config['default_flow'], vType='car0')
-        routes.add_flow(id='flow_ws', from_edge='edge_wc', to_edge='edge_cs', end=config['simulation_duration'], vehsPerHour=config['default_flow'], vType='car0')
+        routes.add_flow(id='flow_we', from_edge='edge_wc', to_edge='edge_ce', end=config['simulation_duration'], density=config['default_flow'], v_type='car0')
+        routes.add_flow(id='flow_wn', from_edge='edge_wc', to_edge='edge_cn', end=config['simulation_duration'], density=config['default_flow'], v_type='car0')
+        routes.add_flow(id='flow_ws', from_edge='edge_wc', to_edge='edge_cs', end=config['simulation_duration'], density=config['default_flow'], v_type='car0')
 
         return routes
 
@@ -241,7 +241,7 @@ class OneCrossroadNetwork:
         vecteur_charge = config['load_vector']
         nb_ticks = config['nb_ticks']
 
-        routes = RoutesBuilder()
+        routes = FlowBuilder()
 
         routes.add_vType(id='car0')
 
@@ -253,21 +253,21 @@ class OneCrossroadNetwork:
             flow_end = nb_ticks * (i+1)
 
             # Flux venant du nord
-            routes.add_flow(id=f'{i}_flow_ne', from_edge='edge_nc', to_edge='edge_ce', begin=flow_start, end=flow_end, vehsPerHour=flows[1], vType='car0', distribution="binomial")
-            routes.add_flow(id=f'{i}_flow_ns', from_edge='edge_nc', to_edge='edge_cs', begin=flow_start, end=flow_end, vehsPerHour=flows[0], vType='car0', distribution="binomial")
-            routes.add_flow(id=f'{i}_flow_nw', from_edge='edge_nc', to_edge='edge_cw', begin=flow_start, end=flow_end, vehsPerHour=flows[2], vType='car0', distribution="binomial")
+            routes.add_flow(id=f'{i}_flow_ne', from_edge='edge_nc', to_edge='edge_ce', begin=flow_start, end=flow_end, density=flows[1], v_type='car0', distribution="binomial")
+            routes.add_flow(id=f'{i}_flow_ns', from_edge='edge_nc', to_edge='edge_cs', begin=flow_start, end=flow_end, density=flows[0], v_type='car0', distribution="binomial")
+            routes.add_flow(id=f'{i}_flow_nw', from_edge='edge_nc', to_edge='edge_cw', begin=flow_start, end=flow_end, density=flows[2], v_type='car0', distribution="binomial")
             # Flux venant de l'est
-            routes.add_flow(id=f'{i}_flow_es', from_edge='edge_ec', to_edge='edge_cs', begin=flow_start, end=flow_end, vehsPerHour=flows[3], vType='car0', distribution="binomial")
-            routes.add_flow(id=f'{i}_flow_ew', from_edge='edge_ec', to_edge='edge_cw', begin=flow_start, end=flow_end, vehsPerHour=flows[5], vType='car0', distribution="binomial")
-            routes.add_flow(id=f'{i}_flow_en', from_edge='edge_ec', to_edge='edge_cn', begin=flow_start, end=flow_end, vehsPerHour=flows[4], vType='car0', distribution="binomial")
+            routes.add_flow(id=f'{i}_flow_es', from_edge='edge_ec', to_edge='edge_cs', begin=flow_start, end=flow_end, density=flows[3], v_type='car0', distribution="binomial")
+            routes.add_flow(id=f'{i}_flow_ew', from_edge='edge_ec', to_edge='edge_cw', begin=flow_start, end=flow_end, density=flows[5], v_type='car0', distribution="binomial")
+            routes.add_flow(id=f'{i}_flow_en', from_edge='edge_ec', to_edge='edge_cn', begin=flow_start, end=flow_end, density=flows[4], v_type='car0', distribution="binomial")
             # Flux venant du sud
-            routes.add_flow(id=f'{i}_flow_sw', from_edge='edge_sc', to_edge='edge_cw', begin=flow_start, end=flow_end, vehsPerHour=flows[8], vType='car0', distribution="binomial")
-            routes.add_flow(id=f'{i}_flow_sn', from_edge='edge_sc', to_edge='edge_cn', begin=flow_start, end=flow_end, vehsPerHour=flows[7], vType='car0', distribution="binomial")
-            routes.add_flow(id=f'{i}_flow_se', from_edge='edge_sc', to_edge='edge_ce', begin=flow_start, end=flow_end, vehsPerHour=flows[6], vType='car0', distribution="binomial")
+            routes.add_flow(id=f'{i}_flow_sw', from_edge='edge_sc', to_edge='edge_cw', begin=flow_start, end=flow_end, density=flows[8], v_type='car0', distribution="binomial")
+            routes.add_flow(id=f'{i}_flow_sn', from_edge='edge_sc', to_edge='edge_cn', begin=flow_start, end=flow_end, density=flows[7], v_type='car0', distribution="binomial")
+            routes.add_flow(id=f'{i}_flow_se', from_edge='edge_sc', to_edge='edge_ce', begin=flow_start, end=flow_end, density=flows[6], v_type='car0', distribution="binomial")
             # Flux venant de l'ouest
-            routes.add_flow(id=f'{i}_flow_wn', from_edge='edge_wc', to_edge='edge_cn', begin=flow_start, end=flow_end, vehsPerHour=flows[10], vType='car0', distribution="binomial")
-            routes.add_flow(id=f'{i}_flow_we', from_edge='edge_wc', to_edge='edge_ce', begin=flow_start, end=flow_end, vehsPerHour=flows[9], vType='car0', distribution="binomial")
-            routes.add_flow(id=f'{i}_flow_ws', from_edge='edge_wc', to_edge='edge_cs', begin=flow_start, end=flow_end, vehsPerHour=flows[11], vType='car0', distribution="binomial")
+            routes.add_flow(id=f'{i}_flow_wn', from_edge='edge_wc', to_edge='edge_cn', begin=flow_start, end=flow_end, density=flows[10], v_type='car0', distribution="binomial")
+            routes.add_flow(id=f'{i}_flow_we', from_edge='edge_wc', to_edge='edge_ce', begin=flow_start, end=flow_end, density=flows[9], v_type='car0', distribution="binomial")
+            routes.add_flow(id=f'{i}_flow_ws', from_edge='edge_wc', to_edge='edge_cs', begin=flow_start, end=flow_end, density=flows[11], v_type='car0', distribution="binomial")
 
         return routes
 
