@@ -117,7 +117,7 @@ class Experiment:
         self.config['simulation_duration'] = value
         return self
 
-    def exportResultsToFile(self, filename, sampling_rate):
+    def export_results_to_csv(self, filename, sampling_rate):
         """
         Exporte les résultats de l'expérience dans un fichier CSV
         :param filename: Nom du fichier CSV

@@ -40,6 +40,6 @@ if __name__ == '__main__':
 
     e.run(gui=True)
 
-    e.exportResultsToFile('../../csv/exp_carrefour_double_fully_connected.csv', sampling_rate=600)
+    e.export_results_to_csv('../../csv/exp_carrefour_double_fully_connected.csv', sampling_rate=600)
 
     e.cleanFiles(delete_summary=True, delete_queue=True)

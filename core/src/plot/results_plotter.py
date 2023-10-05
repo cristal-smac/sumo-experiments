@@ -3,28 +3,37 @@ import pandas as pd
 import numpy as np
 import os
 
-"""
-    Fichier contenant une classe 'Plotter' servant à dessiner les résultats d'une série d'expérience.
-"""
-
 
 class ResultsPlotter:
     """
-    Classe servant à plotter les résultats d'un ensemble d'expérience.
+    The DetectorBuilder class can be used to plot the results of a series of experiments. Experiments results must be
+    saved in a CSV file, with the 'export_results_to_csv' function, to be read by the plotter.
     """
 
     def __init__(self, file, sampling_rate, max_ticks, save_folder):
+        """
+        Init of class.
+        :param file: Path to the csv file where data are stored
+        :type file: str
+        :param sampling_rate: Data scaling in the CSV file (in simulation steps)
+        :type sampling_rate: int
+        :param max_ticks: Final number of simulation steps
+        :type max_ticks: int
+        :param save_folder: Path to the folder where plots will be saved
+        :type save_folder: str
+        """
         self.file = file
         self.df = pd.read_csv(file, )
-        self.sampling_rate = sampling_rate
         self.max_ticks = max_ticks
         self.all_samples = np.arange(start=sampling_rate, stop=max_ticks, step=sampling_rate).tolist()
         self.save_folder = save_folder
 
-    def plot_meanWaitingTime_n_worst(self, n=5):
+    def plot_mean_waiting_time_n_worst(self, n=5):
         """
-        Trace les courbes des n meilleurs réglages qui optimisent le temps d'attente des véhicules.
-        Les n meilleurs réglages sont ceux qui minimisent en moyenne le temps d'attente.
+        Plot the mean waiting time of the vehicles for the n worst settings.
+        The n worsts settings are those who maximize the mean waiting time.
+        :param n: The number of worst experiments to plot.
+        :type n: int
         """
         fig, ax = plt.subplots()
         noms_experiences = self.df['nom_exp'].to_numpy()
@@ -36,9 +45,9 @@ class ResultsPlotter:
         ind = np.argpartition(moyennes, -n)[-n:]
         for i in range(n):
             ax.plot([0] + self.all_samples, results[ind[i]], label=noms_experiences[ind[i]])
-        fig.title = f"Evolution du temps d'attente moyen en fonction du temps ({n} pires)"
-        ax.set_ylabel("Temps d'attente moyen (en s)")
-        ax.set_xlabel("Nombre de steps")
+        fig.title = f"Average waiting time as a function of time ({n} worsts)"
+        ax.set_ylabel("Average waiting time (in s)")
+        ax.set_xlabel("Simulation steps")
         ax.legend()
         if os.path.isdir(self.save_folder):
             fig.savefig(self.save_folder + f"/{n}_worst_mean_waiting_time")
@@ -46,10 +55,12 @@ class ResultsPlotter:
             os.mkdir(self.save_folder)
             fig.savefig(self.save_folder + f"/{n}_worst_mean_waiting_time")
 
-    def plot_meanWaitingTime_n_best(self, n=5):
+    def plot_mean_waiting_time_n_best(self, n=5):
         """
-        Trace les courbes des n meilleurs réglages qui optimisent le temps d'attente des véhicules.
-        Les n meilleurs réglages sont ceux qui minimisent en moyenne le temps d'attente.
+        Plot the mean waiting time of the vehicles for the n best settings.
+        The n bests settings are those who minimize the mean waiting time.
+        :param n: The number of best experiments to plot.
+        :type n: int
         """
         fig, ax = plt.subplots()
         noms_experiences = self.df['nom_exp'].to_numpy()
@@ -61,9 +72,9 @@ class ResultsPlotter:
         ind = np.argpartition(moyennes, n)[:n]
         for i in range(n):
             ax.plot([0] + self.all_samples, results[ind[i]], label=noms_experiences[ind[i]])
-        fig.title = f"Evolution du temps d'attente moyen en fonction du temps ({n} meilleurs)"
-        ax.set_ylabel("Temps d'attente moyen (en s)")
-        ax.set_xlabel("Nombre de steps")
+        fig.title = f"Average waiting time as a function of time ({n} bests)"
+        ax.set_ylabel("Average waiting time (in s)")
+        ax.set_xlabel("Simulation steps")
         ax.legend()
         if os.path.isdir(self.save_folder):
             fig.savefig(self.save_folder + f"/{n}_best_mean_waiting_time")
@@ -71,10 +82,12 @@ class ResultsPlotter:
             os.mkdir(self.save_folder)
             fig.savefig(self.save_folder + f"/{n}_best_mean_waiting_time")
 
-    def plot_meanTravelTime_n_worst(self, n=5):
+    def plot_mean_travel_time_n_worst(self, n=5):
         """
-        Trace les courbes des n meilleurs réglages qui optimisent le temps de trajet des véhicules.
-        Les n meilleurs réglages sont ceux qui minimisent en moyenne le temps de trajet.
+        Plot the mean travel time of the vehicles for the n worst settings.
+        The n worsts settings are those who maximize the mean travel time.
+        :param n: The number of worst experiments to plot.
+        :type n: int
         """
         fig, ax = plt.subplots()
         noms_experiences = self.df['nom_exp'].to_numpy()
@@ -86,9 +99,9 @@ class ResultsPlotter:
         ind = np.argpartition(moyennes, -n)[-n:]
         for i in range(n):
             ax.plot([0] + self.all_samples, results[ind[i]], label=noms_experiences[ind[i]])
-        fig.title = f"Evolution du temps de trajet moyen en fonction du temps ({n} pires)"
-        ax.set_ylabel("Temps de trajet moyen (en s)")
-        ax.set_xlabel("Nombre de steps")
+        fig.title = f"Average travel time as a function of time ({n} worsts)"
+        ax.set_ylabel("Average travel time (in s)")
+        ax.set_xlabel("Simulation steps")
         ax.legend()
         if os.path.isdir(self.save_folder):
             fig.savefig(self.save_folder + f"/{n}_worst_mean_travel_time")
@@ -96,10 +109,12 @@ class ResultsPlotter:
             os.mkdir(self.save_folder)
             fig.savefig(self.save_folder + f"/{n}_worst_mean_travel_time")
 
-    def plot_meanTravelTime_n_best(self, n=5):
+    def plot_mean_travel_time_n_best(self, n=5):
         """
-        Trace les courbes des n meilleurs réglages qui optimisent le temps de trajet des véhicules.
-        Les n meilleurs réglages sont ceux qui minimisent en moyenne le temps de trajet.
+        Plot the mean travel time of the vehicles for the n best settings.
+        The n bests settings are those who minimize the mean travel time.
+        :param n: The number of best experiments to plot.
+        :type n: int
         """
         fig, ax = plt.subplots()
         noms_experiences = self.df['nom_exp'].to_numpy()
@@ -111,9 +126,9 @@ class ResultsPlotter:
         ind = np.argpartition(moyennes, n)[:n]
         for i in range(n):
             ax.plot([0] + self.all_samples, results[ind[i]], label=noms_experiences[ind[i]])
-        fig.title = f"Evolution du temps de trajet moyen en fonction du temps ({n} meilleurs)"
-        ax.set_ylabel("Temps de trajet moyen (en s)")
-        ax.set_xlabel("Nombre de steps")
+        fig.title = f"Average travel time as a function of time ({n} bests)"
+        ax.set_ylabel("Average travel time (in s)")
+        ax.set_xlabel("Simulation steps")
         ax.legend()
         if os.path.isdir(self.save_folder):
             fig.savefig(self.save_folder + f"/{n}_best_mean_travel_time")
@@ -121,10 +136,12 @@ class ResultsPlotter:
             os.mkdir(self.save_folder)
             fig.savefig(self.save_folder + f"/{n}_best_mean_travel_time")
 
-    def plot_meanSpeed_n_worst(self, n=5):
+    def plot_mean_speed_n_worst(self, n=5):
         """
-        Trace les courbes des n meilleurs réglages qui optimisent la vitesse des véhicules.
-        Les n meilleurs réglages sont ceux qui minimisent en moyenne la vitesse.
+        Plot the mean speed of the vehicles for the n worst settings.
+        The n worsts settings are those who minimize the mean speed.
+        :param n: The number of worst experiments to plot.
+        :type n: int
         """
         fig, ax = plt.subplots()
         noms_experiences = self.df['nom_exp'].to_numpy()
@@ -136,9 +153,9 @@ class ResultsPlotter:
         ind = np.argpartition(moyennes, n)[:n]
         for i in range(n):
             ax.plot([0] + self.all_samples, results[ind[i]], label=noms_experiences[ind[i]])
-        fig.title = f"Evolution de la vitesse moyenne en fonction du temps ({n} pires)"
-        ax.set_ylabel("Vitesse moyenne (en m/s)")
-        ax.set_xlabel("Nombre de steps")
+        fig.title = f"Average speed as a function of time ({n} worsts)"
+        ax.set_ylabel("Average speed (in m/s)")
+        ax.set_xlabel("Simulation steps")
         ax.legend()
         if os.path.isdir(self.save_folder):
             fig.savefig(self.save_folder + f"/{n}_worst_mean_speed")
@@ -146,10 +163,12 @@ class ResultsPlotter:
             os.mkdir(self.save_folder)
             fig.savefig(self.save_folder + f"/{n}_worst_mean_speed")
 
-    def plot_meanSpeed_n_best(self, n=5):
+    def plot_mean_speed_n_best(self, n=5):
         """
-        Trace les courbes des n meilleurs réglages qui optimisent la vitesse des véhicules.
-        Les n meilleurs réglages sont ceux qui minimisent en moyenne la vitesse.
+        Plot the mean travel time of the vehicles for the n best settings.
+        The n bests settings are those who minimize the mean travel time.
+        :param n: The number of best experiments to plot.
+        :type n: int
         """
         fig, ax = plt.subplots()
         noms_experiences = self.df['nom_exp'].to_numpy()
@@ -161,9 +180,9 @@ class ResultsPlotter:
         ind = np.argpartition(moyennes, -n)[-n:]
         for i in range(n):
             ax.plot([0] + self.all_samples, results[ind[i]], label=noms_experiences[ind[i]])
-        fig.title = f"Evolution de la vitesse moyenne en fonction du temps ({n} meilleurs)"
-        ax.set_ylabel("Vitesse moyenne (en m/s)")
-        ax.set_xlabel("Nombre de steps")
+        fig.title = f"Average speed as a function of time ({n} bests)"
+        ax.set_ylabel("Average speed (in m/s)")
+        ax.set_xlabel("Simulation steps")
         ax.legend()
         if os.path.isdir(self.save_folder):
             fig.savefig(self.save_folder + f"/{n}_best_mean_speed")
@@ -172,9 +191,16 @@ class ResultsPlotter:
             fig.savefig(self.save_folder + f"/{n}_best_mean_speed")
 
     def plot_all(self, n_best, n_worst):
-        self.plot_meanSpeed_n_best(n_best)
-        self.plot_meanSpeed_n_worst(n_worst)
-        self.plot_meanTravelTime_n_best(n_best)
-        self.plot_meanTravelTime_n_worst(n_worst)
-        self.plot_meanWaitingTime_n_best(n_best)
-        self.plot_meanWaitingTime_n_worst(n_worst)
+        """
+        Plot all graphs of the class.
+        :param n_best: The number of best experiments to plot.
+        :type n_best: int
+        :param n_worst: The number of worst experiments to plot.
+        :type n_worst: int
+        """
+        self.plot_mean_speed_n_best(n_best)
+        self.plot_mean_speed_n_worst(n_worst)
+        self.plot_mean_travel_time_n_best(n_best)
+        self.plot_mean_travel_time_n_worst(n_worst)
+        self.plot_mean_waiting_time_n_best(n_best)
+        self.plot_mean_waiting_time_n_worst(n_worst)

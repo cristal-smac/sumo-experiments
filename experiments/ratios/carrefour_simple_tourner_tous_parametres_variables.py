@@ -59,7 +59,7 @@ if __name__ == '__main__':
 
                                             e.run()
 
-                                            e.exportResultsToFile('../../csv/exp_carrefour_simple_tourner.csv', sampling_rate=900)
+                                            e.export_results_to_csv('../../csv/exp_carrefour_simple_tourner.csv', sampling_rate=900)
 
                                             e.cleanFiles(delete_summary=True, delete_queue=True)
 

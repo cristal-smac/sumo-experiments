@@ -53,7 +53,7 @@ if __name__ == '__main__':
 
         e.run_traci(network.feux_a_seuils_communicants_sans_anticipation_simple_carrefour)
 
-        e.exportResultsToFile("../../csv/exp_plots.csv", sampling_rate=50)
+        e.export_results_to_csv("../../csv/exp_plots.csv", sampling_rate=50)
 
         e.cleanFiles(delete_summary=True, delete_queue=True)
 
