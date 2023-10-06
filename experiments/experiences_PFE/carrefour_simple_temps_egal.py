@@ -33,9 +33,8 @@ if __name__ == '__main__':
     network = OneCrossroadNetwork()
 
     e = Experiment(f'test_reseau_fully_connected',
-                   network=network.simple_crossroad_fully_connected_network,
-                   routes=network.simple_crossroad_fully_connected_multi_flow,
-                   detectors=network.no_detectors)
+                   network=network.generate_infrastructures,
+                   routes=network.generate_flows_with_matrix)
 
 
     load_vector, coeff_matrix = import_flows_parameters_from_csv(params_file)
@@ -46,10 +45,10 @@ if __name__ == '__main__':
     e.set_variable('coeff_matrix', coeff_matrix)
     e.set_variable('load_vector', load_vector)
     e.set_variable("params_file", params_file)
-    e.set_variable('nb_ticks', nb_ticks)
+    e.set_variable('period_time', nb_ticks)
     
-    e.set_variable('default_len', lane_length)
-    e.set_variable('default_speed', speed_value)
+    e.set_variable('default_length', lane_length)
+    e.set_variable('max_speed', speed_value)
     e.set_variable('default_green_time', gt_value[2])
     e.set_variable('default_yellow_time', yt_value)
 

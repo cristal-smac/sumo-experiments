@@ -22,9 +22,9 @@ if __name__ == '__main__':
     for seuil in seuils:
 
         e = Experiment(f'test_detecteurs_seuil_{seuil}',
-                       network=network.simple_crossroad_fully_connected_network,
-                       routes=network.simple_crossroad_fully_connected_multi_flow,
-                       detectors=network.detecteurs_numeriques_simple_carrefour)
+                       network=network.generate_infrastructures,
+                       routes=network.generate_flows_with_matrix,
+                       detectors=network.numerical_detectors)
 
         # Variables de réseau
         e.set_variable('default_len', lane_length)
@@ -51,7 +51,7 @@ if __name__ == '__main__':
         e.set_variable('max_duration_tl', 30)
         e.set_variable('seuil_vehicules', seuil)
 
-        e.run_traci(network.feux_a_seuils_communicants_sans_anticipation_simple_carrefour)
+        e.run_traci(network.numerical_detection_all_vehicles)
 
         e.export_results_to_csv("../../csv/exp_plots.csv", sampling_rate=50)
 

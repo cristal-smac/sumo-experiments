@@ -36,7 +36,7 @@ if __name__ == '__main__':
 
                                         e = Experiment(f'exp_carrefour_simple_tous_parametres_variables{i}',
                                                        network=network.simple_crossroad_network,
-                                                       routes=network.simple_crossroad_routes,
+                                                       routes=network.generate_flows_only_ahead,
                                                        detectors=network.no_detectors)
                                         
                                         e.set_variable('default_len', 100)

@@ -2,6 +2,9 @@ import os, sys
 import pandas as pd
 import numpy as np
 from os.path import exists
+
+from core.src.components import DetectorBuilder
+
 tools = os.path.join(os.environ['SUMO_HOME'], 'tools')
 sys.path.append(tools)
 import traci
@@ -10,7 +13,7 @@ class Experiment:
     """
     Classe qui représente un expérience à réaliser avec SUMO
     """
-    def __init__(self, name, network, routes, detectors):
+    def __init__(self, name, network, routes, detectors=None):
         """
         Constructeur de la classe Experiment
         :param name: Nom de l'expérience
@@ -32,7 +35,8 @@ class Experiment:
         self.generateFileNames()
         self.routes(self.config).build(self.files)
         self.network(self.config).build(self.files)
-        self.detectors(self.config).build(self.files)
+        if self.detectors is not None:
+            self.detectors(self.config).build(self.files)
         os.system(f'$SUMO_HOME/bin/netconvert -n {self.files["nodes"]} -e {self.files["edges"]} -x {self.files["connections"]} -i {self.files["trafic_light_programs"]} -t {self.files["types"]} -o {self.files["network"]}')
         args = self.buildArguments()
         if gui:
@@ -102,7 +106,8 @@ class Experiment:
         args = ''
         args += f'-n {self.files["network"]} '
         args += f'-r {self.files["routes"]} '
-        args += f'-a {self.files["detectors"]} '
+        if self.detectors is not None:
+            args += f'-a {self.files["detectors"]} '
         args += f'--summary {self.files["summaryxml"]} '
         args += f'--queue-output {self.files["queuexml"]} '
         if 'simulation_duration' in self.config:

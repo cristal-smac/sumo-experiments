@@ -21,9 +21,9 @@ if __name__ == '__main__':
     network = OneCrossroadNetwork()
 
     e = Experiment('test_detecteurs',
-                   network=network.simple_crossroad_fully_connected_network,
-                   routes=network.simple_crossroad_fully_connected_multi_flow,
-                   detectors=network.detecteurs_numeriques_simple_carrefour)
+                   network=network.generate_infrastructures,
+                   routes=network.generate_flows_with_matrix,
+                   detectors=network.numerical_detectors)
 
     # Variables de réseau
     e.set_variable('default_len', lane_length)
@@ -52,7 +52,7 @@ if __name__ == '__main__':
 
     for i in range(5):
 
-        e.run_traci(network.feux_a_seuils_communicants_sans_anticipation_simple_carrefour)
+        e.run_traci(network.numerical_detection_all_vehicles)
 
         e.export_results_to_csv("../../csv/exp_traci.csv", sampling_rate=50)
 

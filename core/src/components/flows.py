@@ -222,9 +222,9 @@ class Flow:
         :type v_type: str
         :param density: Flow density (in vehicles/hour)
         :type density: int
-        :param from_edge: ID of starting edge of the flow
+        :param from_edge: ID of starting edge of the flow (if route is not set)
         :type from_edge: str
-        :param to_edge: ID of ending edge of the flow
+        :param to_edge: ID of ending edge of the flow (if route is not set)
         :type to_edge: str
         :param begin: Starting tick of the flow
         :type begin: int

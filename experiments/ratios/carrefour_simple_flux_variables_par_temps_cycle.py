@@ -34,7 +34,7 @@ if __name__ == '__main__':
             # Instanciation de l'expérience
             e = Experiment(f'carrefour_simple_flux_variables_par_temps{i}',
                            network=network.simple_crossroad_network,
-                           routes=network.simple_crossroad_routes,
+                           routes=network.generate_flows_only_ahead,
                            detectors=network.no_detectors)
 
             # Configuration de l'expérience

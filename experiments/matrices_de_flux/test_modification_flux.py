@@ -17,8 +17,8 @@ if __name__ == "__main__":
     network = OneCrossroadNetwork()
 
     e = Experiment('test_multi_flux',
-                   network=network.simple_crossroad_fully_connected_network,
-                   routes=network.simple_crossroad_fully_connected_multi_flow,
+                   network=network.generate_infrastructures,
+                   routes=network.generate_flows_with_matrix,
                    detectors=network.no_detectors)
 
     e.set_variable('default_len', lane_length)
