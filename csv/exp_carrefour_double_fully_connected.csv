@@ -4,3 +4,4 @@ default_len,default_speed,default_green_time,default_yellow_time,params_file,nb_
 100,30,30,3,csv/parameters/double_carrefour.csv,300,287.0,287.0,23.0,0.0,264.0,7.0,0.0,2.52,65.58,2.41
 test_multi_flux,100,30,30,3,csv/parameters/double_carrefour.csv,300,200.0,200.0,30.0,0.0,170.0,12.0,0.0,7.38,81.89,1.9
 test_multi_flux,100,30,30,3,../../csv/parameters/double_carrefour.csv,300,173.0,172.0,27.0,1.0,145.0,7.0,0.0,1.73,67.35,2.93
+test_multi_flux,100,30,30,3,300,217.0,216.0,26.0,1.0,190.0,6.0,0.0,2.9,72.75,2.13

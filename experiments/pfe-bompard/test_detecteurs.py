@@ -23,7 +23,7 @@ if __name__ == '__main__':
     e = Experiment('test_detecteurs',
                    network=network.generate_infrastructures,
                    routes=network.generate_flows_with_matrix,
-                   detectors=network.numerical_detectors)
+                   detectors=network.generate_numerical_detectors)
 
     # Variables de réseau
     e.set_variable('lane_length', lane_length)

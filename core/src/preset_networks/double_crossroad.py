@@ -1,85 +1,147 @@
 import sys, os
+import warnings
+
 from core.src.components import InfrastructureBuilder, FlowBuilder, DetectorBuilder
 tools = os.path.join(os.environ['SUMO_HOME'], 'tools')
 sys.path.append(tools)
 import traci
+import numpy as np
 
 class TwoCrossroadsNetwork:
+    """
+        The TwoCrossroadsNetwork class contains a set of functions for creating a SUMO network containing
+        two consecutive crossroads.
 
+        There are 4 different types of function:
+            - Functions generating infrastructures
+            - Functions generating flows
+            - Functions generationg detectors
+            - Functions representing junction management strategies, usable only when an experiment is launched with TraCi
+
+        It is not possible to combine certain functions to generate a SUMO network.
+        Check the documentation of functions for more information.
+        """
+
+    GREEN_LIGHT_HORIZONTAL_1 = 0
+    GREEN_LIGHT_VERTICAL_1 = 2
+    GREEN_LIGHT_HORIZONTAL_2 = 2
+    GREEN_LIGHT_VERTICAL_2 = 0
+
+    DEFAULT_CONFIG = {
+        'lane_length': 100,
+        'max_speed': 30,
+        'green_time': 30,
+        'yellow_time': 3,
+        'stop_generation_time': 1000,
+        'flow_density': 600,
+        'period_time': 300,
+        'load_vector': np.array([300, 600, 300]),
+        'coeff_matrix': np.array([[0.0833, 0.0833, 0],
+                                  [0.0833, 0.0833, 0],
+                                  [0.0833, 0.0833, 0],
+                                  [0.0833, 0, 0.0833],
+                                  [0.0833, 0, 0.0833],
+                                  [0.0833, 0, 0.0833],
+                                  [0.0833, 0.0833, 0],
+                                  [0.0833, 0.0833, 0],
+                                  [0.0833, 0.0833, 0],
+                                  [0.0833, 0, 0.0833],
+                                  [0.0833, 0, 0.0833],
+                                  [0.0833, 0, 0.0833]]),
+        'min_duration_tl': 30,
+        'max_duration_tl': 60,
+        'vehicle_threshold': 5,
+        'simulation_duration': 1000,
+        'boolean_detector_length': 7
+    }
+
+    CONFIG_PARAMETER_LIST = [
+        'exp_name', 'lane_length', 'max_speed', 'green_time', 'yellow_time',
+        'stop_generation_time', 'flow_density', 'period_time', 'load_vector', 'coeff_matrix', 'min_duration_tl',
+        'max_duration_tl', 'vehicle_threshold', 'simulation_duration', 'north_1_length', 'north_2_length', 'east_length',
+        'south_1_length', 'south_2_length', 'west_length', 'center_length', 'green_time_north_south_1', 'green_time_north_south_2',
+        'green_time_west_east_1', 'green_time_west_east_2', 'yellow_time_north_south_1', 'yellow_time_north_south_2',
+        'yellow_time_west_east_1', 'yellow_time_west_east_1', 'stop_generation_time_north_1', 'stop_generation_time_north_2',
+        'stop_generation_time_south_1', 'stop_generation_time_south_2', 'stop_generation_time_east',
+        'stop_generation_time_west', 'flow_density_north_1', 'flow_density_north_2', 'flow_density_east',
+        'flow_density_south_1', 'flow_density_south_2', 'flow_density_west', 'boolean_detector_length', 'simulation_duration'
+    ]
 
     ### Networks ###
 
-    def double_crossroad_network(self, config):
+    def generate_infrastructures(self, config={}):
         """
-        Réseau routier représentant deux carrefours simples consécutifs
-        :param config: Configuration du réseau routier
-        :return: Retourne un objet NetworkBuilder représentant le réseau routier créé
+        Generate the sumo infrastructures for a network with two consecutive crossroads.
+        The infrastructures can be customized with the config dict passed as parameter.
+        A default configuration is set, and each modification in the config is modified in the default configuration.
+
+        Valid parameters for config :
+        - "lane_length" (int) : The default length for each lane (in meters)
+        - "north_1_length" (int) : The north lane length (in meters) for intersection 1, override default
+        - "north_2_length" (int) : The north lane length (in meters) for intersection 2, override default
+        - "east_length" (int) : The east lane length (in meters), override default
+        - "south_1_length" (int) : The south lane length (in meters) for intersection 1, override default
+        - "south_2_length" (int) : The south lane length (in meters) for intersection 2, override default
+        - "west_length" (int) : The west lane length (in meters), override default
+        - "center_length" (int): The center lane length (in meters), override default
+        - "green_time" (int) : The default green time for each phase (in seconds)
+        - "green_time_north_south_1" (int) : The north-south phase green time (in seconds) for intersection 1, override default
+        - "green_time_north_south_2" (int) : The north-south phase green time (in seconds) for intersection 2, override default
+        - "green_time_west_east_1" (int) : The west-east phase green time (in seconds) for intersection 1, override default
+        - "green_time_west_east_2" (int) : The west-east phase green time (in seconds) for intersection 2, override default
+        - "yellow_time" (int) : The default yellow time for each phase (in seconds)
+        - "yellow_time_north_south_1" (int) : The north-south phase yellow time (in seconds) for intersection 1, override default
+        - "yellow_time_north_south_2" (int) : The north-south phase yellow time (in seconds) for intersection 2, override default
+        - "yellow_time_west_east_1" (int) : The west-east phase yellow time (in seconds) for intersection 1, override default
+        - "yellow_time_west_east_2" (int) : The west-east phase yellow time (in seconds) for intersection 2, override default
+        - "max_speed" (float) : The max speed on each lane
+
+        :param config: Customized network configuration. Check documentation to see all parameters.
+        :type config: dict
+        :return: All infrastructures in a NetworkBuilder object.
+        :rtype: core.src.components.NetworkBuilder
         """
+
+        # Get new parameters from config
+        current_config = self.DEFAULT_CONFIG
+        for key in config:
+            if key not in self.CONFIG_PARAMETER_LIST:
+                warnings.warn(f"The config parameter '{key}' is not a valid parameter.", stacklevel=2)
+            current_config[key] = config[key]
+
+        # Select parameters
+        len_north_1 = current_config['north_1_length'] if 'north_1_length' in current_config else current_config['lane_length']
+        len_north_2 = current_config['north_2_length'] if 'north_2_length' in current_config else current_config['lane_length']
+        len_south_1 = current_config['south_1_length'] if 'south_1_length' in current_config else current_config['lane_length']
+        len_south_2 = current_config['south_2_length'] if 'south_2_length' in current_config else current_config['lane_length']
+        len_east = current_config['east_length'] if 'east_length' in current_config else current_config['lane_length']
+        len_west = current_config['west_length'] if 'west_length' in current_config else current_config['lane_length']
+        len_center = current_config['center_length'] if 'west_length' in current_config else current_config['lane_length']
+        gt_north_south_1 = current_config['green_time_north_south_1'] if 'green_time_north_south_1' in current_config else current_config['green_time']
+        gt_west_east_1 = current_config['green_time_west_east_1'] if 'green_time_west_east_1' in current_config else current_config['green_time']
+        gt_north_south_2 = current_config['green_time_north_south_2'] if 'green_time_north_south_2' in current_config else current_config['green_time']
+        gt_west_east_2 = current_config['green_time_west_east_2'] if 'green_time_west_east_2' in current_config else current_config['green_time']
+        yt_north_south_1 = current_config['yellow_time_north_south_1'] if 'yellow_time_north_south_1' in current_config else current_config['yellow_time']
+        yt_west_east_1 = current_config['yellow_time_west_east_1'] if 'yellow_time_west_east_1' in current_config else current_config['yellow_time']
+        yt_north_south_2 = current_config['yellow_time_north_south_2'] if 'yellow_time_north_south_2' in current_config else current_config['yellow_time']
+        yt_west_east_2 = current_config['yellow_time_west_east_2'] if 'yellow_time_west_east_2' in current_config else current_config['yellow_time']
+        max_speed = current_config['max_speed']
+
         net = InfrastructureBuilder()
 
         net.add_node(id='c1', x=0, y=0, type='traffic_light', tl_program='c1')
-        net.add_node(id='c2', x=config['middle_len'], y=0, type='traffic_light', tl_program='c2')
+        net.add_node(id='c2', x=len_center, y=0, type='traffic_light', tl_program='c2')
 
-        net.add_node(id='w', x=-config['w_e_len'], y=0)
-        net.add_node(id='e', x=config['middle_len'] + config['default_len'], y=0)
+        net.add_node(id='w', x=-len_west, y=0)
+        net.add_node(id='e', x=(len_center + len_east), y=0)
 
-        net.add_node(id='s1', x=0, y=-config['s1_n1_len'])
-        net.add_node(id='n1', x=0, y=config['default_len'])
+        net.add_node(id='s1', x=0, y=-len_south_1)
+        net.add_node(id='n1', x=0, y=len_north_1)
 
-        net.add_node(id='s2', x=config['middle_len'], y=-config['s2_n2_len'])
-        net.add_node(id='n2', x=config['middle_len'], y=config['default_len'])
+        net.add_node(id='s2', x=len_center, y=-len_south_2)
+        net.add_node(id='n2', x=len_center, y=len_north_2)
 
-        net.add_edge_type(id='we', params={'numLanes': '1', 'speed': config['w_e_speed']})
-        net.add_edge_type(id='s1n1', params={'numLanes': '1', 'speed': config['s1_n1_speed']})
-        net.add_edge_type(id='s2n2', params={'numLanes': '1', 'speed': config['s2_n2_speed']})
-
-        net.add_edge(id='edge_wc1', from_node='w', to_node='c1', edge_type='we')
-        net.add_edge(id='edge_c1c2', from_node='c1', to_node='c2', edge_type='we')
-        net.add_edge(id='edge_c2e', from_node='c2', to_node='e', edge_type='we')
-        net.add_edge(id='edge_s1c1', from_node='s1', to_node='c1', edge_type='s1n1')
-        net.add_edge(id='edge_c1n1', from_node='c1', to_node='n1', edge_type='s1n1')
-        net.add_edge(id='edge_s2c2', from_node='s2', to_node='c2', edge_type='s2n2')
-        net.add_edge(id='edge_c2n2', from_node='c2', to_node='n2', edge_type='s2n2')
-
-        net.add_connection(from_edge='edge_wc1', to_edge='edge_c1c2')
-        net.add_connection(from_edge='edge_c1c2', to_edge='edge_c2e')
-        net.add_connection(from_edge='edge_s1c1', to_edge='edge_c1n1')
-        net.add_connection(from_edge='edge_s2c2', to_edge='edge_c2n2')
-
-        net.add_traffic_light_program(id='c1', phases=[{'duration': config['w1_e1_green_time'], 'state': 'rG'},
-                                                       {'duration': config['default_yellow_time'], 'state': 'ry'},
-                                                       {'duration': config['s1_n1_green_time'], 'state': 'Gr'},
-                                                       {'duration': config['default_yellow_time'], 'state': 'yr'}])
-
-        net.add_traffic_light_program(id='c2', phases=[{'duration': config['w2_e2_green_time'], 'state': 'rG'},
-                                                       {'duration': config['default_yellow_time'], 'state': 'ry'},
-                                                       {'duration': config['s2_n2_green_time'], 'state': 'Gr'},
-                                                       {'duration': config['default_yellow_time'], 'state': 'yr'}])
-
-        return net
-
-
-    def double_crossroad_fully_connected_network(self, config):
-        """
-        Réseau routier représentant deux carrefours consécutifs. Les véhicules peuvent arriver et ressortir des 6 entrées.
-        :param config: Configuration du réseau routier
-        :return: Retourne un objet NetworkBuilder représentant le réseau routier créé
-        """
-        net = InfrastructureBuilder()
-
-        net.add_node(id='c1', x=0, y=0, type='traffic_light', tl_program='c1')
-        net.add_node(id='c2', x=config['default_len'], y=0, type='traffic_light', tl_program='c2')
-
-        net.add_node(id='w', x=-config['default_len'], y=0)
-        net.add_node(id='e', x=config['default_len'] * 2, y=0)
-
-        net.add_node(id='s1', x=0, y=-config['default_len'])
-        net.add_node(id='n1', x=0, y=config['default_len'])
-
-        net.add_node(id='s2', x=config['default_len'], y=-config['default_len'])
-        net.add_node(id='n2', x=config['default_len'], y=config['default_len'])
-
-        net.add_edge_type(id='default', params={'numLanes': '1', 'speed': config['default_speed']})
+        net.add_edge_type(id='default', params={'numLanes': '1', 'speed': max_speed})
 
         # Edge entrant sur le premier carrefour
         net.add_edge(id='edge_wc1', from_node='w', to_node='c1', edge_type='default')
@@ -128,16 +190,16 @@ class TwoCrossroadsNetwork:
         net.add_connection(from_edge='edge_ec2', to_edge='edge_c2c1')
 
         net.add_traffic_light_program(id='c1',
-                                      phases=[{'duration': config['default_green_time'], 'state': 'rrrGGGrrrGGG'},
-                                              {'duration': config['default_yellow_time'], 'state': 'rrryyyrrryyy'},
-                                              {'duration': config['default_green_time'], 'state': 'GGGrrrGGGrrr'},
-                                              {'duration': config['default_yellow_time'], 'state': 'yyyrrryyyrrr'}])
+                                      phases=[{'duration': gt_west_east_1, 'state': 'rrrGGGrrrGGG'},
+                                              {'duration': yt_west_east_1, 'state': 'rrryyyrrryyy'},
+                                              {'duration': gt_north_south_1, 'state': 'GGGrrrGGGrrr'},
+                                              {'duration': yt_north_south_1, 'state': 'yyyrrryyyrrr'}])
 
         net.add_traffic_light_program(id='c2',
-                                      phases=[{'duration': config['default_green_time'], 'state': 'GGGrrrGGGrrr'},
-                                              {'duration': config['default_yellow_time'], 'state': 'yyyrrryyyrrr'},
-                                              {'duration': config['default_green_time'], 'state': 'rrrGGGrrrGGG'},
-                                              {'duration': config['default_yellow_time'], 'state': 'rrryyyrrryyy'}])
+                                      phases=[{'duration': gt_west_east_2, 'state': 'GGGrrrGGGrrr'},
+                                              {'duration': yt_west_east_2, 'state': 'yyyrrryyyrrr'},
+                                              {'duration': gt_north_south_2, 'state': 'rrrGGGrrrGGG'},
+                                              {'duration': yt_north_south_2, 'state': 'rrryyyrrryyy'}])
 
         return net
 
@@ -145,153 +207,305 @@ class TwoCrossroadsNetwork:
 
     ### Routes ###
 
-    def double_crossroad_routes(self, config):
+    def generate_flows_only_ahead(self, config={}):
         """
-        Routes pour deux carrefours simples consécutifs
-        :param config: Configuration du réseau routier
-        :return: Retourne un objet RoutesBuilder représentant les routes du réseau routier créé
+        Generate flows for a network with two consecutive crossroads.
+        At the intersections, vehicles can not turn. They can only go ahead.
+        The config parameter can contain more parameter to define the density of vehicles from each entry, and the
+        simulation step where the flow will end.
+
+        Valid parameters for config :
+        - "stop_generation_time" (int) : The default simulation step when flows will end
+        - "stop_generation_time_north_1" (int) : The simulation step when north flows will end for intersection 1, override default
+        - "stop_generation_time_north_2" (int) : The simulation step when north flows will end for intersection 2, override default
+        - "stop_generation_time_east" (int) : The simulation step when east flows will end, override default
+        - "stop_generation_time_south_1" (int) : The simulation step when south flows will end for intersection 1, override default
+        - "stop_generation_time_south_2" (int) : The simulation step when south flows will end for intersection 2, override default
+        - "stop_generation_time_west" (int) : The simulation step when west flows will end, override default
+        - "flow_density" (int) : The default flows density (in vehicles/hour)
+        - "flow_density_north_1" (int) : The north flows density (in vehicles/hour) for intersection 1, override default
+        - "flow_density_north_2" (int) : The north flows density (in vehicles/hour) for intersection 2, override default
+        - "flow_density_east" (int) : The east flows density (in vehicles/hour), override default
+        - "flow_density_south_1" (int) : The south flows density (in vehicles/hour) for intersection 1, override default
+        - "flow_density_south_2" (int) : The south flows density (in vehicles/hour) for intersection 2, override default
+        - "flow_density_west" (int) : The west flows density (in vehicles/hour), override default
+
+        :param config: Customized flows configuration. Check documentation to see all parameters.
+        :type config: dict
+        :return: All flows in a FlowBuilder object.
+        :rtype: core.src.components.FlowBuilder
         """
+        # Get new parameters from config
+        current_config = self.DEFAULT_CONFIG
+        for key in config:
+            current_config[key] = config[key]
+
+        # Select parameters
+        stop_generation_time_north_1 = current_config['stop_generation_time_north_1'] if 'stop_generation_time_north_1' in current_config else current_config['stop_generation_time']
+        stop_generation_time_north_2 = current_config['stop_generation_time_north_2'] if 'stop_generation_time_north_2' in current_config else current_config['stop_generation_time']
+        stop_generation_time_east = current_config['stop_generation_time_east'] if 'stop_generation_time_east' in current_config else current_config['stop_generation_time']
+        stop_generation_time_south_1 = current_config['stop_generation_time_south_1'] if 'stop_generation_time_south_1' in current_config else current_config['stop_generation_time']
+        stop_generation_time_south_2 = current_config['stop_generation_time_south_2'] if 'stop_generation_time_south_2' in current_config else current_config['stop_generation_time']
+        stop_generation_time_west = current_config['stop_generation_time_west'] if 'stop_generation_time_west' in current_config else current_config['stop_generation_time']
+        flow_density_north_1 = current_config['flow_density_north_1'] if 'flow_density_north_1' in current_config else current_config['flow_density']
+        flow_density_north_2 = current_config['flow_density_north_2'] if 'flow_density_north_2' in current_config else current_config['flow_density']
+        flow_density_east = current_config['flow_density_east'] if 'flow_density_east' in current_config else current_config['flow_density']
+        flow_density_south_1 = current_config['flow_density_south_1'] if 'flow_density_south_1' in current_config else current_config['flow_density']
+        flow_density_south_2 = current_config['flow_density_south_2'] if 'flow_density_south_2' in current_config else current_config['flow_density']
+        flow_density_west = current_config['flow_density_west'] if 'flow_density_west' in current_config else current_config['flow_density']
+
         routes = FlowBuilder()
 
         routes.add_vType(id='car0')
 
-        routes.add_route(id='route_s1n1', type='car0', from_edge='edge_s1c1', to_edge='edge_c1n1')
-        routes.add_route(id='route_s2n2', type='car0', from_edge='edge_s2c2', to_edge='edge_c2n2')
+        routes.add_flow(id='flow_we', from_edge='edge_wc1', to_edge='edge_c2e', end=stop_generation_time_west, density=flow_density_west, v_type='car0')
+        routes.add_flow(id='flow_ew', from_edge='edge_ec2', to_edge='edge_c1w', end=stop_generation_time_east, density=flow_density_east, v_type='car0')
+        routes.add_flow(id='flow_n1s1', from_edge='edge_n1c1', to_edge='edge_c1s1', end=stop_generation_time_north_1, density=flow_density_north_1, v_type='car0')
+        routes.add_flow(id='flow_s1n1', from_edge='edge_s1c1', to_edge='edge_c1n1', end=stop_generation_time_south_1, density=flow_density_south_1, v_type='car0')
+        routes.add_flow(id='flow_n2s2', from_edge='edge_n2c2', to_edge='edge_c2s2', end=stop_generation_time_north_2, density=flow_density_north_2, v_type='car0')
+        routes.add_flow(id='flow_s2n2', from_edge='edge_s2c2', to_edge='edge_c2n2', end=stop_generation_time_south_2, density=flow_density_south_2, v_type='car0')
 
-        routes.add_flow(id='flow_we', from_edge='edge_wc1', to_edge='edge_c2e', end=config['stop_generation_time'],
-                        density=config['w_e_flow'], v_type='car0')
-        routes.add_flow(id='flow_s1n1', route='route_s1n1', end=config['stop_generation_time'],
-                        density=config['s1_n1_flow'], v_type='car0')
-        routes.add_flow(id='flow_s2n2', route='route_s2n2', end=config['stop_generation_time'],
-                        density=config['s2_n2_flow'], v_type='car0')
         return routes
 
 
-    def double_crossroad_fully_connected_multi_flow(self, config):
+    def generate_flows_all_directions(self, config={}):
         """
-        Réseau en carefour simple totalement connecté, dont les flux vont varier au cours de la simulation.
-        Il faut placer dans config['coeff_matrix'] une matrice de taille (12, x), avec x le nombre de modifications de flows
-        Cette matrice contient des coefficients compris entre 0 exclus et 1, qui seront multiplié par les nombre de voitures totaux du vecteur de charges
-        Il faut également placer un vecteur de charge dans config['load_vector'], de taille x, qui contient le nombre de voiture total du réseau
-        Enfin, il faut définir config['nb_ticks'] qui définit le nombre de ticks de chaque période.
+        Generate flows for a network with two consecutive crossroads.
+        At the intersections, vehicles can go to any direction.
+        The config parameter can contain more parameter to define the density of vehicles from each entry, and the
+        simulation step where the flow will end.
 
-        :param config: Configuration du réseau routier
-        :return: Retourne un objet RoutesBuilder représentant les routes du réseau routier créé
+        Valid parameters for config :
+        - "stop_generation_time" (int) : The default simulation step when flows will end
+        - "stop_generation_time_north_1" (int) : The simulation step when north flows will end for intersection 1, override default
+        - "stop_generation_time_north_2" (int) : The simulation step when north flows will end for intersection 2, override default
+        - "stop_generation_time_east" (int) : The simulation step when east flows will end, override default
+        - "stop_generation_time_south_1" (int) : The simulation step when south flows will end for intersection 1, override default
+        - "stop_generation_time_south_2" (int) : The simulation step when south flows will end for intersection 2, override default
+        - "stop_generation_time_west" (int) : The simulation step when west flows will end, override default
+        - "flow_density" (int) : The default flows density (in vehicles/hour)
+        - "flow_density_north_1" (int) : The north flows density (in vehicles/hour) for intersection 1, override default
+        - "flow_density_north_2" (int) : The north flows density (in vehicles/hour) for intersection 2, override default
+        - "flow_density_east" (int) : The east flows density (in vehicles/hour), override default
+        - "flow_density_south_1" (int) : The south flows density (in vehicles/hour) for intersection 1, override default
+        - "flow_density_south_2" (int) : The south flows density (in vehicles/hour) for intersection 2, override default
+        - "flow_density_west" (int) : The west flows density (in vehicles/hour), override default
+
+        :param config: Customized flows configuration. Check documentation to see all parameters.
+        :type config: dict
+        :return: All flows in a FlowBuilder object.
+        :rtype: core.src.components.FlowBuilder
         """
+        # Get new parameters from config
+        current_config = self.DEFAULT_CONFIG
+        for key in config:
+            current_config[key] = config[key]
 
-        matrice_coeffs = config['coeff_matrix']
-        vecteur_charge = config['load_vector']
-        nb_ticks = config['nb_ticks']
+        # Select parameters
+        stop_generation_time_north_1 = current_config['stop_generation_time_north_1'] if 'stop_generation_time_north_1' in current_config else current_config['stop_generation_time']
+        stop_generation_time_north_2 = current_config['stop_generation_time_north_2'] if 'stop_generation_time_north_2' in current_config else current_config['stop_generation_time']
+        stop_generation_time_east = current_config['stop_generation_time_east'] if 'stop_generation_time_east' in current_config else current_config['stop_generation_time']
+        stop_generation_time_south_1 = current_config['stop_generation_time_south_1'] if 'stop_generation_time_south_1' in current_config else current_config['stop_generation_time']
+        stop_generation_time_south_2 = current_config['stop_generation_time_south_2'] if 'stop_generation_time_south_2' in current_config else current_config['stop_generation_time']
+        stop_generation_time_west = current_config['stop_generation_time_west'] if 'stop_generation_time_west' in current_config else current_config['stop_generation_time']
+        flow_density_north_1 = current_config['flow_density_north_1'] if 'flow_density_north_1' in current_config else current_config['flow_density']
+        flow_density_north_2 = current_config['flow_density_north_2'] if 'flow_density_north_2' in current_config else current_config['flow_density']
+        flow_density_east = current_config['flow_density_east'] if 'flow_density_east' in current_config else current_config['flow_density']
+        flow_density_south_1 = current_config['flow_density_south_1'] if 'flow_density_south_1' in current_config else current_config['flow_density']
+        flow_density_south_2 = current_config['flow_density_south_2'] if 'flow_density_south_2' in current_config else current_config['flow_density']
+        flow_density_west = current_config['flow_density_west'] if 'flow_density_west' in current_config else current_config['flow_density']
 
         routes = FlowBuilder()
 
         routes.add_vType(id='car0')
 
-        for i in range(matrice_coeffs.shape[1]):
-            vecteur_coeffs = matrice_coeffs[:, i]
-            flows = vecteur_coeffs * vecteur_charge[i]
-            flow_start = nb_ticks * i
-            flow_end = nb_ticks * (i + 1)
+        # From north 1
+        routes.add_flow(id=f'flow_n1n2', from_edge='edge_n1c1', to_edge='edge_c2n2', end=stop_generation_time_north_1, density=flow_density_north_1 // 5, v_type='car0', distribution='binomial')
+        routes.add_flow(id=f'flow_n1e', from_edge='edge_n1c1', to_edge='edge_c2e', end=stop_generation_time_north_1, density=flow_density_north_1 // 5, v_type='car0', distribution='binomial')
+        routes.add_flow(id=f'flow_n1s2', from_edge='edge_n1c1', to_edge='edge_c2s2', end=stop_generation_time_north_1, density=flow_density_north_1 // 5, v_type='car0', distribution='binomial')
+        routes.add_flow(id=f'flow_n1s1', from_edge='edge_n1c1', to_edge='edge_c1s1', end=stop_generation_time_north_1, density=flow_density_north_1 // 5, v_type='car0', distribution='binomial')
+        routes.add_flow(id=f'flow_n1w', from_edge='edge_n1c1', to_edge='edge_c1w', end=stop_generation_time_north_1, density=flow_density_north_1 // 5, v_type='car0', distribution='binomial')
 
-            # Flux venant du nord 1
-            routes.add_flow(id=f'{i}_flow_n1n2', from_edge='edge_n1c1', to_edge='edge_c2n2', begin=flow_start, end=flow_end,
-                            density=flows[0], v_type='car0', distribution='binomial')
-            routes.add_flow(id=f'{i}_flow_n1e', from_edge='edge_n1c1', to_edge='edge_c2e', begin=flow_start, end=flow_end,
-                            density=flows[1], v_type='car0', distribution='binomial')
-            routes.add_flow(id=f'{i}_flow_n1s2', from_edge='edge_n1c1', to_edge='edge_c2s2', begin=flow_start, end=flow_end,
-                            density=flows[2], v_type='car0', distribution='binomial')
-            routes.add_flow(id=f'{i}_flow_n1s1', from_edge='edge_n1c1', to_edge='edge_c1s1', begin=flow_start, end=flow_end,
-                            density=flows[3], v_type='car0', distribution='binomial')
-            routes.add_flow(id=f'{i}_flow_n1w', from_edge='edge_n1c1', to_edge='edge_c1w', begin=flow_start, end=flow_end,
-                            density=flows[4], v_type='car0', distribution='binomial')
-            # Flux venant du nord 2
-            routes.add_flow(id=f'{i}_flow_n2e', from_edge='edge_n2c2', to_edge='edge_c2e', begin=flow_start, end=flow_end,
-                            density=flows[5], v_type='car0', distribution='binomial')
-            routes.add_flow(id=f'{i}_flow_n2s2', from_edge='edge_n2c2', to_edge='edge_c2s2', begin=flow_start, end=flow_end,
-                            density=flows[6], v_type='car0', distribution='binomial')
-            routes.add_flow(id=f'{i}_flow_n2s1', from_edge='edge_n2c2', to_edge='edge_c1s1', begin=flow_start, end=flow_end,
-                            density=flows[7], v_type='car0', distribution='binomial')
-            routes.add_flow(id=f'{i}_flow_n2w', from_edge='edge_n2c2', to_edge='edge_c1w', begin=flow_start, end=flow_end,
-                            density=flows[8], v_type='car0', distribution='binomial')
-            routes.add_flow(id=f'{i}_flow_n2n1', from_edge='edge_n2c2', to_edge='edge_c1n1', begin=flow_start, end=flow_end,
-                            density=flows[9], v_type='car0', distribution='binomial')
-            # Flux venant de l'ouest
-            routes.add_flow(id=f'{i}_flow_es2', from_edge='edge_ec2', to_edge='edge_c2s2', begin=flow_start, end=flow_end,
-                            density=flows[10], v_type='car0', distribution='binomial')
-            routes.add_flow(id=f'{i}_flow_es1', from_edge='edge_ec2', to_edge='edge_c1s1', begin=flow_start, end=flow_end,
-                            density=flows[11], v_type='car0', distribution='binomial')
-            routes.add_flow(id=f'{i}_flow_ew', from_edge='edge_ec2', to_edge='edge_c1w', begin=flow_start, end=flow_end,
-                            density=flows[12], v_type='car0', distribution='binomial')
-            routes.add_flow(id=f'{i}_flow_en1', from_edge='edge_ec2', to_edge='edge_c1n1', begin=flow_start, end=flow_end,
-                            density=flows[13], v_type='car0', distribution='binomial')
-            routes.add_flow(id=f'{i}_flow_en2', from_edge='edge_ec2', to_edge='edge_c2n2', begin=flow_start, end=flow_end,
-                            density=flows[14], v_type='car0', distribution='binomial')
-            # Flux venant du sud 2
-            routes.add_flow(id=f'{i}_flow_s2s1', from_edge='edge_s2c2', to_edge='edge_c1s1', begin=flow_start, end=flow_end,
-                            density=flows[15], v_type='car0', distribution='binomial')
-            routes.add_flow(id=f'{i}_flow_s2w', from_edge='edge_s2c2', to_edge='edge_c1w', begin=flow_start, end=flow_end,
-                            density=flows[16], v_type='car0', distribution='binomial')
-            routes.add_flow(id=f'{i}_flow_s2n1', from_edge='edge_s2c2', to_edge='edge_c1n1', begin=flow_start, end=flow_end,
-                            density=flows[17], v_type='car0', distribution='binomial')
-            routes.add_flow(id=f'{i}_flow_s2n2', from_edge='edge_s2c2', to_edge='edge_c2n2', begin=flow_start, end=flow_end,
-                            density=flows[18], v_type='car0', distribution='binomial')
-            routes.add_flow(id=f'{i}_flow_s2e', from_edge='edge_s2c2', to_edge='edge_c2e', begin=flow_start, end=flow_end,
-                            density=flows[19], v_type='car0', distribution='binomial')
-            # Flux venant du sud 1
-            routes.add_flow(id=f'{i}_flow_s1w', from_edge='edge_s1c1', to_edge='edge_c1w', begin=flow_start, end=flow_end,
-                            density=flows[20], v_type='car0', distribution='binomial')
-            routes.add_flow(id=f'{i}_flow_s1n1', from_edge='edge_s1c1', to_edge='edge_c1n1', begin=flow_start, end=flow_end,
-                            density=flows[21], v_type='car0', distribution='binomial')
-            routes.add_flow(id=f'{i}_flow_s1n2', from_edge='edge_s1c1', to_edge='edge_c2n2', begin=flow_start, end=flow_end,
-                            density=flows[22], v_type='car0', distribution='binomial')
-            routes.add_flow(id=f'{i}_flow_s1e', from_edge='edge_s1c1', to_edge='edge_c2e', begin=flow_start, end=flow_end,
-                            density=flows[23], v_type='car0', distribution='binomial')
-            routes.add_flow(id=f'{i}_flow_s1s2', from_edge='edge_s1c1', to_edge='edge_c2s2', begin=flow_start, end=flow_end,
-                            density=flows[24], v_type='car0', distribution='binomial')
-            # Flux venant de l'est
-            routes.add_flow(id=f'{i}_flow_wn1', from_edge='edge_wc1', to_edge='edge_c1n1', begin=flow_start, end=flow_end,
-                            density=flows[25], v_type='car0', distribution='binomial')
-            routes.add_flow(id=f'{i}_flow_wn2', from_edge='edge_wc1', to_edge='edge_c2n2', begin=flow_start, end=flow_end,
-                            density=flows[26], v_type='car0', distribution='binomial')
-            routes.add_flow(id=f'{i}_flow_we', from_edge='edge_wc1', to_edge='edge_c2e', begin=flow_start, end=flow_end,
-                            density=flows[27], v_type='car0', distribution='binomial')
-            routes.add_flow(id=f'{i}_flow_ws2', from_edge='edge_wc1', to_edge='edge_c2s2', begin=flow_start, end=flow_end,
-                            density=flows[28], v_type='car0', distribution='binomial')
-            routes.add_flow(id=f'{i}_flow_ws1', from_edge='edge_wc1', to_edge='edge_c1s1', begin=flow_start, end=flow_end,
-                            density=flows[29], v_type='car0', distribution='binomial')
+        # From north 2
+        routes.add_flow(id=f'flow_n2e', from_edge='edge_n2c2', to_edge='edge_c2e', end=stop_generation_time_north_2, density=flow_density_north_2 // 5, v_type='car0', distribution='binomial')
+        routes.add_flow(id=f'flow_n2s2', from_edge='edge_n2c2', to_edge='edge_c2s2', end=stop_generation_time_north_2, density=flow_density_north_2 // 5, v_type='car0', distribution='binomial')
+        routes.add_flow(id=f'flow_n2s1', from_edge='edge_n2c2', to_edge='edge_c1s1', end=stop_generation_time_north_2, density=flow_density_north_2 // 5, v_type='car0', distribution='binomial')
+        routes.add_flow(id=f'flow_n2w', from_edge='edge_n2c2', to_edge='edge_c1w', end=stop_generation_time_north_2, density=flow_density_north_2 // 5, v_type='car0', distribution='binomial')
+        routes.add_flow(id=f'flow_n2n1', from_edge='edge_n2c2', to_edge='edge_c1n1', end=stop_generation_time_north_2, density=flow_density_north_2 // 5, v_type='car0', distribution='binomial')
+
+        # From east
+        routes.add_flow(id=f'flow_es2', from_edge='edge_ec2', to_edge='edge_c2s2', end=stop_generation_time_east, density=flow_density_east // 5, v_type='car0', distribution='binomial')
+        routes.add_flow(id=f'flow_es1', from_edge='edge_ec2', to_edge='edge_c1s1', end=stop_generation_time_east, density=flow_density_east // 5, v_type='car0', distribution='binomial')
+        routes.add_flow(id=f'flow_ew', from_edge='edge_ec2', to_edge='edge_c1w', end=stop_generation_time_east, density=flow_density_east // 5, v_type='car0', distribution='binomial')
+        routes.add_flow(id=f'flow_en1', from_edge='edge_ec2', to_edge='edge_c1n1', end=stop_generation_time_east, density=flow_density_east // 5, v_type='car0', distribution='binomial')
+        routes.add_flow(id=f'flow_en2', from_edge='edge_ec2', to_edge='edge_c2n2', end=stop_generation_time_east, density=flow_density_east // 5, v_type='car0', distribution='binomial')
+
+        # From south 2
+        routes.add_flow(id=f'flow_s2s1', from_edge='edge_s2c2', to_edge='edge_c1s1', end=stop_generation_time_south_2, density=flow_density_south_2 // 5, v_type='car0', distribution='binomial')
+        routes.add_flow(id=f'flow_s2w', from_edge='edge_s2c2', to_edge='edge_c1w', end=stop_generation_time_south_2, density=flow_density_south_2 // 5, v_type='car0', distribution='binomial')
+        routes.add_flow(id=f'flow_s2n1', from_edge='edge_s2c2', to_edge='edge_c1n1', end=stop_generation_time_south_2, density=flow_density_south_2 // 5, v_type='car0', distribution='binomial')
+        routes.add_flow(id=f'flow_s2n2', from_edge='edge_s2c2', to_edge='edge_c2n2', end=stop_generation_time_south_2, density=flow_density_south_2 // 5, v_type='car0', distribution='binomial')
+        routes.add_flow(id=f'flow_s2e', from_edge='edge_s2c2', to_edge='edge_c2e', end=stop_generation_time_south_2, density=flow_density_south_2 // 5, v_type='car0', distribution='binomial')
+
+        # From south 1
+        routes.add_flow(id=f'flow_s1w', from_edge='edge_s1c1', to_edge='edge_c1w', end=stop_generation_time_south_1, density=flow_density_south_1 // 5, v_type='car0', distribution='binomial')
+        routes.add_flow(id=f'flow_s1n1', from_edge='edge_s1c1', to_edge='edge_c1n1', end=stop_generation_time_south_1, density=flow_density_south_1 // 5, v_type='car0', distribution='binomial')
+        routes.add_flow(id=f'flow_s1n2', from_edge='edge_s1c1', to_edge='edge_c2n2', end=stop_generation_time_south_1, density=flow_density_south_1 // 5, v_type='car0', distribution='binomial')
+        routes.add_flow(id=f'flow_s1e', from_edge='edge_s1c1', to_edge='edge_c2e', end=stop_generation_time_south_1, density=flow_density_south_1 // 5, v_type='car0', distribution='binomial')
+        routes.add_flow(id=f'flow_s1s2', from_edge='edge_s1c1', to_edge='edge_c2s2', end=stop_generation_time_south_1, density=flow_density_south_1 // 5, v_type='car0', distribution='binomial')
+
+        # From west
+        routes.add_flow(id=f'flow_wn1', from_edge='edge_wc1', to_edge='edge_c1n1', end=stop_generation_time_west, density=flow_density_west // 5, v_type='car0', distribution='binomial')
+        routes.add_flow(id=f'flow_wn2', from_edge='edge_wc1', to_edge='edge_c2n2', end=stop_generation_time_west, density=flow_density_west // 5, v_type='car0', distribution='binomial')
+        routes.add_flow(id=f'flow_we', from_edge='edge_wc1', to_edge='edge_c2e', end=stop_generation_time_west, density=flow_density_west // 5, v_type='car0', distribution='binomial')
+        routes.add_flow(id=f'flow_ws2', from_edge='edge_wc1', to_edge='edge_c2s2', end=stop_generation_time_west, density=flow_density_west // 5, v_type='car0', distribution='binomial')
+        routes.add_flow(id=f'flow_ws1', from_edge='edge_wc1', to_edge='edge_c1s1', end=stop_generation_time_west, density=flow_density_west // 5, v_type='car0', distribution='binomial')
 
         return routes
+
+
+    def generate_flows_with_matrix(self, config={}):
+        """
+        Generate flows for a network with two consecutive crossroads.
+        At the intersections, vehicles can go to any direction.
+        The vehicle density varies over time, following a scheme describe in a load vector and a coefficient matrix.
+        The load vector describes, for each period, the density of vehicle entering the network.
+        The coefficient matrix describes the proportion of load that will follow each route.
+        Each scheme of density last a time defined in simulation steps.
+        The config parameter can contain more parameter to define the density of vehicles from each entry, and the
+        simulation step where the flow will end.
+
+        Valid parameters for config :
+        - "coeff_matrix" (numpy.ndarray) : The proportion of vehicles on each route
+        - "load_vector" (numpy.ndarray) : The vehicle density on the network for each period
+        - "period_time" (int) : The period duration (in simulation steps)
+
+        :param config: Customized flows configuration. Check documentation to see all parameters.
+        :type config: dict
+        :return: All flows in a FlowBuilder object.
+        :rtype: core.src.components.FlowBuilder
+        """
+
+        # Get new parameters from config
+        current_config = self.DEFAULT_CONFIG
+        for key in config:
+            current_config[key] = config[key]
+
+        # Select parameters
+        coeffs_matrix = current_config['coeff_matrix']
+        load_vector = current_config['load_vector']
+        period_time = current_config['period_time']
+
+        flows = FlowBuilder()
+
+        flows.add_vType(id='car0')
+
+        for i in range(coeffs_matrix.shape[1]):
+            vecteur_coeffs = coeffs_matrix[:, i]
+            flow_values = vecteur_coeffs * load_vector[i]
+            flow_start = period_time * i
+            flow_end = period_time * (i + 1)
+
+            # From north 1
+            flows.add_flow(id=f'{i}_flow_n1n2', from_edge='edge_n1c1', to_edge='edge_c2n2', begin=flow_start, end=flow_end,
+                            density=flow_values[0], v_type='car0', distribution='binomial')
+            flows.add_flow(id=f'{i}_flow_n1e', from_edge='edge_n1c1', to_edge='edge_c2e', begin=flow_start, end=flow_end,
+                            density=flow_values[1], v_type='car0', distribution='binomial')
+            flows.add_flow(id=f'{i}_flow_n1s2', from_edge='edge_n1c1', to_edge='edge_c2s2', begin=flow_start, end=flow_end,
+                            density=flow_values[2], v_type='car0', distribution='binomial')
+            flows.add_flow(id=f'{i}_flow_n1s1', from_edge='edge_n1c1', to_edge='edge_c1s1', begin=flow_start, end=flow_end,
+                            density=flow_values[3], v_type='car0', distribution='binomial')
+            flows.add_flow(id=f'{i}_flow_n1w', from_edge='edge_n1c1', to_edge='edge_c1w', begin=flow_start, end=flow_end,
+                            density=flow_values[4], v_type='car0', distribution='binomial')
+
+            # From north 2
+            flows.add_flow(id=f'{i}_flow_n2e', from_edge='edge_n2c2', to_edge='edge_c2e', begin=flow_start, end=flow_end,
+                            density=flow_values[5], v_type='car0', distribution='binomial')
+            flows.add_flow(id=f'{i}_flow_n2s2', from_edge='edge_n2c2', to_edge='edge_c2s2', begin=flow_start, end=flow_end,
+                            density=flow_values[6], v_type='car0', distribution='binomial')
+            flows.add_flow(id=f'{i}_flow_n2s1', from_edge='edge_n2c2', to_edge='edge_c1s1', begin=flow_start, end=flow_end,
+                            density=flow_values[7], v_type='car0', distribution='binomial')
+            flows.add_flow(id=f'{i}_flow_n2w', from_edge='edge_n2c2', to_edge='edge_c1w', begin=flow_start, end=flow_end,
+                            density=flow_values[8], v_type='car0', distribution='binomial')
+            flows.add_flow(id=f'{i}_flow_n2n1', from_edge='edge_n2c2', to_edge='edge_c1n1', begin=flow_start, end=flow_end,
+                            density=flow_values[9], v_type='car0', distribution='binomial')
+
+            # From east
+            flows.add_flow(id=f'{i}_flow_es2', from_edge='edge_ec2', to_edge='edge_c2s2', begin=flow_start, end=flow_end,
+                            density=flow_values[10], v_type='car0', distribution='binomial')
+            flows.add_flow(id=f'{i}_flow_es1', from_edge='edge_ec2', to_edge='edge_c1s1', begin=flow_start, end=flow_end,
+                            density=flow_values[11], v_type='car0', distribution='binomial')
+            flows.add_flow(id=f'{i}_flow_ew', from_edge='edge_ec2', to_edge='edge_c1w', begin=flow_start, end=flow_end,
+                            density=flow_values[12], v_type='car0', distribution='binomial')
+            flows.add_flow(id=f'{i}_flow_en1', from_edge='edge_ec2', to_edge='edge_c1n1', begin=flow_start, end=flow_end,
+                            density=flow_values[13], v_type='car0', distribution='binomial')
+            flows.add_flow(id=f'{i}_flow_en2', from_edge='edge_ec2', to_edge='edge_c2n2', begin=flow_start, end=flow_end,
+                            density=flow_values[14], v_type='car0', distribution='binomial')
+
+            # From south 2
+            flows.add_flow(id=f'{i}_flow_s2s1', from_edge='edge_s2c2', to_edge='edge_c1s1', begin=flow_start, end=flow_end,
+                            density=flow_values[15], v_type='car0', distribution='binomial')
+            flows.add_flow(id=f'{i}_flow_s2w', from_edge='edge_s2c2', to_edge='edge_c1w', begin=flow_start, end=flow_end,
+                            density=flow_values[16], v_type='car0', distribution='binomial')
+            flows.add_flow(id=f'{i}_flow_s2n1', from_edge='edge_s2c2', to_edge='edge_c1n1', begin=flow_start, end=flow_end,
+                            density=flow_values[17], v_type='car0', distribution='binomial')
+            flows.add_flow(id=f'{i}_flow_s2n2', from_edge='edge_s2c2', to_edge='edge_c2n2', begin=flow_start, end=flow_end,
+                            density=flow_values[18], v_type='car0', distribution='binomial')
+            flows.add_flow(id=f'{i}_flow_s2e', from_edge='edge_s2c2', to_edge='edge_c2e', begin=flow_start, end=flow_end,
+                            density=flow_values[19], v_type='car0', distribution='binomial')
+
+            # From south 1
+            flows.add_flow(id=f'{i}_flow_s1w', from_edge='edge_s1c1', to_edge='edge_c1w', begin=flow_start, end=flow_end,
+                            density=flow_values[20], v_type='car0', distribution='binomial')
+            flows.add_flow(id=f'{i}_flow_s1n1', from_edge='edge_s1c1', to_edge='edge_c1n1', begin=flow_start, end=flow_end,
+                            density=flow_values[21], v_type='car0', distribution='binomial')
+            flows.add_flow(id=f'{i}_flow_s1n2', from_edge='edge_s1c1', to_edge='edge_c2n2', begin=flow_start, end=flow_end,
+                            density=flow_values[22], v_type='car0', distribution='binomial')
+            flows.add_flow(id=f'{i}_flow_s1e', from_edge='edge_s1c1', to_edge='edge_c2e', begin=flow_start, end=flow_end,
+                            density=flow_values[23], v_type='car0', distribution='binomial')
+            flows.add_flow(id=f'{i}_flow_s1s2', from_edge='edge_s1c1', to_edge='edge_c2s2', begin=flow_start, end=flow_end,
+                            density=flow_values[24], v_type='car0', distribution='binomial')
+
+            # From west
+            flows.add_flow(id=f'{i}_flow_wn1', from_edge='edge_wc1', to_edge='edge_c1n1', begin=flow_start, end=flow_end,
+                            density=flow_values[25], v_type='car0', distribution='binomial')
+            flows.add_flow(id=f'{i}_flow_wn2', from_edge='edge_wc1', to_edge='edge_c2n2', begin=flow_start, end=flow_end,
+                            density=flow_values[26], v_type='car0', distribution='binomial')
+            flows.add_flow(id=f'{i}_flow_we', from_edge='edge_wc1', to_edge='edge_c2e', begin=flow_start, end=flow_end,
+                            density=flow_values[27], v_type='car0', distribution='binomial')
+            flows.add_flow(id=f'{i}_flow_ws2', from_edge='edge_wc1', to_edge='edge_c2s2', begin=flow_start, end=flow_end,
+                            density=flow_values[28], v_type='car0', distribution='binomial')
+            flows.add_flow(id=f'{i}_flow_ws1', from_edge='edge_wc1', to_edge='edge_c1s1', begin=flow_start, end=flow_end,
+                            density=flow_values[29], v_type='car0', distribution='binomial')
+
+        return flows
 
 
 
     ### Detectors ###
-    def no_detectors(self, config):
+
+    def generate_numerical_dectectors(self, config={}):
         """
-        Fonction qui n'ajoute aucun détecteurs à un réseau.
+        Generate a DetectorBuilder with a numerical detector for each lane going to an intersection.
+        A numerical detector counts and returns the number of vehicles on its scope. In SUMO, a numerical
+        detector is represented with a lane area detector whose scope is the entire lane,
+        from the beginning to the end.
 
-        :param config: Configuration du réseau routier
-        :return: Retourne un objet DetectorBuilder vide
+        Valid parameters for config : No parameters needed
+
+        :param config: Customized flows configuration. Check documentation to see all parameters.
+        :type config: dict
+        :return: An empty DetectorBuilder object.
+        :rtype: core.src.components.DetectorBuilder
         """
-
-        return DetectorBuilder()
-
-    def detecteurs_numeriques_double_carrefour(self, config):
-        """
-        Fonction qui ajoute des détecteurs entre deux carrefours d'un réseau entre deux carrefours
-        de sorte à simuler une communication entre les deux.
-
-        :param config: Configuration du réseau routier
-        :return: Retourne un objet DetectorBuilder représentant les détecteurs mentionnés
-        """
-
         detectors = DetectorBuilder()
 
-        # Premier carrefour
+        # First crossroad
         detectors.add_laneAreaDetector(id="wc1", lane="edge_wc1_0")
         detectors.add_laneAreaDetector(id="s1c1", lane="edge_s1c1_0")
         detectors.add_laneAreaDetector(id="n1c1", lane="edge_n1c1_0")
         detectors.add_laneAreaDetector(id="c2c1", lane="edge_c2c1_0")
-        # Deuxième carrefour
+        # Second crossroad
         detectors.add_laneAreaDetector(id="c1c2", lane="edge_c1c2_0")
         detectors.add_laneAreaDetector(id="ec2", lane="edge_ec2_0")
         detectors.add_laneAreaDetector(id="n2c2", lane="edge_n2c2_0")
@@ -299,30 +513,58 @@ class TwoCrossroadsNetwork:
 
         return detectors
 
-    def detecteurs_booleens_double_carrefour(self, config):
+    def generate_boolean_detectors(self, config):
         """
-        Fonction qui ajoute des détecteurs à deux carrefours d'un réseau à deux carrefours.
-        Ces détecteurs ne renvoient que la présence d'un véhicule prêt à passer au feu.
+        Generate a DetectorBuilder with a boolean detector for each lane going to an intersection.
+        A boolean detector returns if a vehicle is on its scope or not. In SUMO, a boolean
+        detector is represented with a lane area detector whose scope is the entire lane,
+        from the beginning to the end.
 
-        :param config: Configuration du réseau routier
-        :return: Retourne un objet DetectorBuilder représentant les détecteurs mentionnés
+        Valid parameters for config :
+        - "lane_length" (int) : The default length for each lane (in meters)
+        - "north_1_length" (int) : The north lane length (in meters) for intersection 1, override default
+        - "north_2_length" (int) : The north lane length (in meters) for intersection 2, override default
+        - "east_length" (int) : The east lane length (in meters), override default
+        - "south_1_length" (int) : The south lane length (in meters) for intersection 1, override default
+        - "south_2_length" (int) : The south lane length (in meters) for intersection 2, override default
+        - "west_length" (int) : The west lane length (in meters), override default
+        - "boolean_detector_length" (float) : The scope size of the detectors
+
+        :param config: Customized flows configuration. Check documentation to see all parameters.
+        :type config: dict
+        :return: An empty DetectorBuilder object.
+        :rtype: core.src.components.DetectorBuilder
         """
+
+        # Get new parameters from config
+        current_config = self.DEFAULT_CONFIG
+        for key in config:
+            if key not in self.CONFIG_PARAMETER_LIST:
+                warnings.warn(f"The config parameter '{key}' is not a valid parameter.", stacklevel=2)
+            current_config[key] = config[key]
+
+        # Select parameters
+        boolean_detector_length = current_config['boolean_detector_length']
+        len_north_1 = current_config['north_1_length'] if 'north_1_length' in current_config else current_config['lane_length']
+        len_north_2 = current_config['north_2_length'] if 'north_2_length' in current_config else current_config['lane_length']
+        len_south_1 = current_config['south_1_length'] if 'south_1_length' in current_config else current_config['lane_length']
+        len_south_2 = current_config['south_2_length'] if 'south_2_length' in current_config else current_config['lane_length']
+        len_east = current_config['east_length'] if 'east_length' in current_config else current_config['lane_length']
+        len_west = current_config['west_length'] if 'west_length' in current_config else current_config['lane_length']
+        len_center = current_config['center_length'] if 'west_length' in current_config else current_config['lane_length']
 
         detectors = DetectorBuilder()
 
-        detector_length = config["boolean_detector_length"]
-        lane_len = config['default_len']
-
-        # Premier carrefour
-        detectors.add_laneAreaDetector(id="wc1", lane="edge_wc1_0", pos=(lane_len - detector_length - 7.2))
-        detectors.add_laneAreaDetector(id="s1c1", lane="edge_s1c1_0", pos=(lane_len - detector_length - 7.2))
-        detectors.add_laneAreaDetector(id="n1c1", lane="edge_n1c1_0", pos=(lane_len - detector_length - 7.2))
-        detectors.add_laneAreaDetector(id="c2c1", lane="edge_c2c1_0", pos=(lane_len - detector_length - 7.2 * 2))
-        # Deuxième carrefour
-        detectors.add_laneAreaDetector(id="c1c2", lane="edge_c1c2_0", pos=(lane_len - detector_length - 7.2 * 2))
-        detectors.add_laneAreaDetector(id="ec2", lane="edge_ec2_0", pos=(lane_len - detector_length - 7.2))
-        detectors.add_laneAreaDetector(id="n2c2", lane="edge_n2c2_0", pos=(lane_len - detector_length - 7.2))
-        detectors.add_laneAreaDetector(id="s2c2", lane="edge_s2c2_0", pos=(lane_len - detector_length - 7.2))
+        # First crossroad
+        detectors.add_laneAreaDetector(id="wc1", lane="edge_wc1_0", pos=(len_west - boolean_detector_length - 7.2))
+        detectors.add_laneAreaDetector(id="s1c1", lane="edge_s1c1_0", pos=(len_south_1 - boolean_detector_length - 7.2))
+        detectors.add_laneAreaDetector(id="n1c1", lane="edge_n1c1_0", pos=(len_north_1 - boolean_detector_length - 7.2))
+        detectors.add_laneAreaDetector(id="c2c1", lane="edge_c2c1_0", pos=(len_center - boolean_detector_length - 7.2 * 2))
+        # Second crossroad
+        detectors.add_laneAreaDetector(id="c1c2", lane="edge_c1c2_0", pos=(len_center - boolean_detector_length - 7.2 * 2))
+        detectors.add_laneAreaDetector(id="ec2", lane="edge_ec2_0", pos=(len_east - boolean_detector_length - 7.2))
+        detectors.add_laneAreaDetector(id="n2c2", lane="edge_n2c2_0", pos=(len_north_2 - boolean_detector_length - 7.2))
+        detectors.add_laneAreaDetector(id="s2c2", lane="edge_s2c2_0", pos=(len_south_2 - boolean_detector_length - 7.2))
 
         return detectors
 
@@ -331,201 +573,262 @@ class TwoCrossroadsNetwork:
 
     ### Strategies ###
 
-    def feux_a_detection_booleenne_double_carrefour(self, config):
+    def boolean_detection(self, config):
         """
-        Sur chaque voie arrivant devant un feu, il existe un détecteur qui a pour charge d'évaluer si un véhicule est présent dans les
-        7 derniers mêtres avant le feu. S'il y en a un, et que le feu est vert, alors on garde le feu vert. S'il n'y en a pas, et que le feu
-        est vert, et qu'il y a un véhicule en attente sur une voie perpendiculaire, alors on change de feu. L'opération ne peut pas se faire
-        avant "min_duration_tl" step depuis le dernier changement, et se fait obligatoirement après "max_duration_tl" step depuis le dernier
-        changement.
+        To be used with a network equipped with boolean detectors.
 
-        Ne fonctionne que pour un réseau à deux carrefours.
+        Before running the simulation, three variables must be set in config :
+        - The minimum duration for a traffic light phase (default 30 seconds)
+        - The maximum duration for a traffic light phase (default 60 seconds)
+        - The simulation duration (default 1000 simulation steps)
 
-        Paramètres à mettre dans la config :
-        - "min_duration_tl" (int) : Le nombre de pas minimum de durée d'un feu
-        - "max_duration_tl" (int) : Le nombre de pas maximum de durée d'un feu
+        A traffic light has two phases (excluding yellow phases) :
+        - Green for north-south, red for west-east
+        - Red for north-south, green for west-east
+
+        At the beginning of the simulation, The intersections are set to green for the west-east way
+        and red for the north-south way.
+        When a traffic light detects a car on a lane where traffic light is red, and if it doesn't
+        detect any car on the green lanes, it switches to the other phase if the current phase
+        is set since more than the minimum duration time.
+        If this condition doesn't occur, the traffic light switch to the other phase when the current phase
+        last for more than the maximum duration time.
+
+        Valid parameters for config :
+        - "min_duration_tl" (int) : The minimum number of simulation step for a traffic light phase
+        - "max_duration_tl" (int) : The maximum number of simulation step for a traffic light phase
+        - "simulation_duration" (int) : The number of simulation steps of the experiment
+
+        :param config: Customized flows configuration. Check documentation to see all parameters.
+        :type config: dict
         """
 
-        step = 0
-        cooldownStep1 = 0  # Nombre de pas depuis la dernière actualisation du feu 1
-        cooldownStep2 = 0  # Nombre de pas depuis la dernière actualisation du feu 2
+        # Get new parameters from config
+        current_config = self.DEFAULT_CONFIG
+        for key in config:
+            current_config[key] = config[key]
 
-        FEU_1_VERT_HORIZONTAL = 0
-        FEU_1_VERT_VERTICAL = 2
-        FEU_2_VERT_HORIZONTAL = 2
-        FEU_2_VERT_VERTICAL = 0
-
+        # Select parameters
         min_duration_tl = config["min_duration_tl"]
         max_duration_tl = config["max_duration_tl"]
+        simulation_duration = config['simulation_duration']
 
-        while step < config['simulation_duration']:
+        step = 0
+        cooldown_step_tl_1 = 0  # Current phase duration for intersection 1
+        cooldown_step_tl_2 = 0  # Current phase duration for intersection 2
+
+        while step < simulation_duration:
+
             traci.simulationStep()
 
-            # Premier carrefour
-            if cooldownStep1 > min_duration_tl:
-                if traci.trafficlight.getPhase("c1") == FEU_1_VERT_HORIZONTAL:
+            # First intersection
+            if cooldown_step_tl_1 > min_duration_tl:
+                if traci.trafficlight.getPhase("c1") == self.GREEN_LIGHT_HORIZONTAL_1:
                     quelqun_en_attente = (traci.lanearea.getLastStepVehicleNumber(
                         "n1c1") >= 1 or traci.lanearea.getLastStepVehicleNumber("s1c1") >= 1)
                     autre_voie_vide = (traci.lanearea.getLastStepVehicleNumber(
                         "wc1") == 0 and traci.lanearea.getLastStepVehicleNumber("c2c1") == 0)
-                    if (quelqun_en_attente and autre_voie_vide) or cooldownStep1 > max_duration_tl:
-                        traci.trafficlight.setPhase("c1", FEU_1_VERT_HORIZONTAL + 1)  # Passage au orange
-                        cooldownStep1 = 0
+                    if (quelqun_en_attente and autre_voie_vide) or cooldown_step_tl_1 > max_duration_tl:
+                        traci.trafficlight.setPhase("c1", self.GREEN_LIGHT_HORIZONTAL_1 + 1)  # Passage au orange
+                        cooldown_step_tl_1 = 0
 
-                elif traci.trafficlight.getPhase("c1") == FEU_1_VERT_VERTICAL:
+                elif traci.trafficlight.getPhase("c1") == self.GREEN_LIGHT_VERTICAL_1:
                     quelqun_en_attente = (traci.lanearea.getLastStepVehicleNumber(
                         "wc1") >= 1 or traci.lanearea.getLastStepVehicleNumber("c2c1") >= 1)
                     autre_voie_vide = (traci.lanearea.getLastStepVehicleNumber(
                         "n1c1") == 0 and traci.lanearea.getLastStepVehicleNumber("s1c1") == 0)
-                    if (quelqun_en_attente and autre_voie_vide) or cooldownStep1 > max_duration_tl:
-                        traci.trafficlight.setPhase("c1", FEU_1_VERT_VERTICAL + 1)
-                        cooldownStep1 = 0
+                    if (quelqun_en_attente and autre_voie_vide) or cooldown_step_tl_1 > max_duration_tl:
+                        traci.trafficlight.setPhase("c1", self.GREEN_LIGHT_VERTICAL_1 + 1)
+                        cooldown_step_tl_1 = 0
 
-            # Deuxième carrefour
-            if cooldownStep2 > min_duration_tl:
-                if traci.trafficlight.getPhase("c2") == FEU_2_VERT_HORIZONTAL:
+            # Second intersection
+            if cooldown_step_tl_2 > min_duration_tl:
+                if traci.trafficlight.getPhase("c2") == self.GREEN_LIGHT_HORIZONTAL_2:
                     quelqun_en_attente = (traci.lanearea.getLastStepVehicleNumber(
                         "n2c2") >= 1 or traci.lanearea.getLastStepVehicleNumber("s2c2") >= 1)
                     autre_voie_vide = (traci.lanearea.getLastStepVehicleNumber(
                         "ec2") == 0 and traci.lanearea.getLastStepVehicleNumber("c1c2") == 0)
-                    if (quelqun_en_attente and autre_voie_vide) or cooldownStep2 > max_duration_tl:
-                        traci.trafficlight.setPhase("c2", FEU_2_VERT_HORIZONTAL + 1)
-                        cooldownStep2 = 0
+                    if (quelqun_en_attente and autre_voie_vide) or cooldown_step_tl_2 > max_duration_tl:
+                        traci.trafficlight.setPhase("c2", self.GREEN_LIGHT_HORIZONTAL_2 + 1)
+                        cooldown_step_tl_2 = 0
 
-                elif traci.trafficlight.getPhase("c2") == FEU_2_VERT_VERTICAL:
+                elif traci.trafficlight.getPhase("c2") == self.GREEN_LIGHT_VERTICAL_2:
                     quelqun_en_attente = (traci.lanearea.getLastStepVehicleNumber(
                         "ec2") >= 1 or traci.lanearea.getLastStepVehicleNumber("c1c2") >= 1)
                     autre_voie_vide = (traci.lanearea.getLastStepVehicleNumber(
                         "n2c2") == 0 and traci.lanearea.getLastStepVehicleNumber("s2c2") == 0)
-                    if (quelqun_en_attente and autre_voie_vide) or cooldownStep2 > max_duration_tl:
-                        traci.trafficlight.setPhase("c2",
-                                                    FEU_2_VERT_VERTICAL + 1)  # WE orange, SN red, then normal transition to phase 0
-                        cooldownStep2 = 0
+                    if (quelqun_en_attente and autre_voie_vide) or cooldown_step_tl_2 > max_duration_tl:
+                        traci.trafficlight.setPhase("c2", self.GREEN_LIGHT_VERTICAL_2 + 1)
+                        cooldown_step_tl_2 = 0
 
             step += 1
-            cooldownStep1 += 1
-            cooldownStep2 += 1
+            cooldown_step_tl_1 += 1
+            cooldown_step_tl_2 += 1
 
-    def feux_a_seuils_communicants_avec_anticipation_double_carrefour(self, config):
+    def numerical_detection_all_vehicles(self, config):
         """
-        On détermine un seuil pour chaque feu du réseau. Lorsque le feu est rouge pour une voie du feu, et que le nombre de véhicules en attente
-        est supérieur ou égal au seuil, alors le feu passe au vert. Le feu doit rester vert un minimum de temps avant de pouvoir à nouveau changer.
+        To be used with a network equipped with numerical detectors.
 
-        Paramètres à mettre dans la config :
-        - "min_duration_tl" (int) : Le nombre de pas minimum de durée d'un feu
-        - "max_duration_tl" (int) : Le nombre de pas maximum de durée d'un feu
-        - "seuil_vehicules" (int) : Le nombre de véhicules en attente nécessaires pour déclencher un changement de feu. (sur une voie uniquement)
+        Before running the simulation, four variables must be set in config :
+        - The minimum duration for a traffic light phase (default 30 seconds)
+        - The maximum duration for a traffic light phase (default 60 seconds)
+        - The vehicle threshold to trigger a phase change (default 5)
+        - The simulation duration (default 1000 simulation steps)
+
+        A traffic light has two phases (excluding yellow phases) :
+        - Green for north-south, red for west-east
+        - Red for north-south, green for west-east
+
+        At the beginning of the simulation, The intersections are set to green for the west-east way
+        and red for the north-south way.
+        When a traffic light detect more than the threshold of cars on a lane where traffic light is red,
+        it switches to the other phase if the current phase is set since more than the minimum
+        duration time. Both stopped and running cars are considered in this strategy.
+        If this condition doesn't occur, the traffic light switch to the other phase when the current phase
+        last for more than the maximum duration time.
+
+        Valid parameters for config :
+        - "min_duration_tl" (int) : The minimum number of simulation step for a traffic light phase
+        - "max_duration_tl" (int) : The maximum number of simulation step for a traffic light phase
+        - "vehicle_threshold" (int) : The number of waiting vehicles that trigger a traffic light switch
+        - "simulation_duration" (int) : The number of simulation steps of the experiment
+
+        :param config: Customized flows configuration. Check documentation to see all parameters.
+        :type config: dict
         """
 
-        step = 0
-        cooldownStep1 = 0  # Nombre de pas depuis la dernière actualisation du feu 1
-        cooldownStep2 = 0  # Nombre de pas depuis la dernière actualisation du feu 2
+        # Get new parameters from config
+        current_config = self.DEFAULT_CONFIG
+        for key in config:
+            current_config[key] = config[key]
 
-        FEU_1_ROUGE_HORIZONTAL = 2
-        FEU_1_ROUGE_VERTICAL = 0
-        FEU_2_ROUGE_HORIZONTAL = 0
-        FEU_2_ROUGE_VERTICAL = 2
-
+        # Select parameters
         min_duration_tl = config["min_duration_tl"]
         max_duration_tl = config["max_duration_tl"]
-        nb_vehicules = config["seuil_vehicules"]
+        vehicle_threshold = config["vehicle_threshold"]
+        simulation_duration = config['simulation_duration']
 
-        while step < config['simulation_duration']:
+        step = 0
+        cooldown_step_tl_1 = 0  # Current phase duration for intersection 1
+        cooldown_step_tl_2 = 0  # Current phase duration for intersection 2
+
+        while step < simulation_duration:
             traci.simulationStep()
 
             # Premier carrefour
-            if cooldownStep1 > min_duration_tl:
-                if traci.trafficlight.getPhase("c1") == FEU_1_ROUGE_HORIZONTAL:
+            if cooldown_step_tl_1 > min_duration_tl:
+                if traci.trafficlight.getPhase("c1") == self.GREEN_LIGHT_VERTICAL_1:
                     if traci.lanearea.getLastStepVehicleNumber(
-                            "wc1") >= nb_vehicules or traci.lanearea.getLastStepVehicleNumber(
-                            "c2c1") >= nb_vehicules or cooldownStep1 > max_duration_tl:
-                        traci.trafficlight.setPhase("c1", FEU_1_ROUGE_HORIZONTAL + 1)  # Passage au orange
-                        cooldownStep1 = 0
+                            "wc1") >= vehicle_threshold or traci.lanearea.getLastStepVehicleNumber(
+                            "c2c1") >= vehicle_threshold or cooldown_step_tl_1 > max_duration_tl:
+                        traci.trafficlight.setPhase("c1", self.GREEN_LIGHT_VERTICAL_1 + 1)  # Passage au orange
+                        cooldown_step_tl_1 = 0
 
-                elif traci.trafficlight.getPhase("c1") == FEU_1_ROUGE_VERTICAL:
+                elif traci.trafficlight.getPhase("c1") == self.GREEN_LIGHT_HORIZONTAL_1:
                     if traci.lanearea.getLastStepVehicleNumber(
-                            "s1c1") >= nb_vehicules or traci.lanearea.getLastStepVehicleNumber(
-                            "n1c1") >= nb_vehicules or cooldownStep1 > max_duration_tl:
-                        traci.trafficlight.setPhase("c1", FEU_1_ROUGE_VERTICAL + 1)
-                        cooldownStep1 = 0
+                            "s1c1") >= vehicle_threshold or traci.lanearea.getLastStepVehicleNumber(
+                            "n1c1") >= vehicle_threshold or cooldown_step_tl_1 > max_duration_tl:
+                        traci.trafficlight.setPhase("c1", self.GREEN_LIGHT_HORIZONTAL_1 + 1)
+                        cooldown_step_tl_1 = 0
 
             # Deuxième carrefour
-            if cooldownStep2 > min_duration_tl:
-                if traci.trafficlight.getPhase("c2") == FEU_2_ROUGE_HORIZONTAL:
+            if cooldown_step_tl_2 > min_duration_tl:
+                if traci.trafficlight.getPhase("c2") == self.GREEN_LIGHT_VERTICAL_2:
                     if traci.lanearea.getLastStepVehicleNumber(
-                            "c1c2") >= nb_vehicules or traci.lanearea.getLastStepVehicleNumber(
-                            "ec2") >= nb_vehicules or cooldownStep2 > max_duration_tl:
-                        traci.trafficlight.setPhase("c2", FEU_2_ROUGE_HORIZONTAL + 1)
-                        cooldownStep2 = 0
+                            "c1c2") >= vehicle_threshold or traci.lanearea.getLastStepVehicleNumber(
+                            "ec2") >= vehicle_threshold or cooldown_step_tl_2 > max_duration_tl:
+                        traci.trafficlight.setPhase("c2", self.GREEN_LIGHT_VERTICAL_2 + 1)
+                        cooldown_step_tl_2 = 0
 
-                elif traci.trafficlight.getPhase("c2") == FEU_2_ROUGE_VERTICAL:
+                elif traci.trafficlight.getPhase("c2") == self.GREEN_LIGHT_HORIZONTAL_1:
                     if traci.lanearea.getLastStepVehicleNumber(
-                            "s2c2") >= nb_vehicules or traci.lanearea.getLastStepVehicleNumber(
-                            "n2c2") >= nb_vehicules or cooldownStep2 > max_duration_tl:
-                        traci.trafficlight.setPhase("c2",
-                                                    FEU_2_ROUGE_VERTICAL + 1)  # WE orange, SN red, then normal transition to phase 0
-                        cooldownStep2 = 0
+                            "s2c2") >= vehicle_threshold or traci.lanearea.getLastStepVehicleNumber(
+                            "n2c2") >= vehicle_threshold or cooldown_step_tl_2 > max_duration_tl:
+                        traci.trafficlight.setPhase("c2", self.GREEN_LIGHT_HORIZONTAL_1 + 1)
+                        cooldown_step_tl_2 = 0
 
             step += 1
-            cooldownStep1 += 1
-            cooldownStep2 += 1
+            cooldown_step_tl_1 += 1
+            cooldown_step_tl_2 += 1
 
-    def feux_a_seuils_communicants_sans_anticipation_double_carrefour(self, config):
+    def numerical_detections_stopped_vehicles(self, config):
         """
-        On détermine un seuil pour chaque feu du réseau. Lorsque le feu est rouge pour une voie du feu, et que le nombre de véhicules en attente et en course
-        est supérieur ou égal au seuil, alors le feu passe au vert. Le feu doit rester vert un minimum de temps avant de pouvoir à nouveau changer.
+        To be used with a network equipped with numerical detectors.
 
-        Paramètres à mettre dans la config :
-        - "min_duration_tl" (int) : Le nombre de pas minimum de durée d'un feu
-        - "max_duration_tl" (int) : Le nombre de pas maximum de durée d'un feu
-        - "seuil_vehicules" (int) : Le nombre de véhicules en attente nécessaires pour déclencher un changement de feu. (sur une voie uniquement)
+        Before running the simulation, four variables must be set in config :
+        - The minimum duration for a traffic light phase (default 30 seconds)
+        - The maximum duration for a traffic light phase (default 60 seconds)
+        - The vehicle threshold to trigger a phase change (default 5)
+        - The simulation duration (default 1000 simulation steps)
+
+        A traffic light has two phases (excluding yellow phases) :
+        - Green for north-south, red for west-east
+        - Red for north-south, green for west-east
+
+        At the beginning of the simulation, The intersection is set to green for the west-east way
+        and red for the north-south way.
+        When a traffic light detect more than the threshold of cars on a lane where traffic light is red,
+        it switches to the other phase if the current phase is set since more than the minimum
+        duration time. Only stopped cars are considered in this strategy.
+        If this condition doesn't occur, the traffic light switch to the other phase when the current phase
+        last for more than the maximum duration time.
+
+        Valid parameters for config :
+        - "min_duration_tl" (int) : The minimum number of simulation step for a traffic light phase
+        - "max_duration_tl" (int) : The maximum number of simulation step for a traffic light phase
+        - "vehicle_threshold" (int) : The number of waiting vehicles that trigger a traffic light switch
+        - "simulation_duration" (int) : The number of simulation steps of the experiment
+
+        :param config: Customized flows configuration. Check documentation to see all parameters.
+        :type config: dict
         """
 
-        step = 0
-        cooldownStep1 = 0  # Nombre de pas depuis la dernière actualisation du feu 1
-        cooldownStep2 = 0  # Nombre de pas depuis la dernière actualisation du feu 2
+        # Get new parameters from config
+        current_config = self.DEFAULT_CONFIG
+        for key in config:
+            current_config[key] = config[key]
 
-        FEU_1_ROUGE_HORIZONTAL = 2
-        FEU_1_ROUGE_VERTICAL = 0
-        FEU_2_ROUGE_HORIZONTAL = 0
-        FEU_2_ROUGE_VERTICAL = 2
-
+        # Select parameters
         min_duration_tl = config["min_duration_tl"]
         max_duration_tl = config["max_duration_tl"]
-        nb_vehicules = config["seuil_vehicules"]
+        vehicle_threshold = config["vehicle_threshold"]
+        simulation_duration = config['simulation_duration']
 
-        while step < config['simulation_duration']:
+        step = 0
+        cooldown_step_tl_1 = 0  # Nombre de pas depuis la dernière actualisation du feu 1
+        cooldown_step_tl_2 = 0  # Nombre de pas depuis la dernière actualisation du feu 2
+
+        while step < simulation_duration:
             traci.simulationStep()
 
             # Premier carrefour
-            if cooldownStep1 > min_duration_tl:
-                if traci.trafficlight.getPhase("c1") == FEU_1_ROUGE_HORIZONTAL:
-                    if traci.lanearea.getJamLengthVehicle("wc1") >= nb_vehicules or traci.lanearea.getJamLengthVehicle(
-                            "c2c1") >= nb_vehicules or cooldownStep1 > max_duration_tl:
-                        traci.trafficlight.setPhase("c1", FEU_1_ROUGE_HORIZONTAL + 1)  # Passage au orange
-                        cooldownStep1 = 0
+            if cooldown_step_tl_1 > min_duration_tl:
+                if traci.trafficlight.getPhase("c1") == self.GREEN_LIGHT_VERTICAL_1:
+                    if traci.lanearea.getJamLengthVehicle("wc1") >= vehicle_threshold or traci.lanearea.getJamLengthVehicle(
+                            "c2c1") >= vehicle_threshold or cooldown_step_tl_1 > max_duration_tl:
+                        traci.trafficlight.setPhase("c1", self.GREEN_LIGHT_VERTICAL_1 + 1)  # Passage au orange
+                        cooldown_step_tl_1 = 0
 
-                elif traci.trafficlight.getPhase("c1") == FEU_1_ROUGE_VERTICAL:
-                    if traci.lanearea.getJamLengthVehicle("s1c1") >= nb_vehicules or traci.lanearea.getJamLengthVehicle(
-                            "n1c1") >= nb_vehicules or cooldownStep1 > max_duration_tl:
-                        traci.trafficlight.setPhase("c1", FEU_1_ROUGE_VERTICAL + 1)
-                        cooldownStep1 = 0
+                elif traci.trafficlight.getPhase("c1") == self.GREEN_LIGHT_HORIZONTAL_1:
+                    if traci.lanearea.getJamLengthVehicle("s1c1") >= vehicle_threshold or traci.lanearea.getJamLengthVehicle(
+                            "n1c1") >= vehicle_threshold or cooldown_step_tl_1 > max_duration_tl:
+                        traci.trafficlight.setPhase("c1", self.GREEN_LIGHT_HORIZONTAL_1 + 1)
+                        cooldown_step_tl_1 = 0
 
             # Deuxième carrefour
-            if cooldownStep2 > min_duration_tl:
-                if traci.trafficlight.getPhase("c2") == FEU_2_ROUGE_HORIZONTAL:
-                    if traci.lanearea.getJamLengthVehicle("c1c2") >= nb_vehicules or traci.lanearea.getJamLengthVehicle(
-                            "ec2") >= nb_vehicules or cooldownStep2 > max_duration_tl:
-                        traci.trafficlight.setPhase("c2", FEU_2_ROUGE_HORIZONTAL + 1)
-                        cooldownStep2 = 0
+            if cooldown_step_tl_2 > min_duration_tl:
+                if traci.trafficlight.getPhase("c2") == self.GREEN_LIGHT_VERTICAL_2:
+                    if traci.lanearea.getJamLengthVehicle("c1c2") >= vehicle_threshold or traci.lanearea.getJamLengthVehicle(
+                            "ec2") >= vehicle_threshold or cooldown_step_tl_2 > max_duration_tl:
+                        traci.trafficlight.setPhase("c2", self.GREEN_LIGHT_VERTICAL_2 + 1)
+                        cooldown_step_tl_2 = 0
 
-                elif traci.trafficlight.getPhase("c2") == FEU_2_ROUGE_VERTICAL:
-                    if traci.lanearea.getJamLengthVehicle("s2c2") >= nb_vehicules or traci.lanearea.getJamLengthVehicle(
-                            "n2c2") >= nb_vehicules or cooldownStep2 > max_duration_tl:
-                        traci.trafficlight.setPhase("c2",
-                                                    FEU_2_ROUGE_VERTICAL + 1)  # WE orange, SN red, then normal transition to phase 0
-                        cooldownStep2 = 0
+                elif traci.trafficlight.getPhase("c2") == self.GREEN_LIGHT_HORIZONTAL_2:
+                    if traci.lanearea.getJamLengthVehicle("s2c2") >= vehicle_threshold or traci.lanearea.getJamLengthVehicle(
+                            "n2c2") >= vehicle_threshold or cooldown_step_tl_2 > max_duration_tl:
+                        traci.trafficlight.setPhase("c2", self.GREEN_LIGHT_HORIZONTAL_2 + 1)  # WE orange, SN red, then normal transition to phase 0
+                        cooldown_step_tl_2 = 0
 
             step += 1
-            cooldownStep1 += 1
-            cooldownStep2 += 1
+            cooldown_step_tl_1 += 1
+            cooldown_step_tl_2 += 1

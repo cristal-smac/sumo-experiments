@@ -31,7 +31,7 @@ if __name__ == '__main__':
         e.set_variable('flow_density', n_vehicles_h)
         e.set_variable('lane_length', 100)
         e.set_variable('max_speed', 15)
-        e.set_variable('gree_time', t_g)
+        e.set_variable('green_time', t_g)
         e.set_variable('yellow_time', 5)
 
         e.run()

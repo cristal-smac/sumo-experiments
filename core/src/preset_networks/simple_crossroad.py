@@ -97,7 +97,7 @@ class OneCrossroadNetwork:
         current_config = self.DEFAULT_CONFIG
         for key in config:
             if key not in self.CONFIG_PARAMETER_LIST:
-                warnings.warn(f"The config parameter '{key}' is not a valid parameter.")
+                warnings.warn(f"The config parameter {key} is not a valid parameter.", stacklevel=2)
             current_config[key] = config[key]
 
         # Select parameters
@@ -229,7 +229,7 @@ class OneCrossroadNetwork:
         return flows
 
 
-    def generate_flows_every_direction(self, config={}):
+    def generate_flows_all_directions(self, config={}):
         """
         Generate flows for a simple crossroad.
         At the intersection, vehicles can go left, right or ahead. The proportion for each exit is uniform.
@@ -364,7 +364,7 @@ class OneCrossroadNetwork:
 
     ### Additionals ###
 
-    def numerical_detectors(self, config={}):
+    def generate_numerical_detectors(self, config={}):
         """
         Generate a DetectorBuilder with a numerical detector for each entry lane of the network.
         A numerical detector counts and returns the number of vehicles on its scope. In SUMO, a numerical
@@ -387,7 +387,7 @@ class OneCrossroadNetwork:
 
         return detectors
 
-    def boolean_detectors(self, config={}):
+    def generate_boolean_detectors(self, config={}):
         """
         Generate a DetectorBuilder with a boolean detector for each entry lane of the network.
         A boolean detector returns if a vehicle is on its scope or not. In SUMO, a boolean
@@ -518,7 +518,7 @@ class OneCrossroadNetwork:
 
         At the beginning of the simulation, The intersection is set to green for the west-east way
         and red for the north-south way.
-        When the traffic light detect more than the thresholf of cars on a lane where traffic light is red,
+        When the traffic light detect more than the threshold of cars on a lane where traffic light is red,
         the traffic light switch to the other phase if the current phase is set since more than the minimum
         duration time. Only stopped cars are considered in this strategy.
         If this condition doesn't occur, the traffic light switch to the other phase when the current phase

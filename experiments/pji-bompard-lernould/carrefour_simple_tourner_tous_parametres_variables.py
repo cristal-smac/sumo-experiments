@@ -30,7 +30,7 @@ if __name__ == '__main__':
 
                                 e = Experiment(f'exp_carrefour_simple_tourner_{i}',
                                                network=network.generate_infrastructures,
-                                               routes=network.generate_flows_every_direction)
+                                               routes=network.generate_flows_all_directions)
 
                                 e.set_variable('west_length', len_horizontal)
                                 e.set_variable('east_length', len_horizontal)
