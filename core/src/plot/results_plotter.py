@@ -36,7 +36,7 @@ class ResultsPlotter:
         :type n: int
         """
         fig, ax = plt.subplots()
-        noms_experiences = self.df['nom_exp'].to_numpy()
+        noms_experiences = self.df['exp_name'].to_numpy()
         results = np.zeros((self.df.shape[0], 1))
         for step in self.all_samples:
             colonne = self.df[f'meanWaitingTime_{step}']
@@ -63,7 +63,7 @@ class ResultsPlotter:
         :type n: int
         """
         fig, ax = plt.subplots()
-        noms_experiences = self.df['nom_exp'].to_numpy()
+        noms_experiences = self.df['exp_name'].to_numpy()
         results = np.zeros((self.df.shape[0], 1))
         for step in self.all_samples:
             colonne = self.df[f'meanWaitingTime_{step}']
@@ -90,7 +90,7 @@ class ResultsPlotter:
         :type n: int
         """
         fig, ax = plt.subplots()
-        noms_experiences = self.df['nom_exp'].to_numpy()
+        noms_experiences = self.df['exp_name'].to_numpy()
         results = np.zeros((self.df.shape[0], 1))
         for step in self.all_samples:
             colonne = self.df[f'meanTravelTime_{step}']
@@ -117,7 +117,7 @@ class ResultsPlotter:
         :type n: int
         """
         fig, ax = plt.subplots()
-        noms_experiences = self.df['nom_exp'].to_numpy()
+        noms_experiences = self.df['exp_name'].to_numpy()
         results = np.zeros((self.df.shape[0], 1))
         for step in self.all_samples:
             colonne = self.df[f'meanTravelTime_{step}']
@@ -144,7 +144,7 @@ class ResultsPlotter:
         :type n: int
         """
         fig, ax = plt.subplots()
-        noms_experiences = self.df['nom_exp'].to_numpy()
+        noms_experiences = self.df['exp_name'].to_numpy()
         results = np.zeros((self.df.shape[0], 1))
         for step in self.all_samples:
             colonne = self.df[f'meanSpeed_{step}']
@@ -171,7 +171,7 @@ class ResultsPlotter:
         :type n: int
         """
         fig, ax = plt.subplots()
-        noms_experiences = self.df['nom_exp'].to_numpy()
+        noms_experiences = self.df['exp_name'].to_numpy()
         results = np.zeros((self.df.shape[0], 1))
         for step in self.all_samples:
             colonne = self.df[f'meanSpeed_{step}']

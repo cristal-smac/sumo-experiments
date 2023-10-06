@@ -147,7 +147,6 @@ class InfrastructureBuilder:
         for connection in self.connections:
             connection.build(xml_connections)
         tree = ET.ElementTree(xml_connections)
-        print(type(tree))
         tree.write(filename)
 
     def add_traffic_light_program(self, id, phases):

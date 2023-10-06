@@ -25,7 +25,7 @@ class Experiment:
         self.routes = routes
         self.detectors = detectors
         self.name = name
-        self.config = {'nom_exp':name}
+        self.config = {'exp_name': name}
         self.files = {}
 
     def run(self, gui = False, seed = None):

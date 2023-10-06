@@ -25,12 +25,12 @@ class OneCrossroadNetwork:
     NS_GREEN_LIGHT = 2
 
     DEFAULT_CONFIG = {
-        'default_length': 100,
+        'lane_length': 100,
         'max_speed': 30,
-        'default_green_time': 30,
-        'default_yellow_time': 3,
-        'default_stop_generation_time': 1000,
-        'default_flow_density': 600,
+        'green_time': 30,
+        'yellow_time': 3,
+        'stop_generation_time': 1000,
+        'flow_density': 600,
         'period_time': 300,
         'load_vector': np.array([300, 600, 300]),
         'coeff_matrix': np.array([[0.0833, 0.0833, 0],
@@ -53,8 +53,8 @@ class OneCrossroadNetwork:
     }
 
     CONFIG_PARAMETER_LIST = [
-        "default_length", 'max_speed', 'default_green_time', 'default_yellow_time', 'default_stop_generation_time',
-        'default_flow_density', 'period_time', 'load_vector', 'coeff_matrix', 'min_duration_tl',
+        'exp_name', 'lane_length', 'max_speed', 'green_time', 'yellow_time',
+        'stop_generation_time', 'flow_density', 'period_time', 'load_vector', 'coeff_matrix', 'min_duration_tl',
         'max_duration_tl', 'vehicle_threshold', 'simulation_duration', 'north_length', 'east_length',
         'south_length', 'west_length', 'green_time_north_south', 'green_time_west_east', 'yellow_time_north_south',
         'yellow_time_west_east', 'stop_generation_time_north', 'stop_generation_time_east', 'stop_generation_time_south',
@@ -74,15 +74,15 @@ class OneCrossroadNetwork:
         A default configuration is set, and each modification in the config is modified in the default configuration.
 
         Valid parameters for config :
-        - "default_length" (int) : The default length for each lane (in meters)
+        - "lane_length" (int) : The default length for each lane (in meters)
         - "north_length" (int) : The north lane length (in meters), override default
         - "east_length" (int) : The east lane length (in meters), override default
         - "south_length" (int) : The south lane length (in meters), override default
         - "west_length" (int) : The west lane length (in meters), override default
-        - "default_green_time" (int) : The default green time for each phase (in seconds)
+        - "green_time" (int) : The default green time for each phase (in seconds)
         - "green_time_north_south" (int) : The north-south phase green time (in seconds), override default
         - "green_time_west_east" (int) : The west-east phase green time (in seconds), override default
-        - "default_yellow_time" (int) : The default yellow time for each phase (in seconds)
+        - "yellow_time" (int) : The default yellow time for each phase (in seconds)
         - "yellow_time_north_south" (int) : The north-south phase yellow time (in seconds), override default
         - "yellow_time_west_east" (int) : The west-east phase yellow time (in seconds), override default
         - "max_speed" (float) : The max speed on each lane
@@ -101,14 +101,14 @@ class OneCrossroadNetwork:
             current_config[key] = config[key]
 
         # Select parameters
-        len_north = current_config['north_length'] if 'north_length' in current_config else current_config['default_length']
-        len_east = current_config['east_length'] if 'east_length' in current_config else current_config['default_length']
-        len_south = current_config['south_length'] if 'south_length' in current_config else current_config['default_length']
-        len_west = current_config['west_length'] if 'west_length' in current_config else current_config['default_length']
-        gt_north_south = current_config['green_time_north_south'] if 'green_time_north_south' in current_config else current_config['default_green_time']
-        gt_west_east = current_config['green_time_west_east'] if 'green_time_west_east' in current_config else current_config['default_green_time']
-        yt_north_south = current_config['yellow_time_north_south'] if 'yellow_time_north_south' in current_config else current_config['default_yellow_time']
-        yt_west_east = current_config['yellow_time_west_east'] if 'yellow_time_west_east' in current_config else current_config['default_yellow_time']
+        len_north = current_config['north_length'] if 'north_length' in current_config else current_config['lane_length']
+        len_east = current_config['east_length'] if 'east_length' in current_config else current_config['lane_length']
+        len_south = current_config['south_length'] if 'south_length' in current_config else current_config['lane_length']
+        len_west = current_config['west_length'] if 'west_length' in current_config else current_config['lane_length']
+        gt_north_south = current_config['green_time_north_south'] if 'green_time_north_south' in current_config else current_config['green_time']
+        gt_west_east = current_config['green_time_west_east'] if 'green_time_west_east' in current_config else current_config['green_time']
+        yt_north_south = current_config['yellow_time_north_south'] if 'yellow_time_north_south' in current_config else current_config['yellow_time']
+        yt_west_east = current_config['yellow_time_west_east'] if 'yellow_time_west_east' in current_config else current_config['yellow_time']
         max_speed = current_config['max_speed']
 
         # Instantiation of the infrastructures builder
@@ -177,12 +177,12 @@ class OneCrossroadNetwork:
         simulation step where the flow will end.
 
         Valid parameters for config :
-        - "default_stop_generation_time" (int) : The default simulation step when flows will end
+        - "stop_generation_time" (int) : The default simulation step when flows will end
         - "stop_generation_time_north" (int) : The simulation step when north flows will end, override default
         - "stop_generation_time_east" (int) : The simulation step when east flows will end, override default
         - "stop_generation_time_south" (int) : The simulation step when south flows will end, override default
         - "stop_generation_time_west" (int) : The simulation step when west flows will end, override default
-        - "default_flow_density" (int) : The default flows density (in vehicles/hour)
+        - "flow_density" (int) : The default flows density (in vehicles/hour)
         - "flow_density_north" (int) : The north flows density (in vehicles/hour), override default
         - "flow_density_east" (int) : The east flows density (in vehicles/hour), override default
         - "flow_density_south" (int) : The south flows density (in vehicles/hour), override default
@@ -199,14 +199,14 @@ class OneCrossroadNetwork:
             current_config[key] = config[key]
 
         # Select parameters
-        stop_generation_time_north = current_config['stop_generation_time_north'] if 'stop_generation_time_north' in current_config else current_config['default_stop_generation_time']
-        stop_generation_time_east = current_config['stop_generation_time_east'] if 'stop_generation_time_east' in current_config else current_config['default_stop_generation_time']
-        stop_generation_time_south = current_config['stop_generation_time_south'] if 'stop_generation_time_south' in current_config else current_config['default_stop_generation_time']
-        stop_generation_time_west = current_config['stop_generation_time_west'] if 'stop_generation_time_west' in current_config else current_config['default_stop_generation_time']
-        flow_density_north = current_config['flow_density_north'] if 'flow_density_north' in current_config else current_config['default_flow_density']
-        flow_density_east = current_config['flow_density_east'] if 'flow_density_east' in current_config else current_config['default_flow_density']
-        flow_density_south = current_config['flow_density_south'] if 'flow_density_south' in current_config else current_config['default_flow_density']
-        flow_density_west = current_config['flow_density_west'] if 'flow_density_west' in current_config else current_config['default_flow_density']
+        stop_generation_time_north = current_config['stop_generation_time_north'] if 'stop_generation_time_north' in current_config else current_config['stop_generation_time']
+        stop_generation_time_east = current_config['stop_generation_time_east'] if 'stop_generation_time_east' in current_config else current_config['stop_generation_time']
+        stop_generation_time_south = current_config['stop_generation_time_south'] if 'stop_generation_time_south' in current_config else current_config['stop_generation_time']
+        stop_generation_time_west = current_config['stop_generation_time_west'] if 'stop_generation_time_west' in current_config else current_config['stop_generation_time']
+        flow_density_north = current_config['flow_density_north'] if 'flow_density_north' in current_config else current_config['flow_density']
+        flow_density_east = current_config['flow_density_east'] if 'flow_density_east' in current_config else current_config['flow_density']
+        flow_density_south = current_config['flow_density_south'] if 'flow_density_south' in current_config else current_config['flow_density']
+        flow_density_west = current_config['flow_density_west'] if 'flow_density_west' in current_config else current_config['flow_density']
 
         # Intantiation of flows builder
         flows = FlowBuilder()
@@ -216,9 +216,9 @@ class OneCrossroadNetwork:
 
         # Create routes
         flows.add_route(id='route_we', type='car0', from_edge='edge_wc', to_edge='edge_ce')
-        flows.add_route(id='route_ew', type='car0', from_edge='edge_ce', to_edge='edge_wc')
+        flows.add_route(id='route_ew', type='car0', from_edge='edge_ec', to_edge='edge_cw')
         flows.add_route(id='route_sn', type='car0', from_edge='edge_sc', to_edge='edge_cn')
-        flows.add_route(id='route_ns', type='car0', from_edge='edge_cn', to_edge='edge_sc')
+        flows.add_route(id='route_ns', type='car0', from_edge='edge_nc', to_edge='edge_cs')
 
         # Create flows
         flows.add_flow(id='flow_we', route='route_we', end=stop_generation_time_west, density=flow_density_west, v_type='car0')
@@ -237,12 +237,12 @@ class OneCrossroadNetwork:
         simulation step where the flow will end.
 
         Valid parameters for config :
-        - "default_stop_generation_time" (int) : The default simulation step when flows will end
+        - "stop_generation_time" (int) : The default simulation step when flows will end
         - "stop_generation_time_north" (int) : The simulation step when north flows will end, override default
         - "stop_generation_time_east" (int) : The simulation step when east flows will end, override default
         - "stop_generation_time_south" (int) : The simulation step when south flows will end, override default
         - "stop_generation_time_west" (int) : The simulation step when west flows will end, override default
-        - "default_flow_density" (int) : The default flows density (in vehicles/hour)
+        - "flow_density" (int) : The default flows density (in vehicles/hour)
         - "flow_density_north" (int) : The north flows density (in vehicles/hour), override default
         - "flow_density_east" (int) : The east flows density (in vehicles/hour), override default
         - "flow_density_south" (int) : The south flows density (in vehicles/hour), override default
@@ -259,14 +259,14 @@ class OneCrossroadNetwork:
             current_config[key] = config[key]
 
         # Select parameters
-        stop_generation_time_north = current_config['stop_generation_time_north'] if 'stop_generation_time_north' in current_config else current_config['default_stop_generation_time']
-        stop_generation_time_east = current_config['stop_generation_time_east'] if 'stop_generation_time_east' in current_config else current_config['default_stop_generation_time']
-        stop_generation_time_south = current_config['stop_generation_time_south'] if 'stop_generation_time_south' in current_config else current_config['default_stop_generation_time']
-        stop_generation_time_west = current_config['stop_generation_time_west'] if 'stop_generation_time_west' in current_config else current_config['default_stop_generation_time']
-        flow_density_north = current_config['flow_density_north'] if 'flow_density_north' in current_config else current_config['default_flow_density']
-        flow_density_east = current_config['flow_density_east'] if 'flow_density_east' in current_config else current_config['default_flow_density']
-        flow_density_south = current_config['flow_density_south'] if 'flow_density_south' in current_config else current_config['default_flow_density']
-        flow_density_west = current_config['flow_density_west'] if 'flow_density_west' in current_config else current_config['default_flow_density']
+        stop_generation_time_north = current_config['stop_generation_time_north'] if 'stop_generation_time_north' in current_config else current_config['stop_generation_time']
+        stop_generation_time_east = current_config['stop_generation_time_east'] if 'stop_generation_time_east' in current_config else current_config['stop_generation_time']
+        stop_generation_time_south = current_config['stop_generation_time_south'] if 'stop_generation_time_south' in current_config else current_config['stop_generation_time']
+        stop_generation_time_west = current_config['stop_generation_time_west'] if 'stop_generation_time_west' in current_config else current_config['stop_generation_time']
+        flow_density_north = current_config['flow_density_north'] if 'flow_density_north' in current_config else current_config['flow_density']
+        flow_density_east = current_config['flow_density_east'] if 'flow_density_east' in current_config else current_config['flow_density']
+        flow_density_south = current_config['flow_density_south'] if 'flow_density_south' in current_config else current_config['flow_density']
+        flow_density_west = current_config['flow_density_west'] if 'flow_density_west' in current_config else current_config['flow_density']
 
         # Instantiation of flows builder
         flows = FlowBuilder()
@@ -395,7 +395,7 @@ class OneCrossroadNetwork:
         from the beginning to the end.
 
         Valid parameters for config :
-        - "default_length" (int) : The default length for each lane (in meters)
+        - "lane_length" (int) : The default length for each lane (in meters)
         - "north_length" (int) : The north lane length (in meters), override default
         - "east_length" (int) : The east lane length (in meters), override default
         - "south_length" (int) : The south lane length (in meters), override default
@@ -414,10 +414,10 @@ class OneCrossroadNetwork:
 
         # Select parameters
         boolean_detector_length = current_config['boolean_detector_length']
-        len_north = current_config['north_length'] if 'north_length' in current_config else current_config['default_length']
-        len_east = current_config['east_length'] if 'east_length' in current_config else current_config['default_length']
-        len_south = current_config['south_length'] if 'south_length' in current_config else current_config['default_length']
-        len_west = current_config['west_length'] if 'west_length' in current_config else current_config['default_length']
+        len_north = current_config['north_length'] if 'north_length' in current_config else current_config['lane_length']
+        len_east = current_config['east_length'] if 'east_length' in current_config else current_config['lane_length']
+        len_south = current_config['south_length'] if 'south_length' in current_config else current_config['lane_length']
+        len_west = current_config['west_length'] if 'west_length' in current_config else current_config['lane_length']
 
         detectors = DetectorBuilder()
 

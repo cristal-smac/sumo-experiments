@@ -18,13 +18,12 @@ if __name__ == "__main__":
 
     e = Experiment('test_multi_flux',
                    network=network.generate_infrastructures,
-                   routes=network.generate_flows_with_matrix,
-                   detectors=network.no_detectors)
+                   routes=network.generate_flows_with_matrix)
 
-    e.set_variable('default_len', lane_length)
-    e.set_variable('default_speed', speed_value)
-    e.set_variable('default_green_time', gt_value)
-    e.set_variable('default_yellow_time', yt_value)
+    e.set_variable('lane_length', lane_length)
+    e.set_variable('max_speed', speed_value)
+    e.set_variable('green_time', gt_value)
+    e.set_variable('yellow_time', yt_value)
 
     zero = 0.001        # SUMO n'admet pas de flux égal à 0
     
@@ -50,7 +49,7 @@ if __name__ == "__main__":
 
     e.set_variable('coeff_matrix', coeff_matrix)
     e.set_variable('load_vector', load_vector)
-    e.set_variable('nb_ticks', nb_ticks)
+    e.set_variable('period_time', nb_ticks)
 
     e.run(gui=True)
 

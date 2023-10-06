@@ -24,24 +24,15 @@ if __name__ == '__main__':
         n_vehicles_h = 100 + 50 * i
 
         e = Experiment(f'exp_carrefour_simple_flux_variables_egaux_temps_fixe{i}',
-                       network=network.simple_crossroad_network,
-                       routes=network.generate_flows_only_ahead,
-                       detectors=network.no_detectors)
+                       network=network.generate_infrastructures,
+                       routes=network.generate_flows_only_ahead)
 
         e.set_variable('stop_generation_time', 900)
-        e.set_variable('w_e_flow', n_vehicles_h)
-        e.set_variable('s_n_flow', n_vehicles_h)
-
-        e.set_variable('default_len', 100)
-        e.set_variable('w_e_len', 100)
-        e.set_variable('s_n_len', 100)
-
-        e.set_variable('w_e_speed', 15)
-        e.set_variable('s_n_speed', 15)
-
-        e.set_variable('w_e_green_time', t_g)
-        e.set_variable('s_n_green_time', t_g)
-        e.set_variable('default_yellow_time', 5)
+        e.set_variable('flow_density', n_vehicles_h)
+        e.set_variable('lane_length', 100)
+        e.set_variable('max_speed', 15)
+        e.set_variable('gree_time', t_g)
+        e.set_variable('yellow_time', 5)
 
         e.run()
 

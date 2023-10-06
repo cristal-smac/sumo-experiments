@@ -7,7 +7,8 @@ from core.src.plot import ResultsPlotter
 
 if __name__ == '__main__':
 
-    os.remove("../../csv/exp_plots.csv")
+    if os.path.exists("../../csv/exp_plots.csv"):
+        os.remove("../../csv/exp_plots.csv")
 
     params_file = "../../csv/parameters/simple_carrefour.csv"
 
@@ -27,10 +28,10 @@ if __name__ == '__main__':
                        detectors=network.numerical_detectors)
 
         # Variables de réseau
-        e.set_variable('default_len', lane_length)
-        e.set_variable('default_speed', speed_value)
-        e.set_variable('default_green_time', gt_value)
-        e.set_variable('default_yellow_time', yt_value)
+        e.set_variable('lane_length', lane_length)
+        e.set_variable('max_speed', speed_value)
+        e.set_variable('green_time', gt_value)
+        e.set_variable('yellow_time', yt_value)
         e.set_variable('boolean_detector_length', 7.5)
 
         load_vector, coeff_matrix = import_flows_parameters_from_csv(params_file)
@@ -40,8 +41,7 @@ if __name__ == '__main__':
         # Variables de flux
         e.set_variable('coeff_matrix', coeff_matrix)
         e.set_variable('load_vector', load_vector)
-        e.set_variable("params_file", params_file)
-        e.set_variable('nb_ticks', nb_ticks)
+        e.set_variable('period_time', nb_ticks)
 
         # Temps de simulation
         e.set_simulation_time(nb_ticks * (len(load_vector) + 1) + 1) # x * nb_ticks du durée + 1* nb_ticks pour observer la dernière configuration
@@ -49,7 +49,7 @@ if __name__ == '__main__':
         # Variables Traci
         e.set_variable('min_duration_tl', 10)
         e.set_variable('max_duration_tl', 30)
-        e.set_variable('seuil_vehicules', seuil)
+        e.set_variable('vehicle_threshold', seuil)
 
         e.run_traci(network.numerical_detection_all_vehicles)
 

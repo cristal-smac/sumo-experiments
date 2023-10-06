@@ -4,7 +4,7 @@ from core.src.experiment import Experiment
 from core.src.util import import_flows_parameters_from_csv
 from core.src.preset_networks import OneCrossroadNetwork
 
-sys.path.append(os.path.join(sys.path[0],'..'))
+sys.path.append(os.path.join(sys.path[0], '..'))
 
 
 if __name__ == '__main__':
@@ -44,13 +44,12 @@ if __name__ == '__main__':
     # Variables de flux
     e.set_variable('coeff_matrix', coeff_matrix)
     e.set_variable('load_vector', load_vector)
-    e.set_variable("params_file", params_file)
     e.set_variable('period_time', nb_ticks)
     
-    e.set_variable('default_length', lane_length)
+    e.set_variable('lane_length', lane_length)
     e.set_variable('max_speed', speed_value)
-    e.set_variable('default_green_time', gt_value[2])
-    e.set_variable('default_yellow_time', yt_value)
+    e.set_variable('green_time', gt_value[2])
+    e.set_variable('yellow_time', yt_value)
 
     e.set_simulation_time(nb_ticks * (len(load_vector) + 1) + 1) # x * nb_ticks du durée + 1* nb_ticks pour observer la dernière configuration
 
