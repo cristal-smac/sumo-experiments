@@ -29,7 +29,7 @@ class DetectorBuilder:
         tree = ET.ElementTree(xml_additional)
         tree.write(filenames['detectors'])
 
-    def add_laneAreaDetector(self, id, lane, pos=0, end_pos=-0.1, freq=100000, file="detectors.out"):
+    def add_laneAreaDetector(self, id, lane, pos=0, end_pos=-0.1, freq=100000):
         """
         Add a E2 detector to the object.
         :param id: ID of detector
@@ -45,7 +45,7 @@ class DetectorBuilder:
         :param file: The file where the detector will be saved
         :type file: str
         """
-        self.laneAreaDetectors[id] = LaneAreaDetector(id, lane, pos, end_pos, freq, file)
+        self.laneAreaDetectors[id] = LaneAreaDetector(id, lane, pos, end_pos, freq, 'detectors.out')
 
     def build_laneAreaDetectors(self, xml):
         """

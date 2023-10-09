@@ -32,28 +32,26 @@ if __name__ == '__main__':
             sn_t = temps_vert * (flux_vertical / (flux_vertical + flux_horizontal))
 
             # Instanciation de l'expérience
-            e = Experiment(f'carrefour_simple_flux_variables_par_temps{i}',
-                           network=network.generate_infrastructures,
-                           routes=network.generate_flows_only_ahead)
+            e = Experiment(f'carrefour_simple_flux_variables_par_temps{i}', network=network.generate_infrastructures, flows=network.generate_flows_only_ahead)
 
             # Configuration de l'expérience
-            e.set_variable('stop_generation_time', 900)
-            e.set_variable('flow_density_east', flux_horizontal)
-            e.set_variable('flow_density_west', flux_horizontal)
-            e.set_variable('flow_density_south', flux_vertical)
-            e.set_variable('flow_density_north', flux_vertical)
+            e.set_parameter('stop_generation_time', 900)
+            e.set_parameter('flow_density_east', flux_horizontal)
+            e.set_parameter('flow_density_west', flux_horizontal)
+            e.set_parameter('flow_density_south', flux_vertical)
+            e.set_parameter('flow_density_north', flux_vertical)
 
-            e.set_variable('lane_length', 100)
-            e.set_variable('max_speed', 16.89)
+            e.set_parameter('lane_length', 100)
+            e.set_parameter('max_speed', 16.89)
 
-            e.set_variable('yellow_time', 3)
-            e.set_variable('green_time_west_east', we_t)
-            e.set_variable('green_time_north_south', sn_t)
+            e.set_parameter('yellow_time', 3)
+            e.set_parameter('green_time_west_east', we_t)
+            e.set_parameter('green_time_north_south', sn_t)
 
             # Lancement de l'expérience
             e.run()
 
-            e.cleanFiles(delete_summary=False, delete_queue=True)
+            e.clean_files(except_summary=True)
 
             output_files += f'{e.files["summaryxml"]}'
             legend += f'"Temps cycle = {temps_vert}"'

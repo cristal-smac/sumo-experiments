@@ -32,42 +32,40 @@ if __name__ == '__main__':
                                             for gt_vertical1 in gt_values:
                                                 for gt_vertical2 in gt_values:
 
-                                                    e = Experiment(f'exp_carrefour_double_tous_parametres_variables{i}',
-                                                                   network=network.generate_infrastructures,
-                                                                   routes=network.generate_flows_only_ahead)
+                                                    e = Experiment(f'exp_carrefour_double_tous_parametres_variables{i}', network=network.generate_infrastructures, flows=network.generate_flows_only_ahead)
 
-                                                    e.set_variable('lane_length', 100)
-                                                    e.set_variable('west_length', len_horizontal)
-                                                    e.set_variable('east_length', len_horizontal)
-                                                    e.set_variable('north_1_length', len_vertical1)
-                                                    e.set_variable('south_1_length', len_vertical1)
-                                                    e.set_variable('north_2_length', len_vertical2)
-                                                    e.set_variable('south_2_length', len_vertical2)
-                                                    e.set_variable('center_length', middle_len)
+                                                    e.set_parameter('lane_length', 100)
+                                                    e.set_parameter('west_length', len_horizontal)
+                                                    e.set_parameter('east_length', len_horizontal)
+                                                    e.set_parameter('north_1_length', len_vertical1)
+                                                    e.set_parameter('south_1_length', len_vertical1)
+                                                    e.set_parameter('north_2_length', len_vertical2)
+                                                    e.set_parameter('south_2_length', len_vertical2)
+                                                    e.set_parameter('center_length', middle_len)
 
-                                                    e.set_variable('stop_generation_time', 900)
-                                                    e.set_variable('flow_density_west', flux_horizontal)
-                                                    e.set_variable('flow_density_east', flux_horizontal)
-                                                    e.set_variable('flow_density_north_1', flux_vertical1)
-                                                    e.set_variable('flow_density_south_1', flux_vertical1)
-                                                    e.set_variable('flow_density_north_2', flux_vertical2)
-                                                    e.set_variable('flow_density_south_2', flux_vertical2)
+                                                    e.set_parameter('stop_generation_time', 900)
+                                                    e.set_parameter('flow_density_west', flux_horizontal)
+                                                    e.set_parameter('flow_density_east', flux_horizontal)
+                                                    e.set_parameter('flow_density_north_1', flux_vertical1)
+                                                    e.set_parameter('flow_density_south_1', flux_vertical1)
+                                                    e.set_parameter('flow_density_north_2', flux_vertical2)
+                                                    e.set_parameter('flow_density_south_2', flux_vertical2)
 
-                                                    e.set_variable('max_speed', max_speed)
+                                                    e.set_parameter('max_speed', max_speed)
 
-                                                    e.set_variable('green_time_west_east_1', gt_horizontal1)
-                                                    e.set_variable('green_time_north_south_1', gt_vertical1)
-                                                    e.set_variable('green_time_west_east_2', gt_horizontal2)
-                                                    e.set_variable('green_time_north_south_2', gt_vertical2)
-                                                    e.set_variable('yellow_time', 3)
+                                                    e.set_parameter('green_time_west_east_1', gt_horizontal1)
+                                                    e.set_parameter('green_time_north_south_1', gt_vertical1)
+                                                    e.set_parameter('green_time_west_east_2', gt_horizontal2)
+                                                    e.set_parameter('green_time_north_south_2', gt_vertical2)
+                                                    e.set_parameter('yellow_time', 3)
 
-                                                    e.set_simulation_time(3601)
+                                                    e.set_parameter('simulation_duration', 3601)
 
                                                     e.run()
 
                                                     e.export_results_to_csv('../../csv/exp_carrefour_double_tous_parametres_variables.csv', sampling_rate=900)
 
-                                                    e.cleanFiles(delete_summary=True, delete_queue=True)
+                                                    e.clean_files()
 
                                                     i += 1
                                                     print(f'{i}/{nb_exp} => {round((i/nb_exp)*100, 4)}%')

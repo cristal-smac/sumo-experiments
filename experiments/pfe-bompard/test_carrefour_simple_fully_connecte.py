@@ -24,28 +24,26 @@ if __name__ == '__main__':
 
     network = OneCrossroadNetwork()
 
-    e = Experiment(f'test_reseau_fully_connected',
-                   network=network.generate_infrastructures,
-                   routes=network.generate_flows_with_matrix)
+    e = Experiment(f'test_reseau_fully_connected', network=network.generate_infrastructures, flows=network.generate_flows_with_matrix)
 
     load_vector, coeff_matrix = import_flows_parameters_from_csv(params_file)
 
     period_time = 300       # Nombre de ticks par période de flux
 
     # Variables de flux
-    e.set_variable('coeff_matrix', coeff_matrix)
-    e.set_variable('load_vector', load_vector)
-    e.set_variable("params_file", params_file)
-    e.set_variable('period_time', period_time)
-    
-    e.set_variable('lane_length', lane_length)
-    e.set_variable('max_speed', speed_value)
-    e.set_variable('green_time', gt_value)
-    e.set_variable('yellow_time', yt_value)
-    e.set_variable('flow_density', flow_value)
+    e.set_parameter('coeff_matrix', coeff_matrix)
+    e.set_parameter('load_vector', load_vector)
+    e.set_parameter("params_file", params_file)
+    e.set_parameter('period_time', period_time)
 
-    e.set_simulation_time(3601)
+    e.set_parameter('lane_length', lane_length)
+    e.set_parameter('max_speed', speed_value)
+    e.set_parameter('green_time', gt_value)
+    e.set_parameter('yellow_time', yt_value)
+    e.set_parameter('flow_density', flow_value)
+
+    e.set_parameter('simulation_duration', 3601)
 
     e.run(gui=True)
 
-    e.cleanFiles(delete_summary=True, delete_queue=True)
+    e.clean_files()

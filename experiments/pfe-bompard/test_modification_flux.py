@@ -16,14 +16,12 @@ if __name__ == "__main__":
 
     network = OneCrossroadNetwork()
 
-    e = Experiment('test_multi_flux',
-                   network=network.generate_infrastructures,
-                   routes=network.generate_flows_with_matrix)
+    e = Experiment('test_multi_flux', network=network.generate_infrastructures, flows=network.generate_flows_with_matrix)
 
-    e.set_variable('lane_length', lane_length)
-    e.set_variable('max_speed', speed_value)
-    e.set_variable('green_time', gt_value)
-    e.set_variable('yellow_time', yt_value)
+    e.set_parameter('lane_length', lane_length)
+    e.set_parameter('max_speed', speed_value)
+    e.set_parameter('green_time', gt_value)
+    e.set_parameter('yellow_time', yt_value)
 
     zero = 0.001        # SUMO n'admet pas de flux égal à 0
     
@@ -47,10 +45,10 @@ if __name__ == "__main__":
 
     nb_ticks = 300       # Nombre de ticks par période de flux
 
-    e.set_variable('coeff_matrix', coeff_matrix)
-    e.set_variable('load_vector', load_vector)
-    e.set_variable('period_time', nb_ticks)
+    e.set_parameter('coeff_matrix', coeff_matrix)
+    e.set_parameter('load_vector', load_vector)
+    e.set_parameter('period_time', nb_ticks)
 
     e.run(gui=True)
 
-    e.cleanFiles(delete_summary=True, delete_queue=True)
+    e.clean_files()

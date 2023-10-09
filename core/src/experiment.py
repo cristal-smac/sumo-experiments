@@ -11,34 +11,56 @@ import traci
 
 class Experiment:
     """
-    Classe qui représente un expérience à réaliser avec SUMO
+    This class creates and runs experiments with the SUMO simulator.
+    The aim of this class is to easily generate all the configuration files to run a SUMO simulation.
+    It also provides some useful functions to manage configuration files, and export data from simulations.
+
+    To run an experiment, you need to define a function that generates the infrastructures for a network,
+    and another that generates the flows. You can also add some optional functions generating optional
+    elements of the network. If you don't want to define a full network, some preset networks are
+    available, but you need to define the parameters to use it. After this, you can run the simulation
+    with the function run that will build config files and launch SUMO. You can also run a simulation with Traci
+    if you define a strategy that controls the infrastructures simulation step by simulation step. We highly
+    recommand to use the clean files function after your experiments, to clean the repository from all
+    configuration files.
     """
-    def __init__(self, name, network, routes, detectors=None):
+
+
+    def __init__(self, name, network, flows, detectors=None):
         """
-        Constructeur de la classe Experiment
-        :param name: Nom de l'expérience
-        :param network: Réseau de l'expérience (classe Network)
-        :param routes: Routes de l'expérience (classe Routes)
-        :param detectors: Détecteurs de l'expérience
+        Init of class.
+        :param name: The name of the experiment
+        :type name: str
+        :param network: The function that creates the network infrastructures. Must return a InfrastructureBuilder object.
+        :type network: function
+        :param flows: The function that creates network flows. Must return a FlowBuilder object.
+        :type flows: function
+        :param detectors: The function that creates network detectors. Must return a DetectorBuilder object.
+        :type detectors: function
         """
         self.network = network
-        self.routes = routes
+        self.flows = flows
         self.detectors = detectors
         self.name = name
         self.config = {'exp_name': name}
         self.files = {}
 
-    def run(self, gui = False, seed = None):
+    def run(self, gui=False, seed=None):
         """
-        Lance l'expérience
+        Launch an SUMO simulation with the network configuration.
+        First build the configuration files and then launch SUMO.
+        :param gui: True to run SUMO in graphical mode. False otherwise.
+        :type gui: bool
+        :param seed: The seed of the simulation. Same seeds = same simulations.
+        :type seed: int
         """
-        self.generateFileNames()
-        self.routes(self.config).build(self.files)
+        self.generate_file_names()
+        self.flows(self.config).build(self.files)
         self.network(self.config).build(self.files)
         if self.detectors is not None:
             self.detectors(self.config).build(self.files)
         os.system(f'$SUMO_HOME/bin/netconvert -n {self.files["nodes"]} -e {self.files["edges"]} -x {self.files["connections"]} -i {self.files["trafic_light_programs"]} -t {self.files["types"]} -o {self.files["network"]}')
-        args = self.buildArguments()
+        args = self.build_arguments()
         if gui:
             if seed is None:
                 os.system(f'$SUMO_HOME/bin/sumo-gui {args} --random')
@@ -54,26 +76,39 @@ class Experiment:
 
 
 
-    def run_traci(self, fonction_traci, gui=False):
+    def run_traci(self, traci_function, gui=False, seed=None):
         """
-        Lance l'expérience avec l'API Traci
-        Le comportement de Traci est choisi par la fonction "fonction_traci".
-        Si le nombre de véhicule en attente dépasse 6, le feu passe au vert.
+        Launch an SUMO simulation with the network configuration.
+        First build the configuration files and then launch SUMO.
+        This function uses TraCi, which means that the infrastructures can be controlled
+        simulation steps by simpulation steps. So a function using TraCi must be defined
+        to run SUMO with TraCi.
+        :param traci_function: The function using TraCi package and that can control infrastructures.
+        :type: function
+        :param gui: True to run SUMO in graphical mode. False otherwise.
+        :type gui: bool
+        :param seed: The seed of the simulation. Same seeds = same simulations.
+        :type seed: int
         """
-        self.generateFileNames()
-        self.routes(self.config).build(self.files)
+        self.generate_file_names()
+        self.flows(self.config).build(self.files)
         self.network(self.config).build(self.files)
         self.detectors(self.config).build(self.files)
         os.system(f'$SUMO_HOME/bin/netconvert -n {self.files["nodes"]} -e {self.files["edges"]} -x {self.files["connections"]} -i {self.files["trafic_light_programs"]} -t {self.files["types"]} -o {self.files["network"]}')
-        args = self.buildArguments()
+        args = self.build_arguments()
 
-        # Spécifique Traci
         if gui:
-            traci.start(["sumo-gui"] + args.split())
+            if seed is None:
+                traci.start(["sumo-gui"] + args.split() + ['--random'])
+            else:
+                traci.start(["sumo-gui"] + args.split() + ['--seed', seed])
         else:
-            traci.start(["sumo"] + args.split())
+            if seed is None:
+                traci.start(["sumo"] + args.split() + ['--random'])
+            else:
+                traci.start(["sumo"] + args.split() + ['--seed', seed])
             
-        fonction_traci(self.config)
+        traci_function(self.config)
 
         traci.close()
 
@@ -82,26 +117,28 @@ class Experiment:
 
 
 
-    def cleanFiles(self, delete_summary=False, delete_queue=False):
+    def clean_files(self, except_summary=False, except_queue=False):
         """
-        Supprime les fichiers de l'expérience
-        :param delete_summary: Supprime le fichier de sortie summary de l'expérience si True
-        :param delete_queue: Supprime le fichier de sortie queue de l'expérience si True
+        Delete simulation config files.
+        :param except_summary: Doesn't delete summary files if True
+        :type except_summary: bool
+        :param except_queue: Doesn't delete queue files if
+        :type except_queue: bool
         """
         for file in self.files.values():
             if os.path.exists(file):
                 if (file == self.files['summaryxml'] or file == self.files['summarycsv']):
-                    if delete_summary:
+                    if not except_summary:
                         os.remove(file)
                 elif (file == self.files['queuexml'] or file == self.files['queuecsv']):
-                    if delete_queue:
+                    if not except_queue:
                         os.remove(file)
                 else:
                     os.remove(file)
 
-    def buildArguments(self):
+    def build_arguments(self):
         """
-        Construit les arguments de lancement de SUMO
+        Build the arguments to launch SUMO with a command line.
         """
         args = ''
         args += f'-n {self.files["network"]} '
@@ -114,31 +151,27 @@ class Experiment:
             args += f'-e {self.config["simulation_duration"]} '
         return args
 
-    def set_variable(self, key, value):
-        self.config[key] = value
-        return self
-
-    def set_simulation_time(self, value):
-        self.config['simulation_duration'] = value
-        return self
+    def set_parameter(self, name, value):
+        """
+        Add a parameter to the experiment configuration.
+        :param name: The name of the parameter
+        :type name: str
+        :param value: The value of the parameter
+        """
+        self.config[name] = value
 
     def export_results_to_csv(self, filename, sampling_rate):
         """
-        Exporte les résultats de l'expérience dans un fichier CSV
-        :param filename: Nom du fichier CSV
-        :param sampling_rate: le nombre de secondes entre deux mesures
+        Export experiment results in a CSV file.
+        This function appends results of the experiment to the rest of file. It doesn't overwrite.
+        Creates the file if it doesn't exist.
+        :param filename: CSV file name
+        :type filename: str
+        :param sampling_rate: Number of simulation steps between two measurements
+        :type sampling_rate: int
         """
         summary_data = pd.read_csv(self.files["summarycsv"])
         # queue_data = pd.read_csv(self.files["queuecsv"])
-
-
-        # queue_data.replace('edge_sc_0', 1, inplace=True)
-        # queue_data.replace('edge_wc_0', 2, inplace=True)
-        # queue_data.replace(':c_1_0', 3, inplace=True)
-        # queue_data.replace(np.nan, 0, inplace=True)
-        # queue_data['lane_id'] = pd.to_numeric(queue_data['lane_id'])
-
-        # queue_data.drop_duplicates(subset=['data_timestep'], keep='first', inplace=True)
 
         samples = np.arange(start=sampling_rate, stop=summary_data.shape[0], step=sampling_rate)
 
@@ -147,7 +180,7 @@ class Experiment:
 
             # Columns titles
             for key in self.config:
-                # Pour éviter les matrices dans le fichier de résultats
+                # To avoid matrices in CSV
                 if not (key == "coeff_matrix" or key == "load_vector"):
                     f.write(f'{key},')
             for s in samples:
@@ -162,14 +195,6 @@ class Experiment:
             for key in self.config:
                 if not (key == "coeff_matrix" or key == "load_vector"):
                     f.write(f'{self.config[key]},')
-            
-            # flow_ratio = self.config["w_e_flow"] / self.config["s_n_flow"]
-            # gt_ratio = self.config["w_e_green_time"] / self.config["s_n_green_time"]
-
-            # if math.isclose(flow_ratio, gt_ratio, rel_tol=0, abs_tol=0.11):
-            #     f.write(f'1,')
-            # else:
-            #     f.write(f'0,')
 
             for s in samples:
                 loaded = summary_data.loc[s]['step_loaded']
@@ -179,19 +204,18 @@ class Experiment:
                 ended = summary_data.loc[s]['step_ended']
                 halting = summary_data.loc[s]['step_halting']
                 stopped = summary_data.loc[s]['step_stopped']
-                meanWaitingTime = summary_data.loc[s]['step_meanWaitingTime']
-                meanTravelTime = summary_data.loc[s]['step_meanTravelTime']
-                meanSpeed = summary_data.loc[s]['step_meanSpeed']
-                f.write(f'{loaded},{inserted},{running},{waiting},{ended},{halting},{stopped},{meanWaitingTime},{meanTravelTime},{meanSpeed}')
+                mean_waiting_time = summary_data.loc[s]['step_meanWaitingTime']
+                mean_travel_time = summary_data.loc[s]['step_meanTravelTime']
+                mean_speed = summary_data.loc[s]['step_meanSpeed']
+                f.write(f'{loaded},{inserted},{running},{waiting},{ended},{halting},{stopped},{mean_waiting_time},{mean_travel_time},{mean_speed}')
                 if s != samples[-1]:
                     f.write(',')
 
             f.write('\n')
 
-    def generateFileNames(self):
+    def generate_file_names(self):
         """
-        Génère les noms des fichiers qui seront générés par le programme
-        Les noms sont sauvegardés dans l'attribut files
+        Generates file names for all SUMO config files.
         """
         self.files = {
             'nodes': f'{self.name}.nod.xml',
@@ -206,6 +230,7 @@ class Experiment:
             'summarycsv': f'summary_{self.name}.csv',
             'queuexml': f'queue_{self.name}.xml',
             'queuecsv': f'queue_{self.name}.csv',
+            'detectors_out': 'detectors.out'
         }
 
 

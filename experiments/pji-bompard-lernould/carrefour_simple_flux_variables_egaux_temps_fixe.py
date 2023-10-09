@@ -23,20 +23,18 @@ if __name__ == '__main__':
 
         n_vehicles_h = 100 + 50 * i
 
-        e = Experiment(f'exp_carrefour_simple_flux_variables_egaux_temps_fixe{i}',
-                       network=network.generate_infrastructures,
-                       routes=network.generate_flows_only_ahead)
+        e = Experiment(f'exp_carrefour_simple_flux_variables_egaux_temps_fixe{i}', network=network.generate_infrastructures, flows=network.generate_flows_only_ahead)
 
-        e.set_variable('stop_generation_time', 900)
-        e.set_variable('flow_density', n_vehicles_h)
-        e.set_variable('lane_length', 100)
-        e.set_variable('max_speed', 15)
-        e.set_variable('green_time', t_g)
-        e.set_variable('yellow_time', 5)
+        e.set_parameter('stop_generation_time', 900)
+        e.set_parameter('flow_density', n_vehicles_h)
+        e.set_parameter('lane_length', 100)
+        e.set_parameter('max_speed', 15)
+        e.set_parameter('green_time', t_g)
+        e.set_parameter('yellow_time', 5)
 
         e.run()
 
-        e.cleanFiles(delete_summary=False, delete_queue=True)
+        e.clean_files(except_summary=True)
 
         output_files += f'{e.files["summaryxml"]}'
         legend += f'"Flux = {n_vehicles_h}"'
