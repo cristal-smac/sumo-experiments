@@ -2,12 +2,16 @@ import numpy as np
 
 def import_flows_parameters_from_csv(file, delimiter=','):
     """
-        Fonction permettant d'importer la matrice de coefficients et le vecteur de charge pour les expériences à flux variables.
-
-        :param file: Le chemin du fichier.
+    Load the load vector and coff matrix from a csv file, to be used with flows generated with a matrix.
+    The load vector and the matrix are of type numpy.array.
+    :param file: The path to the file where flows data are stored
+    :type file: str
+    :param delimiter: Separation character between columns in the CSV file
+    :type delimiter: str
+    :return: A tuple containing the load vector in first position, and the matrix in second position.
+    :rtype: tuple
     """
-
     data = np.genfromtxt(file, delimiter=delimiter)
-    vecteur_charge = data[0]
+    load_vector = data[0]
     coeff_matrix = data[1:]
-    return vecteur_charge, coeff_matrix
+    return load_vector, coeff_matrix
