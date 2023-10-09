@@ -20,7 +20,7 @@ class TwoCrossroadsNetwork:
 
         It is not possible to combine certain functions to generate a SUMO network.
         Check the documentation of functions for more information.
-        """
+    """
 
     GREEN_LIGHT_HORIZONTAL_1 = 0
     GREEN_LIGHT_VERTICAL_1 = 2
@@ -35,19 +35,6 @@ class TwoCrossroadsNetwork:
         'stop_generation_time': 1000,
         'flow_density': 600,
         'period_time': 300,
-        'load_vector': np.array([300, 600, 300]),
-        'coeff_matrix': np.array([[0.0833, 0.0833, 0],
-                                  [0.0833, 0.0833, 0],
-                                  [0.0833, 0.0833, 0],
-                                  [0.0833, 0, 0.0833],
-                                  [0.0833, 0, 0.0833],
-                                  [0.0833, 0, 0.0833],
-                                  [0.0833, 0.0833, 0],
-                                  [0.0833, 0.0833, 0],
-                                  [0.0833, 0.0833, 0],
-                                  [0.0833, 0, 0.0833],
-                                  [0.0833, 0, 0.0833],
-                                  [0.0833, 0, 0.0833]]),
         'min_duration_tl': 30,
         'max_duration_tl': 60,
         'vehicle_threshold': 5,
@@ -58,13 +45,7 @@ class TwoCrossroadsNetwork:
     CONFIG_PARAMETER_LIST = [
         'exp_name', 'lane_length', 'max_speed', 'green_time', 'yellow_time',
         'stop_generation_time', 'flow_density', 'period_time', 'load_vector', 'coeff_matrix', 'min_duration_tl',
-        'max_duration_tl', 'vehicle_threshold', 'simulation_duration', 'north_1_length', 'north_2_length', 'east_length',
-        'south_1_length', 'south_2_length', 'west_length', 'center_length', 'green_time_north_south_1', 'green_time_north_south_2',
-        'green_time_west_east_1', 'green_time_west_east_2', 'yellow_time_north_south_1', 'yellow_time_north_south_2',
-        'yellow_time_west_east_1', 'yellow_time_west_east_1', 'stop_generation_time_north_1', 'stop_generation_time_north_2',
-        'stop_generation_time_south_1', 'stop_generation_time_south_2', 'stop_generation_time_east',
-        'stop_generation_time_west', 'flow_density_north_1', 'flow_density_north_2', 'flow_density_east',
-        'flow_density_south_1', 'flow_density_south_2', 'flow_density_west', 'boolean_detector_length', 'simulation_duration'
+        'max_duration_tl', 'vehicle_threshold', 'simulation_duration'
     ]
 
     ### Networks ###
@@ -573,7 +554,7 @@ class TwoCrossroadsNetwork:
 
     ### Strategies ###
 
-    def boolean_detection(self, config):
+    def boolean_detection(self, config={}):
         """
         To be used with a network equipped with boolean detectors.
 
@@ -609,9 +590,9 @@ class TwoCrossroadsNetwork:
             current_config[key] = config[key]
 
         # Select parameters
-        min_duration_tl = config["min_duration_tl"]
-        max_duration_tl = config["max_duration_tl"]
-        simulation_duration = config['simulation_duration']
+        min_duration_tl = current_config["min_duration_tl"]
+        max_duration_tl = current_config["max_duration_tl"]
+        simulation_duration = current_config['simulation_duration']
 
         step = 0
         cooldown_step_tl_1 = 0  # Current phase duration for intersection 1
@@ -665,7 +646,7 @@ class TwoCrossroadsNetwork:
             cooldown_step_tl_1 += 1
             cooldown_step_tl_2 += 1
 
-    def numerical_detection_all_vehicles(self, config):
+    def numerical_detection_all_vehicles(self, config={}):
         """
         To be used with a network equipped with numerical detectors.
 
@@ -703,10 +684,10 @@ class TwoCrossroadsNetwork:
             current_config[key] = config[key]
 
         # Select parameters
-        min_duration_tl = config["min_duration_tl"]
-        max_duration_tl = config["max_duration_tl"]
-        vehicle_threshold = config["vehicle_threshold"]
-        simulation_duration = config['simulation_duration']
+        min_duration_tl = current_config["min_duration_tl"]
+        max_duration_tl = current_config["max_duration_tl"]
+        vehicle_threshold = current_config["vehicle_threshold"]
+        simulation_duration = current_config['simulation_duration']
 
         step = 0
         cooldown_step_tl_1 = 0  # Current phase duration for intersection 1
@@ -751,7 +732,7 @@ class TwoCrossroadsNetwork:
             cooldown_step_tl_1 += 1
             cooldown_step_tl_2 += 1
 
-    def numerical_detections_stopped_vehicles(self, config):
+    def numerical_detections_stopped_vehicles(self, config={}):
         """
         To be used with a network equipped with numerical detectors.
 
@@ -789,10 +770,10 @@ class TwoCrossroadsNetwork:
             current_config[key] = config[key]
 
         # Select parameters
-        min_duration_tl = config["min_duration_tl"]
-        max_duration_tl = config["max_duration_tl"]
-        vehicle_threshold = config["vehicle_threshold"]
-        simulation_duration = config['simulation_duration']
+        min_duration_tl = current_config["min_duration_tl"]
+        max_duration_tl = current_config["max_duration_tl"]
+        vehicle_threshold = current_config["vehicle_threshold"]
+        simulation_duration = current_config['simulation_duration']
 
         step = 0
         cooldown_step_tl_1 = 0  # Nombre de pas depuis la dernière actualisation du feu 1

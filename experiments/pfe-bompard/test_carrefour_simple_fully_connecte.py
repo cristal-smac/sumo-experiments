@@ -2,7 +2,7 @@ import sys, os
 
 from core.src.experiment import Experiment
 from core.src.util import import_flows_parameters_from_csv
-from core.src.preset_networks import SquareNetwork
+from core.src.preset_networks import OneCrossroadNetwork
 
 sys.path.append(os.path.join(sys.path[0],'..'))
 
@@ -20,32 +20,29 @@ if __name__ == '__main__':
     gt_value = 30
     yt_value = 3
     speed_value = 30
-    nb_roads_by_side = 2
+    square_side_length = 2
 
-    network = SquareNetwork()
+    network = OneCrossroadNetwork()
 
     e = Experiment(f'test_reseau_fully_connected',
-                   network=network.square_crossroad_network,
-                   routes=network.square_crossroad_routes,
-                   detectors=network.no_detectors)
-
+                   network=network.generate_infrastructures,
+                   routes=network.generate_flows_with_matrix)
 
     load_vector, coeff_matrix = import_flows_parameters_from_csv(params_file)
 
-    nb_ticks = 300       # Nombre de ticks par période de flux
+    period_time = 300       # Nombre de ticks par période de flux
 
     # Variables de flux
     e.set_variable('coeff_matrix', coeff_matrix)
     e.set_variable('load_vector', load_vector)
     e.set_variable("params_file", params_file)
-    e.set_variable('nb_ticks', nb_ticks)
+    e.set_variable('period_time', period_time)
     
-    e.set_variable('default_len', lane_length)
-    e.set_variable('default_speed', speed_value)
-    e.set_variable('default_green_time', gt_value)
-    e.set_variable('default_yellow_time', yt_value)
-    e.set_variable('default_flow', flow_value)
-    e.set_variable('nb_roads_by_side', nb_roads_by_side)
+    e.set_variable('lane_length', lane_length)
+    e.set_variable('max_speed', speed_value)
+    e.set_variable('green_time', gt_value)
+    e.set_variable('yellow_time', yt_value)
+    e.set_variable('flow_density', flow_value)
 
     e.set_simulation_time(3601)
 

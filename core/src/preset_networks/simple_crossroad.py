@@ -469,9 +469,9 @@ class OneCrossroadNetwork:
             current_config[key] = config[key]
 
         # Select parameters
-        min_duration_tl = config["min_duration_tl"]
-        max_duration_tl = config["max_duration_tl"]
-        simulation_duration = config['simulation_duration']
+        min_duration_tl = current_config["min_duration_tl"]
+        max_duration_tl = current_config["max_duration_tl"]
+        simulation_duration = current_config['simulation_duration']
 
         step = 0
         cooldown_step = 0  # Current phase duration
@@ -540,10 +540,10 @@ class OneCrossroadNetwork:
             current_config[key] = config[key]
 
         # Select parameters
-        min_duration_tl = config["min_duration_tl"]
-        max_duration_tl = config["max_duration_tl"]
-        vehicle_threshold = config["vehicle_threshold"]
-        simulation_duration = config['simulation_duration']
+        min_duration_tl = current_config["min_duration_tl"]
+        max_duration_tl = current_config["max_duration_tl"]
+        vehicle_threshold = current_config["vehicle_threshold"]
+        simulation_duration = current_config['simulation_duration']
 
         step = 0
         cooldown_step = 0  # Current phase duration
@@ -608,10 +608,10 @@ class OneCrossroadNetwork:
             current_config[key] = config[key]
 
         # Select parameters
-        min_duration_tl = config["min_duration_tl"]
-        max_duration_tl = config["max_duration_tl"]
-        vehicle_threshold = config["vehicle_threshold"]
-        simulation_duration = config['simulation_duration']
+        min_duration_tl = current_config["min_duration_tl"]
+        max_duration_tl = current_config["max_duration_tl"]
+        vehicle_threshold = current_config["vehicle_threshold"]
+        simulation_duration = current_config['simulation_duration']
 
         step = 0
         cooldown_step = 0  # Current phase duration
