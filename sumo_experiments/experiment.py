@@ -3,8 +3,6 @@ import pandas as pd
 import numpy as np
 from os.path import exists
 
-tools = os.path.join(os.environ['SUMO_HOME'], 'tools')
-sys.path.append(tools)
 import traci
 
 class Experiment:
