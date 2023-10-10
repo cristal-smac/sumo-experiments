@@ -1,7 +1,6 @@
-import sys, os
 import warnings
 
-from sumo_experiments.components import InfrastructureBuilder, FlowBuilder, DetectorBuilder
+from src.sumo_experiments.components import InfrastructureBuilder, FlowBuilder, DetectorBuilder
 import traci
 
 

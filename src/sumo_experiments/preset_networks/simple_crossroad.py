@@ -1,6 +1,5 @@
-import sys, os
 import numpy as np
-from sumo_experiments.components import InfrastructureBuilder, FlowBuilder, DetectorBuilder
+from src.sumo_experiments.components import InfrastructureBuilder, FlowBuilder, DetectorBuilder
 import traci
 import warnings
 

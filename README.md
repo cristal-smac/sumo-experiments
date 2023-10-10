@@ -1,2 +1,2 @@
 # sumo-experiments
-A python interface with SUMO to easily run reproductible simulations.
+The sumo-experiments library implements a python interface for the Simulation of Urban MObility (SUMO) software.

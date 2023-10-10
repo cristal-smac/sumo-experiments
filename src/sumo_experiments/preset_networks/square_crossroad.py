@@ -1,8 +1,7 @@
 import warnings
 
 import numpy as np
-import sys, os
-from sumo_experiments.components import InfrastructureBuilder, FlowBuilder, DetectorBuilder
+from src.sumo_experiments.components import InfrastructureBuilder, FlowBuilder, DetectorBuilder
 import traci
 
 class SquareNetwork:
