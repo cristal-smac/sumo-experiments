@@ -2,8 +2,6 @@ import sys, os
 import warnings
 
 from sumo_experiments.components import InfrastructureBuilder, FlowBuilder, DetectorBuilder
-tools = os.path.join(os.environ['SUMO_HOME'], 'tools')
-sys.path.append(tools)
 import traci
 
 
