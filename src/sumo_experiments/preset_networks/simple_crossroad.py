@@ -1,5 +1,5 @@
 import numpy as np
-from src.sumo_experiments.components import InfrastructureBuilder, FlowBuilder, DetectorBuilder
+from sumo_experiments.components import InfrastructureBuilder, FlowBuilder, DetectorBuilder
 import traci
 import warnings
 
