@@ -11,7 +11,7 @@ authors = [
     { name="Philippe Mathieu", email="philippe.mathieu@univ-lille.fr"},
 ]
 description = "The sumo-experiments library implements a python interface for the Simulation of Urban MObility (SUMO) software."
-readme = "README.rst"
+readme = "README.md"
 requires-python = ">=3.9"
 classifiers = [
     "Programming Language :: Python :: 3",
