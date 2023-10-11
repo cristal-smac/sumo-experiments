@@ -72,11 +72,6 @@
 <!-- ABOUT THE PROJECT -->
 ## About The Project
 
-<p align="center">
-  <img src="images/sumo.gif" alt="SUMO simulation" width=300 height=250/>
-</p>
-<br/>
-
 The `sumo-experiments` package aims to provide an ergonomic environment for creating and configuring highly reproducible SUMO simulations.
 
 Creating a SUMO network for a simulation is very time-consuming. Infrastructure and flows have to be defined either using the `netedit` tool, 
