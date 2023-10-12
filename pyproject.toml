@@ -27,7 +27,7 @@ dependencies = [
     "cycler >= 0.12.1, < 1",
     "fonttools >= 4.43.1, < 5",
     "kiwisolver >= 1.4.5, < 2",
-    "matplotlib == 3.7.0",
+    "matplotlib >= 3.8.0, < 4",
     "numpy >= 1.26.0, < 2",
     "packaging >= 23.2, < 24",
     "pandas >= 2.1.1, < 3",
