@@ -22,19 +22,19 @@ class Experiment:
     """
 
 
-    def __init__(self, name, network, flows, detectors=None):
+    def __init__(self, name, infrastructures, flows, detectors=None):
         """
         Init of class.
         :param name: The name of the experiment
         :type name: str
-        :param network: The function that creates the network infrastructures. Must return a InfrastructureBuilder object.
-        :type network: function
+        :param infrastructures: The function that creates the network infrastructures. Must return a InfrastructureBuilder object.
+        :type infrastructures: function
         :param flows: The function that creates network flows. Must return a FlowBuilder object.
         :type flows: function
         :param detectors: The function that creates network detectors. Must return a DetectorBuilder object.
         :type detectors: function
         """
-        self.network = network
+        self.infrastructures = infrastructures
         self.flows = flows
         self.detectors = detectors
         self.name = name
@@ -52,7 +52,7 @@ class Experiment:
         """
         self.generate_file_names()
         self.flows(self.config).build(self.files)
-        self.network(self.config).build(self.files)
+        self.infrastructures(self.config).build(self.files)
         if self.detectors is not None:
             self.detectors(self.config).build(self.files)
         os.system(f'$SUMO_HOME/bin/netconvert -n {self.files["nodes"]} -e {self.files["edges"]} -x {self.files["connections"]} -i {self.files["trafic_light_programs"]} -t {self.files["types"]} -o {self.files["network"]}')
@@ -88,7 +88,7 @@ class Experiment:
         """
         self.generate_file_names()
         self.flows(self.config).build(self.files)
-        self.network(self.config).build(self.files)
+        self.infrastructures(self.config).build(self.files)
         self.detectors(self.config).build(self.files)
         os.system(f'$SUMO_HOME/bin/netconvert -n {self.files["nodes"]} -e {self.files["edges"]} -x {self.files["connections"]} -i {self.files["trafic_light_programs"]} -t {self.files["types"]} -o {self.files["network"]}')
         args = self.build_arguments()
