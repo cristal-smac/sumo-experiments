@@ -13,7 +13,7 @@ class FlowBuilder:
 
     def __init__(self):
         self.routes = {}
-        self.vTypes = {}
+        self.v_types = {}
         self.flows = {}
 
     def build(self, filenames):
@@ -75,7 +75,7 @@ class FlowBuilder:
         :param color: Color of vehicle
         :type color: str
         """
-        self.vTypes[id] = VType(id, accel, decel, length, min_gap, max_speed, sigma, tau, color)
+        self.v_types[id] = VType(id, accel, decel, length, min_gap, max_speed, sigma, tau, color)
 
     def build_v_types(self, xml_flows):
         """
@@ -83,10 +83,10 @@ class FlowBuilder:
         :param xml_flows: The XML object where to build vTypes.
         :type xml_flows: xml.etree.ElementTree.Element
         """
-        for vType in self.vTypes.values():
-            vType.build(xml_flows)
+        for v_type in self.v_types.values():
+            v_type.build(xml_flows)
 
-    def add_flow(self, id, end, v_type, density, from_edge='', to_edge='', route='', begin=0,
+    def add_flow(self, id, end, v_type, frequency, from_edge='', to_edge='', route='', begin=0,
                  distribution="uniform"):
         """
         Add a flow of vehicules to the flows
@@ -98,8 +98,8 @@ class FlowBuilder:
         :type end: int
         :param v_type: ID of vType of the flow
         :type v_type: str
-        :param density: Flow density (in vehicles/hour)
-        :type density: int
+        :param frequency: Flow frequency (in vehicles/hour)
+        :type frequency: int
         :param from_edge: ID of starting edge of the flow
         :type from_edge: str
         :param to_edge: ID of ending edge of the flow
@@ -110,7 +110,7 @@ class FlowBuilder:
         or with "binomial" for a binomial distribution. The number of vehicle per hour will be respected anyway.
         :type distribution: str
         """
-        self.flows[id] = Flow(id=id, end=end, vehsPerHour=density, vType=v_type, from_edge=from_edge,
+        self.flows[id] = Flow(id=id, end=end, frequency=frequency, v_type=v_type, from_edge=from_edge,
                               to_edge=to_edge, route=route, begin=begin, distribution=distribution)
 
     def build_flows(self, xml_flows):
@@ -208,7 +208,7 @@ class Flow:
     Class representing a vehicle flow
     """
 
-    def __init__(self, id, end, vehsPerHour, vType, route='', from_edge='', to_edge='', begin=0,
+    def __init__(self, id, end, frequency, v_type, route='', from_edge='', to_edge='', begin=0,
                  distribution="uniform"):
         """
         Init of class.
@@ -220,8 +220,8 @@ class Flow:
         :type end: int
         :param v_type: ID of vType of the flow
         :type v_type: str
-        :param density: Flow density (in vehicles/hour)
-        :type density: int
+        :param frequency: Flow frequency (in vehicles/hour)
+        :type frequency: int
         :param from_edge: ID of starting edge of the flow (if route is not set)
         :type from_edge: str
         :param to_edge: ID of ending edge of the flow (if route is not set)
@@ -234,13 +234,13 @@ class Flow:
         """
         self.id = id
         self.route = route
-        self.number = str(((end - begin) / 3600) * vehsPerHour)
+        self.number = str(((end - begin) / 3600) * frequency)
         self.begin = str(begin)
         self.end = str(end)
-        self.vehsPerHour = str(vehsPerHour)
+        self.frequency = str(frequency)
         self.from_edge = from_edge
         self.to_edge = to_edge
-        self.vType = vType
+        self.v_type = v_type
         self.distribution = distribution
 
     def build(self, xml_flows):
@@ -249,21 +249,21 @@ class Flow:
         :param xml_flows: XML object where to build the node.
         :type xml_flows: xml.etree.ElementTree.Element
         """
-        probability = str(float(self.vehsPerHour) / 3600)
+        probability = str(float(self.frequency) / 3600)
         if self.route != '' and self.from_edge == '' and self.to_edge == '':
             if self.distribution == "uniform":
                 ET.SubElement(xml_flows, 'flow', {'id': self.id, 'begin': self.begin, 'end': self.end, 'route': self.route,
-                                              'vehsPerHour': self.vehsPerHour, 'type': self.vType})
+                                              'vehsPerHour': self.frequency, 'type': self.v_type})
             elif self.distribution == "binomial":
                 ET.SubElement(xml_flows, 'flow', {'id': self.id, 'begin': self.begin, 'end': self.end, 'route': self.route,
-                                              'probability': probability, 'type': self.vType})
+                                              'probability': probability, 'type': self.v_type})
         elif self.route == '' and self.from_edge != '' and self.to_edge != '':
             if self.distribution == "uniform":
                 ET.SubElement(xml_flows, 'flow',
                               {'id': self.id, 'begin': self.begin, 'end': self.end, 'from': self.from_edge,
-                               'to': self.to_edge, 'vehsPerHour': self.vehsPerHour, 'type': self.vType})
+                               'to': self.to_edge, 'vehsPerHour': self.frequency, 'type': self.v_type})
             elif self.distribution == "binomial":
                 ET.SubElement(xml_flows, 'flow',
                               {'id': self.id, 'begin': self.begin, 'end': self.end, 'from': self.from_edge,
-                               'to': self.to_edge, 'probability': probability, 'type': self.vType})
+                               'to': self.to_edge, 'probability': probability, 'type': self.v_type})
 

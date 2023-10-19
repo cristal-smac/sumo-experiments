@@ -27,7 +27,7 @@ class OneCrossroadNetwork:
         'green_time': 30,
         'yellow_time': 3,
         'stop_generation_time': 1000,
-        'flow_density': 600,
+        'flow_frequency': 600,
         'period_time': 300,
         'load_vector': np.array([300, 600, 300]),
         'coeff_matrix': np.array([[0.0833, 0.0833, 0],
@@ -51,11 +51,11 @@ class OneCrossroadNetwork:
 
     CONFIG_PARAMETER_LIST = [
         'exp_name', 'lane_length', 'max_speed', 'green_time', 'yellow_time',
-        'stop_generation_time', 'flow_density', 'period_time', 'load_vector', 'coeff_matrix', 'min_duration_tl',
+        'stop_generation_time', 'flow_frequency', 'period_time', 'load_vector', 'coeff_matrix', 'min_duration_tl',
         'max_duration_tl', 'vehicle_threshold', 'simulation_duration', 'north_length', 'east_length',
         'south_length', 'west_length', 'green_time_north_south', 'green_time_west_east', 'yellow_time_north_south',
         'yellow_time_west_east', 'stop_generation_time_north', 'stop_generation_time_east', 'stop_generation_time_south',
-        'stop_generation_time_west', 'flow_density_north', 'flow_density_east', 'flow_density_south', 'flow_density_west',
+        'stop_generation_time_west', 'flow_frequency_north', 'flow_frequency_east', 'flow_frequency_south', 'flow_frequency_west',
         'boolean_detector_length', 'simulation_duration'
     ]
 
@@ -170,7 +170,7 @@ class OneCrossroadNetwork:
         """
         Generate flows for a simple crossroad.
         At the intersection, vehicles can not turn. They can only go ahead.
-        The config parameter can contain more parameter to define the density of vehicles from each entry, and the
+        The config parameter can contain more parameter to define the frequency of vehicles from each entry, and the
         simulation step where the flow will end.
 
         Valid parameters for config :
@@ -179,11 +179,11 @@ class OneCrossroadNetwork:
         - "stop_generation_time_east" (int) : The simulation step when east flows will end, override default
         - "stop_generation_time_south" (int) : The simulation step when south flows will end, override default
         - "stop_generation_time_west" (int) : The simulation step when west flows will end, override default
-        - "flow_density" (int) : The default flows density (in vehicles/hour)
-        - "flow_density_north" (int) : The north flows density (in vehicles/hour), override default
-        - "flow_density_east" (int) : The east flows density (in vehicles/hour), override default
-        - "flow_density_south" (int) : The south flows density (in vehicles/hour), override default
-        - "flow_density_west" (int) : The west flows density (in vehicles/hour), override default
+        - "flow_frequency" (int) : The default flows frequency (in vehicles/hour)
+        - "flow_frequency_north" (int) : The north flows frequency (in vehicles/hour), override default
+        - "flow_frequency_east" (int) : The east flows frequency (in vehicles/hour), override default
+        - "flow_frequency_south" (int) : The south flows frequency (in vehicles/hour), override default
+        - "flow_frequency_west" (int) : The west flows frequency (in vehicles/hour), override default
 
         :param config: Customized flows configuration. Check documentation to see all parameters.
         :type config: dict
@@ -200,10 +200,10 @@ class OneCrossroadNetwork:
         stop_generation_time_east = current_config['stop_generation_time_east'] if 'stop_generation_time_east' in current_config else current_config['stop_generation_time']
         stop_generation_time_south = current_config['stop_generation_time_south'] if 'stop_generation_time_south' in current_config else current_config['stop_generation_time']
         stop_generation_time_west = current_config['stop_generation_time_west'] if 'stop_generation_time_west' in current_config else current_config['stop_generation_time']
-        flow_density_north = current_config['flow_density_north'] if 'flow_density_north' in current_config else current_config['flow_density']
-        flow_density_east = current_config['flow_density_east'] if 'flow_density_east' in current_config else current_config['flow_density']
-        flow_density_south = current_config['flow_density_south'] if 'flow_density_south' in current_config else current_config['flow_density']
-        flow_density_west = current_config['flow_density_west'] if 'flow_density_west' in current_config else current_config['flow_density']
+        flow_frequency_north = current_config['flow_frequency_north'] if 'flow_frequency_north' in current_config else current_config['flow_frequency']
+        flow_frequency_east = current_config['flow_frequency_east'] if 'flow_frequency_east' in current_config else current_config['flow_frequency']
+        flow_frequency_south = current_config['flow_frequency_south'] if 'flow_frequency_south' in current_config else current_config['flow_frequency']
+        flow_frequency_west = current_config['flow_frequency_west'] if 'flow_frequency_west' in current_config else current_config['flow_frequency']
 
         # Intantiation of flows builder
         flows = FlowBuilder()
@@ -218,10 +218,10 @@ class OneCrossroadNetwork:
         flows.add_route(id='route_ns', type='car0', from_edge='edge_nc', to_edge='edge_cs')
 
         # Create flows
-        flows.add_flow(id='flow_we', route='route_we', end=stop_generation_time_west, density=flow_density_west, v_type='car0')
-        flows.add_flow(id='flow_ew', route='route_ew', end=stop_generation_time_east, density=flow_density_east, v_type='car0')
-        flows.add_flow(id='flow_sn', route='route_sn', end=stop_generation_time_south, density=flow_density_south, v_type='car0')
-        flows.add_flow(id='flow_ns', route='route_ns', end=stop_generation_time_north, density=flow_density_north, v_type='car0')
+        flows.add_flow(id='flow_we', route='route_we', end=stop_generation_time_west, frequency=flow_frequency_west, v_type='car0')
+        flows.add_flow(id='flow_ew', route='route_ew', end=stop_generation_time_east, frequency=flow_frequency_east, v_type='car0')
+        flows.add_flow(id='flow_sn', route='route_sn', end=stop_generation_time_south, frequency=flow_frequency_south, v_type='car0')
+        flows.add_flow(id='flow_ns', route='route_ns', end=stop_generation_time_north, frequency=flow_frequency_north, v_type='car0')
 
         return flows
 
@@ -230,7 +230,7 @@ class OneCrossroadNetwork:
         """
         Generate flows for a simple crossroad.
         At the intersection, vehicles can go left, right or ahead. The proportion for each exit is uniform.
-        The config parameter can contain more parameter to define the density of vehicles from each entry, and the
+        The config parameter can contain more parameter to define the frequency of vehicles from each entry, and the
         simulation step where the flow will end.
 
         Valid parameters for config :
@@ -239,11 +239,11 @@ class OneCrossroadNetwork:
         - "stop_generation_time_east" (int) : The simulation step when east flows will end, override default
         - "stop_generation_time_south" (int) : The simulation step when south flows will end, override default
         - "stop_generation_time_west" (int) : The simulation step when west flows will end, override default
-        - "flow_density" (int) : The default flows density (in vehicles/hour)
-        - "flow_density_north" (int) : The north flows density (in vehicles/hour), override default
-        - "flow_density_east" (int) : The east flows density (in vehicles/hour), override default
-        - "flow_density_south" (int) : The south flows density (in vehicles/hour), override default
-        - "flow_density_west" (int) : The west flows density (in vehicles/hour), override default
+        - "flow_frequency" (int) : The default flows frequency (in vehicles/hour)
+        - "flow_frequency_north" (int) : The north flows frequency (in vehicles/hour), override default
+        - "flow_frequency_east" (int) : The east flows frequency (in vehicles/hour), override default
+        - "flow_frequency_south" (int) : The south flows frequency (in vehicles/hour), override default
+        - "flow_frequency_west" (int) : The west flows frequency (in vehicles/hour), override default
 
         :param config: Customized flows configuration. Check documentation to see all parameters.
         :type config: dict
@@ -260,10 +260,10 @@ class OneCrossroadNetwork:
         stop_generation_time_east = current_config['stop_generation_time_east'] if 'stop_generation_time_east' in current_config else current_config['stop_generation_time']
         stop_generation_time_south = current_config['stop_generation_time_south'] if 'stop_generation_time_south' in current_config else current_config['stop_generation_time']
         stop_generation_time_west = current_config['stop_generation_time_west'] if 'stop_generation_time_west' in current_config else current_config['stop_generation_time']
-        flow_density_north = current_config['flow_density_north'] if 'flow_density_north' in current_config else current_config['flow_density']
-        flow_density_east = current_config['flow_density_east'] if 'flow_density_east' in current_config else current_config['flow_density']
-        flow_density_south = current_config['flow_density_south'] if 'flow_density_south' in current_config else current_config['flow_density']
-        flow_density_west = current_config['flow_density_west'] if 'flow_density_west' in current_config else current_config['flow_density']
+        flow_frequency_north = current_config['flow_frequency_north'] if 'flow_frequency_north' in current_config else current_config['flow_frequency']
+        flow_frequency_east = current_config['flow_frequency_east'] if 'flow_frequency_east' in current_config else current_config['flow_frequency']
+        flow_frequency_south = current_config['flow_frequency_south'] if 'flow_frequency_south' in current_config else current_config['flow_frequency']
+        flow_frequency_west = current_config['flow_frequency_west'] if 'flow_frequency_west' in current_config else current_config['flow_frequency']
 
         # Instantiation of flows builder
         flows = FlowBuilder()
@@ -273,21 +273,21 @@ class OneCrossroadNetwork:
 
         # Create flows
         # From north
-        flows.add_flow(id='flow_ns', from_edge='edge_nc', to_edge='edge_cs', end=stop_generation_time_north, density=flow_density_north//3, v_type='car0')
-        flows.add_flow(id='flow_ne', from_edge='edge_nc', to_edge='edge_ce', end=stop_generation_time_north, density=flow_density_north//3, v_type='car0')
-        flows.add_flow(id='flow_nw', from_edge='edge_nc', to_edge='edge_cw', end=stop_generation_time_north, density=flow_density_north//3, v_type='car0')
+        flows.add_flow(id='flow_ns', from_edge='edge_nc', to_edge='edge_cs', end=stop_generation_time_north, frequency=flow_frequency_north // 3, v_type='car0')
+        flows.add_flow(id='flow_ne', from_edge='edge_nc', to_edge='edge_ce', end=stop_generation_time_north, frequency=flow_frequency_north // 3, v_type='car0')
+        flows.add_flow(id='flow_nw', from_edge='edge_nc', to_edge='edge_cw', end=stop_generation_time_north, frequency=flow_frequency_north // 3, v_type='car0')
         # From east
-        flows.add_flow(id='flow_es', from_edge='edge_ec', to_edge='edge_cs', end=stop_generation_time_east, density=flow_density_east//3, v_type='car0')
-        flows.add_flow(id='flow_en', from_edge='edge_ec', to_edge='edge_cn', end=stop_generation_time_east, density=flow_density_east//3, v_type='car0')
-        flows.add_flow(id='flow_ew', from_edge='edge_ec', to_edge='edge_cw', end=stop_generation_time_east, density=flow_density_east//3, v_type='car0')
+        flows.add_flow(id='flow_es', from_edge='edge_ec', to_edge='edge_cs', end=stop_generation_time_east, frequency=flow_frequency_east // 3, v_type='car0')
+        flows.add_flow(id='flow_en', from_edge='edge_ec', to_edge='edge_cn', end=stop_generation_time_east, frequency=flow_frequency_east // 3, v_type='car0')
+        flows.add_flow(id='flow_ew', from_edge='edge_ec', to_edge='edge_cw', end=stop_generation_time_east, frequency=flow_frequency_east // 3, v_type='car0')
         # From south
-        flows.add_flow(id='flow_se', from_edge='edge_sc', to_edge='edge_ce', end=stop_generation_time_south, density=flow_density_south//3, v_type='car0')
-        flows.add_flow(id='flow_sn', from_edge='edge_sc', to_edge='edge_cn', end=stop_generation_time_south, density=flow_density_south//3, v_type='car0')
-        flows.add_flow(id='flow_sw', from_edge='edge_sc', to_edge='edge_cw', end=stop_generation_time_south, density=flow_density_south//3, v_type='car0')
+        flows.add_flow(id='flow_se', from_edge='edge_sc', to_edge='edge_ce', end=stop_generation_time_south, frequency=flow_frequency_south // 3, v_type='car0')
+        flows.add_flow(id='flow_sn', from_edge='edge_sc', to_edge='edge_cn', end=stop_generation_time_south, frequency=flow_frequency_south // 3, v_type='car0')
+        flows.add_flow(id='flow_sw', from_edge='edge_sc', to_edge='edge_cw', end=stop_generation_time_south, frequency=flow_frequency_south // 3, v_type='car0')
         # From west
-        flows.add_flow(id='flow_we', from_edge='edge_wc', to_edge='edge_ce', end=stop_generation_time_west, density=flow_density_west//3, v_type='car0')
-        flows.add_flow(id='flow_wn', from_edge='edge_wc', to_edge='edge_cn', end=stop_generation_time_west, density=flow_density_west//3, v_type='car0')
-        flows.add_flow(id='flow_ws', from_edge='edge_wc', to_edge='edge_cs', end=stop_generation_time_west, density=flow_density_west//3, v_type='car0')
+        flows.add_flow(id='flow_we', from_edge='edge_wc', to_edge='edge_ce', end=stop_generation_time_west, frequency=flow_frequency_west // 3, v_type='car0')
+        flows.add_flow(id='flow_wn', from_edge='edge_wc', to_edge='edge_cn', end=stop_generation_time_west, frequency=flow_frequency_west // 3, v_type='car0')
+        flows.add_flow(id='flow_ws', from_edge='edge_wc', to_edge='edge_cs', end=stop_generation_time_west, frequency=flow_frequency_west // 3, v_type='car0')
 
         return flows
 
@@ -297,16 +297,16 @@ class OneCrossroadNetwork:
         """
         Generate flows for a simple crossroad.
         At the intersection, vehicles can go left, right or ahead.
-        The vehicle density varies over time, following a scheme describe in a load vector and a coefficient matrix.
-        The load vector describes, for each period, the density of vehicle entering the network.
+        The vehicle frequency varies over time, following a scheme describe in a load vector and a coefficient matrix.
+        The load vector describes, for each period, the frequency of vehicle entering the network.
         The coefficient matrix describes the proportion of load that will follow each route.
-        Each scheme of density last a time defined in simulation steps.
-        The config parameter can contain more parameter to define the density of vehicles from each entry, and the
+        Each scheme of frequency last a time defined in simulation steps.
+        The config parameter can contain more parameter to define the frequency of vehicles from each entry, and the
         simulation step where the flow will end.
 
         Valid parameters for config :
         - "coeff_matrix" (numpy.ndarray) : The proportion of vehicles on each route
-        - "load_vector" (numpy.ndarray) : The vehicle density on the network for each period
+        - "load_vector" (numpy.ndarray) : The vehicle frequency on the network for each period
         - "period_time" (int) : The period duration (in simulation steps)
 
         :param config: Customized flows configuration. Check documentation to see all parameters.
@@ -339,21 +339,21 @@ class OneCrossroadNetwork:
             flow_end = period_time * (i+1)
 
             # From north
-            flows.add_flow(id=f'{i}_flow_ne', from_edge='edge_nc', to_edge='edge_ce', begin=flow_start, end=flow_end, density=flow_values[0], v_type='car0', distribution="binomial")
-            flows.add_flow(id=f'{i}_flow_ns', from_edge='edge_nc', to_edge='edge_cs', begin=flow_start, end=flow_end, density=flow_values[1], v_type='car0', distribution="binomial")
-            flows.add_flow(id=f'{i}_flow_nw', from_edge='edge_nc', to_edge='edge_cw', begin=flow_start, end=flow_end, density=flow_values[2], v_type='car0', distribution="binomial")
+            flows.add_flow(id=f'{i}_flow_ne', from_edge='edge_nc', to_edge='edge_ce', begin=flow_start, end=flow_end, frequency=flow_values[0], v_type='car0', distribution="binomial")
+            flows.add_flow(id=f'{i}_flow_ns', from_edge='edge_nc', to_edge='edge_cs', begin=flow_start, end=flow_end, frequency=flow_values[1], v_type='car0', distribution="binomial")
+            flows.add_flow(id=f'{i}_flow_nw', from_edge='edge_nc', to_edge='edge_cw', begin=flow_start, end=flow_end, frequency=flow_values[2], v_type='car0', distribution="binomial")
             # From east
-            flows.add_flow(id=f'{i}_flow_es', from_edge='edge_ec', to_edge='edge_cs', begin=flow_start, end=flow_end, density=flow_values[3], v_type='car0', distribution="binomial")
-            flows.add_flow(id=f'{i}_flow_ew', from_edge='edge_ec', to_edge='edge_cw', begin=flow_start, end=flow_end, density=flow_values[4], v_type='car0', distribution="binomial")
-            flows.add_flow(id=f'{i}_flow_en', from_edge='edge_ec', to_edge='edge_cn', begin=flow_start, end=flow_end, density=flow_values[5], v_type='car0', distribution="binomial")
+            flows.add_flow(id=f'{i}_flow_es', from_edge='edge_ec', to_edge='edge_cs', begin=flow_start, end=flow_end, frequency=flow_values[3], v_type='car0', distribution="binomial")
+            flows.add_flow(id=f'{i}_flow_ew', from_edge='edge_ec', to_edge='edge_cw', begin=flow_start, end=flow_end, frequency=flow_values[4], v_type='car0', distribution="binomial")
+            flows.add_flow(id=f'{i}_flow_en', from_edge='edge_ec', to_edge='edge_cn', begin=flow_start, end=flow_end, frequency=flow_values[5], v_type='car0', distribution="binomial")
             # From south
-            flows.add_flow(id=f'{i}_flow_sw', from_edge='edge_sc', to_edge='edge_cw', begin=flow_start, end=flow_end, density=flow_values[6], v_type='car0', distribution="binomial")
-            flows.add_flow(id=f'{i}_flow_sn', from_edge='edge_sc', to_edge='edge_cn', begin=flow_start, end=flow_end, density=flow_values[7], v_type='car0', distribution="binomial")
-            flows.add_flow(id=f'{i}_flow_se', from_edge='edge_sc', to_edge='edge_ce', begin=flow_start, end=flow_end, density=flow_values[8], v_type='car0', distribution="binomial")
+            flows.add_flow(id=f'{i}_flow_sw', from_edge='edge_sc', to_edge='edge_cw', begin=flow_start, end=flow_end, frequency=flow_values[6], v_type='car0', distribution="binomial")
+            flows.add_flow(id=f'{i}_flow_sn', from_edge='edge_sc', to_edge='edge_cn', begin=flow_start, end=flow_end, frequency=flow_values[7], v_type='car0', distribution="binomial")
+            flows.add_flow(id=f'{i}_flow_se', from_edge='edge_sc', to_edge='edge_ce', begin=flow_start, end=flow_end, frequency=flow_values[8], v_type='car0', distribution="binomial")
             # From west
-            flows.add_flow(id=f'{i}_flow_wn', from_edge='edge_wc', to_edge='edge_cn', begin=flow_start, end=flow_end, density=flow_values[9], v_type='car0', distribution="binomial")
-            flows.add_flow(id=f'{i}_flow_we', from_edge='edge_wc', to_edge='edge_ce', begin=flow_start, end=flow_end, density=flow_values[10], v_type='car0', distribution="binomial")
-            flows.add_flow(id=f'{i}_flow_ws', from_edge='edge_wc', to_edge='edge_cs', begin=flow_start, end=flow_end, density=flow_values[11], v_type='car0', distribution="binomial")
+            flows.add_flow(id=f'{i}_flow_wn', from_edge='edge_wc', to_edge='edge_cn', begin=flow_start, end=flow_end, frequency=flow_values[9], v_type='car0', distribution="binomial")
+            flows.add_flow(id=f'{i}_flow_we', from_edge='edge_wc', to_edge='edge_ce', begin=flow_start, end=flow_end, frequency=flow_values[10], v_type='car0', distribution="binomial")
+            flows.add_flow(id=f'{i}_flow_ws', from_edge='edge_wc', to_edge='edge_cs', begin=flow_start, end=flow_end, frequency=flow_values[11], v_type='car0', distribution="binomial")
 
         return flows
 

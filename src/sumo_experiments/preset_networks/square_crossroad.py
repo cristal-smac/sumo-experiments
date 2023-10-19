@@ -28,7 +28,7 @@ class SquareNetwork:
         'green_time': 30,
         'yellow_time': 3,
         'stop_generation_time': 1000,
-        'flow_density': 300,
+        'flow_frequency': 300,
         'period_time': 300,
         'min_duration_tl': 30,
         'max_duration_tl': 60,
@@ -42,11 +42,11 @@ class SquareNetwork:
 
     CONFIG_PARAMETER_LIST = [
         'exp_name', 'lane_length', 'max_speed', 'green_time', 'yellow_time',
-        'stop_generation_time', 'flow_density', 'period_time', 'load_vector', 'coeff_matrix', 'min_duration_tl',
+        'stop_generation_time', 'flow_frequency', 'period_time', 'load_vector', 'coeff_matrix', 'min_duration_tl',
         'max_duration_tl', 'vehicle_threshold', 'simulation_duration', 'north_length', 'east_length',
         'south_length', 'west_length', 'green_time_north_south', 'green_time_west_east', 'yellow_time_north_south',
         'yellow_time_west_east', 'stop_generation_time_north', 'stop_generation_time_east', 'stop_generation_time_south',
-        'stop_generation_time_west', 'flow_density_north', 'flow_density_east', 'flow_density_south', 'flow_density_west',
+        'stop_generation_time_west', 'flow_frequency_north', 'flow_frequency_east', 'flow_frequency_south', 'flow_frequency_west',
         'boolean_detector_length', 'simulation_duration', 'square_side_length'
     ]
 
@@ -348,12 +348,12 @@ class SquareNetwork:
         """
         Generate flows for a square network.
         At the intersection, vehicles can not turn. They can only go ahead.
-        The config parameter can contain more parameter to define the density of vehicles from each entry, and the
+        The config parameter can contain more parameter to define the frequency of vehicles from each entry, and the
         simulation step where the flow will end.
 
         Valid parameters for config :
         - "stop_generation_time" (int) : The default simulation step when flows will end
-        - "flow_density" (int) : The default flows density (in vehicles/hour)
+        - "flow_frequency" (int) : The default flows frequency (in vehicles/hour)
         - "square_side_length" (int) : The number of intersections that compose a side of the square
 
         :param config: Customized flows configuration. Check documentation to see all parameters.
@@ -370,7 +370,7 @@ class SquareNetwork:
 
         # Select parameters
         stop_generation_time = current_config['stop_generation_time']
-        flow_density = current_config['flow_density']
+        flow_frequency = current_config['flow_frequency']
         square_side_length = current_config["square_side_length"]
 
         routes = FlowBuilder()
@@ -401,7 +401,7 @@ class SquareNetwork:
                             from_edge=liste_entrees[x],
                             to_edge=liste_sorties[x],
                             end=stop_generation_time,
-                            density=flow_density,
+                            frequency=flow_frequency,
                             v_type='car0')
 
         return routes
@@ -411,12 +411,12 @@ class SquareNetwork:
         """
         Generate flows for a square network.
         At the intersection, vehicles can go left, right or ahead. The proportion for each exit is uniform.
-        The config parameter can contain more parameter to define the density of vehicles from each entry, and the
+        The config parameter can contain more parameter to define the frequency of vehicles from each entry, and the
         simulation step where the flow will end.
 
         Valid parameters for config :
         - "stop_generation_time" (int) : The default simulation step when flows will end
-        - "flow_density" (int) : The default flows density (in vehicles/hour)
+        - "flow_frequency" (int) : The default flows frequency (in vehicles/hour)
         - "square_side_length" (int) : The number of intersections that compose a side of the square
 
         :param config: Customized flows configuration. Check documentation to see all parameters.
@@ -433,7 +433,7 @@ class SquareNetwork:
 
         # Select parameters
         stop_generation_time = current_config['stop_generation_time']
-        flow_density = current_config['flow_density']
+        flow_frequency = current_config['flow_frequency']
         square_side_length = current_config["square_side_length"]
 
         routes = FlowBuilder()
@@ -466,7 +466,7 @@ class SquareNetwork:
                                     from_edge=liste_entrees[i],
                                     to_edge=liste_sorties[j],
                                     end=stop_generation_time,
-                                    density=flow_density,
+                                    frequency=flow_frequency,
                                     v_type='car0')
 
         return routes
@@ -476,16 +476,16 @@ class SquareNetwork:
         """
         Generate flows for a square network.
         At the intersection, vehicles can go left, right or ahead.
-        The vehicle density varies over time, following a scheme describe in a load vector and a coefficient matrix.
-        The load vector describes, for each period, the density of vehicle entering the network.
+        The vehicle frequency varies over time, following a scheme describe in a load vector and a coefficient matrix.
+        The load vector describes, for each period, the frequency of vehicle entering the network.
         The coefficient matrix describes the proportion of load that will follow each route.
-        Each scheme of density last a time defined in simulation steps.
-        The config parameter can contain more parameter to define the density of vehicles from each entry, and the
+        Each scheme of frequency last a time defined in simulation steps.
+        The config parameter can contain more parameter to define the frequency of vehicles from each entry, and the
         simulation step where the flow will end.
 
         Valid parameters for config :
         - "coeff_matrix" (numpy.ndarray) : The proportion of vehicles on each route
-        - "load_vector" (numpy.ndarray) : The vehicle density on the network for each period
+        - "load_vector" (numpy.ndarray) : The vehicle frequency on the network for each period
         - "period_time" (int) : The period duration (in simulation steps)
         - "square_side_length" (int) : The number of intersections that compose a side of the square
 
@@ -544,7 +544,7 @@ class SquareNetwork:
                                         to_edge=liste_sorties[j],
                                         begin=flow_start,
                                         end=flow_end,
-                                        density=flows[compteur],
+                                        frequency=flows[compteur],
                                         v_type='car0',
                                         distribution="binomial")
                         compteur += 1
