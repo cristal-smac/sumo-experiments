@@ -144,7 +144,7 @@ class Experiment:
         args += f'--summary {self.files["summaryxml"]} '
         args += f'--queue-output {self.files["queuexml"]} '
         if 'simulation_duration' in self.config:
-            args += f'-e {self.config["simulation_duration"]} '
+            args += f'-e {self.config["simulation_duration"] + 1} '
         return args
 
     def set_parameter(self, name, value):
