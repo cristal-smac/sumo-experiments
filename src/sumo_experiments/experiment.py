@@ -41,7 +41,7 @@ class Experiment:
         self.config = {'exp_name': name}
         self.files = {}
 
-    def run(self, gui=False, seed=None):
+    def run(self, gui=False, seed=None, no_warnings=True):
         """
         Launch an SUMO simulation with the network configuration.
         First build the configuration files and then launch SUMO.
@@ -49,30 +49,29 @@ class Experiment:
         :type gui: bool
         :param seed: The seed of the simulation. Same seeds = same simulations.
         :type seed: int
+        :param no_warnings: If set to True, no warnings when executing SUMO.
+        :type no_warnings: bool
         """
         self.generate_file_names()
         self.flows(self.config).build(self.files)
         self.infrastructures(self.config).build(self.files)
         if self.detectors is not None:
             self.detectors(self.config).build(self.files)
+
         os.system(f'$SUMO_HOME/bin/netconvert -n {self.files["nodes"]} -e {self.files["edges"]} -x {self.files["connections"]} -i {self.files["trafic_light_programs"]} -t {self.files["types"]} -o {self.files["network"]}')
-        args = self.build_arguments()
+        args = self.build_arguments(seed, no_warnings)
+
         if gui:
-            if seed is None:
-                os.system(f'$SUMO_HOME/bin/sumo-gui {args} --random')
-            else:
-                os.system(f'$SUMO_HOME/bin/sumo-gui {args} --seed {seed}')
+            os.system(f'$SUMO_HOME/bin/sumo-gui {args}')
         else:
-            if seed is None:
-                os.system(f'$SUMO_HOME/bin/sumo {args} --random')
-            else:
-                os.system(f'$SUMO_HOME/bin/sumo {args} --seed {seed}')
+            os.system(f'$SUMO_HOME/bin/sumo {args}')
+
         os.system(f'python3 $SUMO_HOME/tools/xml/xml2csv.py {self.files["queuexml"]} --separator ","')
         os.system(f'python3 $SUMO_HOME/tools/xml/xml2csv.py {self.files["summaryxml"]} --separator ","')
 
 
 
-    def run_traci(self, traci_function, gui=False, seed=None):
+    def run_traci(self, traci_function, gui=False, seed=None, no_warnings=True):
         """
         Launch an SUMO simulation with the network configuration.
         First build the configuration files and then launch SUMO.
@@ -85,6 +84,8 @@ class Experiment:
         :type gui: bool
         :param seed: The seed of the simulation. Same seeds = same simulations.
         :type seed: int
+        :param no_warnings: If set to True, no warnings when executing SUMO.
+        :type no_warnings: bool
         """
         self.generate_file_names()
         self.flows(self.config).build(self.files)
@@ -92,18 +93,12 @@ class Experiment:
         if self.detectors is not None:
             self.detectors(self.config).build(self.files)
         os.system(f'$SUMO_HOME/bin/netconvert -n {self.files["nodes"]} -e {self.files["edges"]} -x {self.files["connections"]} -i {self.files["trafic_light_programs"]} -t {self.files["types"]} -o {self.files["network"]}')
-        args = self.build_arguments()
+        args = self.build_arguments(seed, no_warnings)
 
         if gui:
-            if seed is None:
-                traci.start(["sumo-gui"] + args.split() + ['--random'])
-            else:
-                traci.start(["sumo-gui"] + args.split() + ['--seed', seed])
+            traci.start(["sumo-gui"] + args.split())
         else:
-            if seed is None:
-                traci.start(["sumo"] + args.split() + ['--random'])
-            else:
-                traci.start(["sumo"] + args.split() + ['--seed', seed])
+            traci.start(["sumo"] + args.split())
             
         traci_function(self.config)
 
@@ -111,8 +106,6 @@ class Experiment:
 
         os.system(f'python3 $SUMO_HOME/tools/xml/xml2csv.py {self.files["queuexml"]} --separator ","')
         os.system(f'python3 $SUMO_HOME/tools/xml/xml2csv.py {self.files["summaryxml"]} --separator ","')
-
-
 
     def clean_files(self, except_summary=False, except_queue=False):
         """
@@ -133,7 +126,7 @@ class Experiment:
                 else:
                     os.remove(file)
 
-    def build_arguments(self):
+    def build_arguments(self, seed, no_warnings):
         """
         Build the arguments to launch SUMO with a command line.
         """
@@ -146,6 +139,12 @@ class Experiment:
         args += f'--queue-output {self.files["queuexml"]} '
         if 'simulation_duration' in self.config:
             args += f'-e {self.config["simulation_duration"] + 1} '
+        if seed is not None:
+            args += f'--seed {seed} '
+        else:
+            args += '--random '
+        if no_warnings:
+            args += '--no-warnings'
         return args
 
     def set_parameter(self, name, value):
