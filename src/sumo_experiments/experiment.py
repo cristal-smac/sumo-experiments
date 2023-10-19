@@ -89,7 +89,8 @@ class Experiment:
         self.generate_file_names()
         self.flows(self.config).build(self.files)
         self.infrastructures(self.config).build(self.files)
-        self.detectors(self.config).build(self.files)
+        if self.detectors is not None:
+            self.detectors(self.config).build(self.files)
         os.system(f'$SUMO_HOME/bin/netconvert -n {self.files["nodes"]} -e {self.files["edges"]} -x {self.files["connections"]} -i {self.files["trafic_light_programs"]} -t {self.files["types"]} -o {self.files["network"]}')
         args = self.build_arguments()
 
