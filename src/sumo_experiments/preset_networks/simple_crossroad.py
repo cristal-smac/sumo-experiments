@@ -209,7 +209,7 @@ class OneCrossroadNetwork:
         flows = FlowBuilder()
 
         # Create vehicle type
-        flows.add_vType(id='car0')
+        flows.add_v_type(id='car0')
 
         # Create routes
         flows.add_route(id='route_we', type='car0', from_edge='edge_wc', to_edge='edge_ce')
@@ -269,7 +269,7 @@ class OneCrossroadNetwork:
         flows = FlowBuilder()
 
         # Create vehicle type
-        flows.add_vType(id='car0')
+        flows.add_v_type(id='car0')
 
         # Create flows
         # From north
@@ -328,7 +328,7 @@ class OneCrossroadNetwork:
         flows = FlowBuilder()
 
         # Create vehicle type
-        flows.add_vType(id='car0')
+        flows.add_v_type(id='car0')
 
         # Create flows
         for i in range(coeffs_matrix.shape[1]):
@@ -377,10 +377,10 @@ class OneCrossroadNetwork:
         """
         detectors = DetectorBuilder()
 
-        detectors.add_laneAreaDetector(id="wc", lane="edge_wc_0")
-        detectors.add_laneAreaDetector(id="sc", lane="edge_sc_0")
-        detectors.add_laneAreaDetector(id="nc", lane="edge_nc_0")
-        detectors.add_laneAreaDetector(id="ec", lane="edge_ec_0")
+        detectors.add_lane_area_detector(id="wc", lane="edge_wc_0")
+        detectors.add_lane_area_detector(id="sc", lane="edge_sc_0")
+        detectors.add_lane_area_detector(id="nc", lane="edge_nc_0")
+        detectors.add_lane_area_detector(id="ec", lane="edge_ec_0")
 
         return detectors
 
@@ -418,10 +418,10 @@ class OneCrossroadNetwork:
 
         detectors = DetectorBuilder()
 
-        detectors.add_laneAreaDetector(id="wc", lane="edge_wc_0", pos=(len_west - boolean_detector_length - 7.2))
-        detectors.add_laneAreaDetector(id="sc", lane="edge_sc_0", pos=(len_south - boolean_detector_length - 7.2))
-        detectors.add_laneAreaDetector(id="nc", lane="edge_nc_0", pos=(len_north - boolean_detector_length - 7.2))
-        detectors.add_laneAreaDetector(id="ec", lane="edge_ec_0", pos=(len_east - boolean_detector_length - 7.2))
+        detectors.add_lane_area_detector(id="wc", lane="edge_wc_0", pos=(len_west - boolean_detector_length - 7.2))
+        detectors.add_lane_area_detector(id="sc", lane="edge_sc_0", pos=(len_south - boolean_detector_length - 7.2))
+        detectors.add_lane_area_detector(id="nc", lane="edge_nc_0", pos=(len_north - boolean_detector_length - 7.2))
+        detectors.add_lane_area_detector(id="ec", lane="edge_ec_0", pos=(len_east - boolean_detector_length - 7.2))
 
         return detectors
 

@@ -393,7 +393,7 @@ class SquareNetwork:
             liste_sorties.append(f'edge_x{square_side_length}-y{y}_x{square_side_length + 1}-y{y}')
 
         # We add the vehicle type
-        routes.add_vType(id='car0')
+        routes.add_v_type(id='car0')
 
         # We create a flow for each entry with the correspondant exit
         for x in range(len(liste_entrees)):
@@ -456,7 +456,7 @@ class SquareNetwork:
             liste_sorties.append(f'edge_x1-y{y}_x0-y{y}')
 
         # We add the vehicle type
-        routes.add_vType(id='car0')
+        routes.add_v_type(id='car0')
 
         for i in range(len(liste_entrees)):
             for j in range(len(liste_sorties)):
@@ -525,7 +525,7 @@ class SquareNetwork:
             liste_sorties.append(f'edge_x1-y{y}_x0-y{y}')
 
         # We add the vehicle type
-        routes.add_vType(id='car0')
+        routes.add_v_type(id='car0')
 
         for period in range(len(load_vector)):
 
@@ -589,18 +589,18 @@ class SquareNetwork:
                 if not self.is_corner(x, y, square_side_length):
                     if y not in [0, square_side_length + 1]:
                         if x < square_side_length:
-                            detectors.add_laneAreaDetector(id=f'detector_x{x}-y{y}_x{x + 1}-y{y}',
-                                                            lane=f'edge_x{x}-y{y}_x{x + 1}-y{y}_0')
+                            detectors.add_lane_area_detector(id=f'detector_x{x}-y{y}_x{x + 1}-y{y}',
+                                                             lane=f'edge_x{x}-y{y}_x{x + 1}-y{y}_0')
                         if x > 1:
-                            detectors.add_laneAreaDetector(id=f'detector_x{x}-y{y}_x{x - 1}-y{y}',
-                                                            lane=f'edge_x{x}-y{y}_x{x - 1}-y{y}_0')
+                            detectors.add_lane_area_detector(id=f'detector_x{x}-y{y}_x{x - 1}-y{y}',
+                                                             lane=f'edge_x{x}-y{y}_x{x - 1}-y{y}_0')
                     if x not in [0, square_side_length + 1]:
                         if y < square_side_length:
-                            detectors.add_laneAreaDetector(id=f'detector_x{x}-y{y}_x{x}-y{y + 1}',
-                                                            lane=f'edge_x{x}-y{y}_x{x}-y{y + 1}_0')
+                            detectors.add_lane_area_detector(id=f'detector_x{x}-y{y}_x{x}-y{y + 1}',
+                                                             lane=f'edge_x{x}-y{y}_x{x}-y{y + 1}_0')
                         if y > 1:
-                            detectors.add_laneAreaDetector(id=f'detector_x{x}-y{y}_x{x}-y{y - 1}',
-                                                            lane=f'edge_x{x}-y{y}_x{x}-y{y - 1}_0')
+                            detectors.add_lane_area_detector(id=f'detector_x{x}-y{y}_x{x}-y{y - 1}',
+                                                             lane=f'edge_x{x}-y{y}_x{x}-y{y - 1}_0')
 
         return detectors
 
@@ -642,41 +642,41 @@ class SquareNetwork:
                     if y not in [0, square_side_length + 1]:
                         if x < square_side_length:
                             if x == 0:
-                                detectors.add_laneAreaDetector(id=f'detector_x{x}-y{y}_x{x + 1}-y{y}',
-                                                                lane=f'edge_x{x}-y{y}_x{x + 1}-y{y}_0',
-                                                                pos=(lane_length - boolean_detector_length - 7.2))
+                                detectors.add_lane_area_detector(id=f'detector_x{x}-y{y}_x{x + 1}-y{y}',
+                                                                 lane=f'edge_x{x}-y{y}_x{x + 1}-y{y}_0',
+                                                                 pos=(lane_length - boolean_detector_length - 7.2))
                             else:
-                                detectors.add_laneAreaDetector(id=f'detector_x{x}-y{y}_x{x + 1}-y{y}',
-                                                                lane=f'edge_x{x}-y{y}_x{x + 1}-y{y}_0',
-                                                                pos=(lane_length - boolean_detector_length - 7.2 * 2))
+                                detectors.add_lane_area_detector(id=f'detector_x{x}-y{y}_x{x + 1}-y{y}',
+                                                                 lane=f'edge_x{x}-y{y}_x{x + 1}-y{y}_0',
+                                                                 pos=(lane_length - boolean_detector_length - 7.2 * 2))
                         if x > 1:
                             if x == square_side_length + 1:
-                                detectors.add_laneAreaDetector(id=f'detector_x{x}-y{y}_x{x - 1}-y{y}',
-                                                                lane=f'edge_x{x}-y{y}_x{x - 1}-y{y}_0',
-                                                                pos=(lane_length - boolean_detector_length - 7.2))
+                                detectors.add_lane_area_detector(id=f'detector_x{x}-y{y}_x{x - 1}-y{y}',
+                                                                 lane=f'edge_x{x}-y{y}_x{x - 1}-y{y}_0',
+                                                                 pos=(lane_length - boolean_detector_length - 7.2))
                             else:
-                                detectors.add_laneAreaDetector(id=f'detector_x{x}-y{y}_x{x - 1}-y{y}',
-                                                                lane=f'edge_x{x}-y{y}_x{x - 1}-y{y}_0',
-                                                                pos=(lane_length - boolean_detector_length - 7.2 * 2))
+                                detectors.add_lane_area_detector(id=f'detector_x{x}-y{y}_x{x - 1}-y{y}',
+                                                                 lane=f'edge_x{x}-y{y}_x{x - 1}-y{y}_0',
+                                                                 pos=(lane_length - boolean_detector_length - 7.2 * 2))
                     if x not in [0, square_side_length + 1]:
                         if y < square_side_length:
                             if y == 0:
-                                detectors.add_laneAreaDetector(id=f'detector_x{x}-y{y}_x{x}-y{y + 1}',
-                                                                lane=f'edge_x{x}-y{y}_x{x}-y{y + 1}_0',
-                                                                pos=(lane_length - boolean_detector_length - 7.2))
+                                detectors.add_lane_area_detector(id=f'detector_x{x}-y{y}_x{x}-y{y + 1}',
+                                                                 lane=f'edge_x{x}-y{y}_x{x}-y{y + 1}_0',
+                                                                 pos=(lane_length - boolean_detector_length - 7.2))
                             else:
-                                detectors.add_laneAreaDetector(id=f'detector_x{x}-y{y}_x{x}-y{y + 1}',
-                                                                lane=f'edge_x{x}-y{y}_x{x}-y{y + 1}_0',
-                                                                pos=(lane_length - boolean_detector_length - 7.2 * 2))
+                                detectors.add_lane_area_detector(id=f'detector_x{x}-y{y}_x{x}-y{y + 1}',
+                                                                 lane=f'edge_x{x}-y{y}_x{x}-y{y + 1}_0',
+                                                                 pos=(lane_length - boolean_detector_length - 7.2 * 2))
                         if y > 1:
                             if y == square_side_length + 1:
-                                detectors.add_laneAreaDetector(id=f'detector_x{x}-y{y}_x{x}-y{y - 1}',
-                                                                lane=f'edge_x{x}-y{y}_x{x}-y{y - 1}_0',
-                                                                pos=(lane_length - boolean_detector_length - 7.2))
+                                detectors.add_lane_area_detector(id=f'detector_x{x}-y{y}_x{x}-y{y - 1}',
+                                                                 lane=f'edge_x{x}-y{y}_x{x}-y{y - 1}_0',
+                                                                 pos=(lane_length - boolean_detector_length - 7.2))
                             else:
-                                detectors.add_laneAreaDetector(id=f'detector_x{x}-y{y}_x{x}-y{y - 1}',
-                                                                lane=f'edge_x{x}-y{y}_x{x}-y{y - 1}_0',
-                                                                pos=(lane_length - boolean_detector_length - 7.2 * 2))
+                                detectors.add_lane_area_detector(id=f'detector_x{x}-y{y}_x{x}-y{y - 1}',
+                                                                 lane=f'edge_x{x}-y{y}_x{x}-y{y - 1}_0',
+                                                                 pos=(lane_length - boolean_detector_length - 7.2 * 2))
 
         return detectors
 

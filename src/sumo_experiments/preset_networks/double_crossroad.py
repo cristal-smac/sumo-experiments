@@ -234,7 +234,7 @@ class TwoCrossroadsNetwork:
 
         routes = FlowBuilder()
 
-        routes.add_vType(id='car0')
+        routes.add_v_type(id='car0')
 
         routes.add_flow(id='flow_we', from_edge='edge_wc1', to_edge='edge_c2e', end=stop_generation_time_west, density=flow_density_west, v_type='car0')
         routes.add_flow(id='flow_ew', from_edge='edge_ec2', to_edge='edge_c1w', end=stop_generation_time_east, density=flow_density_east, v_type='car0')
@@ -295,7 +295,7 @@ class TwoCrossroadsNetwork:
 
         routes = FlowBuilder()
 
-        routes.add_vType(id='car0')
+        routes.add_v_type(id='car0')
 
         # From north 1
         routes.add_flow(id=f'flow_n1n2', from_edge='edge_n1c1', to_edge='edge_c2n2', end=stop_generation_time_north_1, density=flow_density_north_1 // 5, v_type='car0', distribution='binomial')
@@ -376,7 +376,7 @@ class TwoCrossroadsNetwork:
 
         flows = FlowBuilder()
 
-        flows.add_vType(id='car0')
+        flows.add_v_type(id='car0')
 
         for i in range(coeffs_matrix.shape[1]):
             vecteur_coeffs = coeffs_matrix[:, i]
@@ -479,15 +479,15 @@ class TwoCrossroadsNetwork:
         detectors = DetectorBuilder()
 
         # First crossroad
-        detectors.add_laneAreaDetector(id="wc1", lane="edge_wc1_0")
-        detectors.add_laneAreaDetector(id="s1c1", lane="edge_s1c1_0")
-        detectors.add_laneAreaDetector(id="n1c1", lane="edge_n1c1_0")
-        detectors.add_laneAreaDetector(id="c2c1", lane="edge_c2c1_0")
+        detectors.add_lane_area_detector(id="wc1", lane="edge_wc1_0")
+        detectors.add_lane_area_detector(id="s1c1", lane="edge_s1c1_0")
+        detectors.add_lane_area_detector(id="n1c1", lane="edge_n1c1_0")
+        detectors.add_lane_area_detector(id="c2c1", lane="edge_c2c1_0")
         # Second crossroad
-        detectors.add_laneAreaDetector(id="c1c2", lane="edge_c1c2_0")
-        detectors.add_laneAreaDetector(id="ec2", lane="edge_ec2_0")
-        detectors.add_laneAreaDetector(id="n2c2", lane="edge_n2c2_0")
-        detectors.add_laneAreaDetector(id="s2c2", lane="edge_s2c2_0")
+        detectors.add_lane_area_detector(id="c1c2", lane="edge_c1c2_0")
+        detectors.add_lane_area_detector(id="ec2", lane="edge_ec2_0")
+        detectors.add_lane_area_detector(id="n2c2", lane="edge_n2c2_0")
+        detectors.add_lane_area_detector(id="s2c2", lane="edge_s2c2_0")
 
         return detectors
 
@@ -534,15 +534,15 @@ class TwoCrossroadsNetwork:
         detectors = DetectorBuilder()
 
         # First crossroad
-        detectors.add_laneAreaDetector(id="wc1", lane="edge_wc1_0", pos=(len_west - boolean_detector_length - 7.2))
-        detectors.add_laneAreaDetector(id="s1c1", lane="edge_s1c1_0", pos=(len_south_1 - boolean_detector_length - 7.2))
-        detectors.add_laneAreaDetector(id="n1c1", lane="edge_n1c1_0", pos=(len_north_1 - boolean_detector_length - 7.2))
-        detectors.add_laneAreaDetector(id="c2c1", lane="edge_c2c1_0", pos=(len_center - boolean_detector_length - 7.2 * 2))
+        detectors.add_lane_area_detector(id="wc1", lane="edge_wc1_0", pos=(len_west - boolean_detector_length - 7.2))
+        detectors.add_lane_area_detector(id="s1c1", lane="edge_s1c1_0", pos=(len_south_1 - boolean_detector_length - 7.2))
+        detectors.add_lane_area_detector(id="n1c1", lane="edge_n1c1_0", pos=(len_north_1 - boolean_detector_length - 7.2))
+        detectors.add_lane_area_detector(id="c2c1", lane="edge_c2c1_0", pos=(len_center - boolean_detector_length - 7.2 * 2))
         # Second crossroad
-        detectors.add_laneAreaDetector(id="c1c2", lane="edge_c1c2_0", pos=(len_center - boolean_detector_length - 7.2 * 2))
-        detectors.add_laneAreaDetector(id="ec2", lane="edge_ec2_0", pos=(len_east - boolean_detector_length - 7.2))
-        detectors.add_laneAreaDetector(id="n2c2", lane="edge_n2c2_0", pos=(len_north_2 - boolean_detector_length - 7.2))
-        detectors.add_laneAreaDetector(id="s2c2", lane="edge_s2c2_0", pos=(len_south_2 - boolean_detector_length - 7.2))
+        detectors.add_lane_area_detector(id="c1c2", lane="edge_c1c2_0", pos=(len_center - boolean_detector_length - 7.2 * 2))
+        detectors.add_lane_area_detector(id="ec2", lane="edge_ec2_0", pos=(len_east - boolean_detector_length - 7.2))
+        detectors.add_lane_area_detector(id="n2c2", lane="edge_n2c2_0", pos=(len_north_2 - boolean_detector_length - 7.2))
+        detectors.add_lane_area_detector(id="s2c2", lane="edge_s2c2_0", pos=(len_south_2 - boolean_detector_length - 7.2))
 
         return detectors
 

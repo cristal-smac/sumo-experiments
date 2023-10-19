@@ -23,7 +23,7 @@ class FlowBuilder:
         :type filenames: dict
         """
         xml_routes = ET.Element('routes')
-        self.build_vTypes(xml_routes)
+        self.build_v_types(xml_routes)
         self.build_routes(xml_routes)
         self.build_flows(xml_routes)
         tree = ET.ElementTree(xml_routes)
@@ -52,8 +52,8 @@ class FlowBuilder:
         for route in self.routes:
             self.routes[route].build(xml_flows)
 
-    def add_vType(self, id, accel=0.8, decel=4.5, length=5.0, min_gap=2.5, max_speed=55.56, sigma=0.5, tau=1.0,
-                  color='yellow'):
+    def add_v_type(self, id, accel=0.8, decel=4.5, length=5.0, min_gap=2.5, max_speed=55.56, sigma=0.5, tau=1.0,
+                   color='yellow'):
         """
         Add a vehicle type to define a flow.
         :param id: ID of vehicle type
@@ -77,7 +77,7 @@ class FlowBuilder:
         """
         self.vTypes[id] = VType(id, accel, decel, length, min_gap, max_speed, sigma, tau, color)
 
-    def build_vTypes(self, xml_flows):
+    def build_v_types(self, xml_flows):
         """
         Build all vehicle types in an XML object.
         :param xml_flows: The XML object where to build vTypes.

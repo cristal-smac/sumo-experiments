@@ -25,11 +25,11 @@ class DetectorBuilder:
         :type filenames: dict
         """
         xml_additional = ET.Element('additional')
-        self.build_laneAreaDetectors(xml_additional)
+        self.build_lane_area_detectors(xml_additional)
         tree = ET.ElementTree(xml_additional)
         tree.write(filenames['detectors'])
 
-    def add_laneAreaDetector(self, id, lane, pos=0, end_pos=-0.1, freq=100000):
+    def add_lane_area_detector(self, id, lane, pos=0, end_pos=-0.1, freq=100000):
         """
         Add a E2 detector to the object.
         :param id: ID of detector
@@ -47,7 +47,7 @@ class DetectorBuilder:
         """
         self.laneAreaDetectors[id] = LaneAreaDetector(id, lane, pos, end_pos, freq, 'detectors.out')
 
-    def build_laneAreaDetectors(self, xml):
+    def build_lane_area_detectors(self, xml):
         """
         Build all lane area detectors in the XML.
         :param xml: The XML where to build lane area detectors.
