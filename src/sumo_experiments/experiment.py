@@ -100,12 +100,14 @@ class Experiment:
         else:
             traci.start(["sumo"] + args.split())
             
-        traci_function(self.config)
+        res = traci_function(self.config)
 
         traci.close()
 
         os.system(f'python3 $SUMO_HOME/tools/xml/xml2csv.py {self.files["queuexml"]} --separator ","')
         os.system(f'python3 $SUMO_HOME/tools/xml/xml2csv.py {self.files["summaryxml"]} --separator ","')
+
+        return res
 
     def clean_files(self, except_summary=False, except_queue=False):
         """

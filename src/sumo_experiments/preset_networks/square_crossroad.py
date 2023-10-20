@@ -766,6 +766,8 @@ class SquareNetwork:
 
             step += 1
 
+        return
+
     def numerical_detection_all_vehicles(self, config):
         """
         To be used with a network equipped with numerical detectors.
@@ -846,6 +848,8 @@ class SquareNetwork:
 
             step += 1
 
+        return
+
     def numerical_detection_stopped_vehicles(self, config):
         """
         To be used with a network equipped with numerical detectors.
@@ -923,6 +927,8 @@ class SquareNetwork:
                     cooldown_step[x - 1, y - 1] += 1
 
             step += 1
+
+        return
 
     def is_corner(self, x, y, square_side_length):
         """

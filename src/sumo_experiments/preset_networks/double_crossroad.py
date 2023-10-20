@@ -643,6 +643,8 @@ class TwoCrossroadsNetwork:
             cooldown_step_tl_1 += 1
             cooldown_step_tl_2 += 1
 
+        return
+
     def numerical_detection_all_vehicles(self, config={}):
         """
         To be used with a network equipped with numerical detectors.
@@ -729,6 +731,8 @@ class TwoCrossroadsNetwork:
             cooldown_step_tl_1 += 1
             cooldown_step_tl_2 += 1
 
+        return
+
     def numerical_detections_stopped_vehicles(self, config={}):
         """
         To be used with a network equipped with numerical detectors.
@@ -810,3 +814,5 @@ class TwoCrossroadsNetwork:
             step += 1
             cooldown_step_tl_1 += 1
             cooldown_step_tl_2 += 1
+
+        return

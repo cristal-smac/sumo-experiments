@@ -499,6 +499,8 @@ class OneCrossroadNetwork:
             step += 1
             cooldown_step += 1
 
+        return
+
     def numerical_detection_stopped_vehicles(self, config={}):
         """
         To be used with a network equipped with numerical detectors.
@@ -567,6 +569,8 @@ class OneCrossroadNetwork:
             step += 1
             cooldown_step += 1
 
+        return
+
     def numerical_detection_all_vehicles(self, config={}):
         """
         To be used with a network equipped with numerical detectors.
@@ -632,3 +636,5 @@ class OneCrossroadNetwork:
 
             step += 1
             cooldown_step += 1
+
+        return
