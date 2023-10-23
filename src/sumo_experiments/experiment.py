@@ -21,7 +21,6 @@ class Experiment:
     configuration files.
     """
 
-
     def __init__(self, name, infrastructures, flows, detectors=None):
         """
         Init of class.
@@ -66,11 +65,6 @@ class Experiment:
         else:
             os.system(f'$SUMO_HOME/bin/sumo {args}')
 
-        os.system(f'python3 $SUMO_HOME/tools/xml/xml2csv.py {self.files["queuexml"]} --separator ","')
-        os.system(f'python3 $SUMO_HOME/tools/xml/xml2csv.py {self.files["summaryxml"]} --separator ","')
-
-
-
     def run_traci(self, traci_function, gui=False, seed=None, no_warnings=True):
         """
         Launch an SUMO simulation with the network configuration.
@@ -99,34 +93,22 @@ class Experiment:
             traci.start(["sumo-gui"] + args.split())
         else:
             traci.start(["sumo"] + args.split())
-            
+
         res = traci_function(self.config)
 
         traci.close()
 
-        os.system(f'python3 $SUMO_HOME/tools/xml/xml2csv.py {self.files["queuexml"]} --separator ","')
-        os.system(f'python3 $SUMO_HOME/tools/xml/xml2csv.py {self.files["summaryxml"]} --separator ","')
-
         return res
 
-    def clean_files(self, except_summary=False, except_queue=False):
+    def clean_files(self, except_trip_info=False, except_emission=False):
         """
         Delete simulation config files.
-        :param except_summary: Doesn't delete summary files if True
-        :type except_summary: bool
-        :param except_queue: Doesn't delete queue files if
-        :type except_queue: bool
+        :param except_trip_info: Doesn't delete trip info csv file if True
+        :type except_trip_info: bool
         """
         for file in self.files.values():
             if os.path.exists(file):
-                if (file == self.files['summaryxml'] or file == self.files['summarycsv']):
-                    if not except_summary:
-                        os.remove(file)
-                elif (file == self.files['queuexml'] or file == self.files['queuecsv']):
-                    if not except_queue:
-                        os.remove(file)
-                else:
-                    os.remove(file)
+                os.remove(file)
 
     def build_arguments(self, seed, no_warnings):
         """
@@ -137,8 +119,6 @@ class Experiment:
         args += f'-r {self.files["routes"]} '
         if self.detectors is not None:
             args += f'-a {self.files["detectors"]} '
-        args += f'--summary {self.files["summaryxml"]} '
-        args += f'--queue-output {self.files["queuexml"]} '
         if 'simulation_duration' in self.config:
             args += f'-e {self.config["simulation_duration"] + 1} '
         if seed is not None:
@@ -158,59 +138,6 @@ class Experiment:
         """
         self.config[name] = value
 
-    def export_results_to_csv(self, filename, sampling_rate):
-        """
-        Export experiment results in a CSV file.
-        This function appends results of the experiment to the rest of file. It doesn't overwrite.
-        Creates the file if it doesn't exist.
-        :param filename: CSV file name
-        :type filename: str
-        :param sampling_rate: Number of simulation steps between two measurements
-        :type sampling_rate: int
-        """
-        summary_data = pd.read_csv(self.files["summarycsv"])
-        # queue_data = pd.read_csv(self.files["queuecsv"])
-
-        samples = np.arange(start=sampling_rate, stop=summary_data.shape[0], step=sampling_rate)
-
-        if not exists(filename):
-            f = open(filename, 'w')
-
-            # Columns titles
-            for key in self.config:
-                # To avoid matrices in CSV
-                if not (key == "coeff_matrix" or key == "load_vector"):
-                    f.write(f'{key},')
-            for s in samples:
-                f.write(f'loaded_{s},inserted_{s},running_{s},waiting_{s},ended_{s},halting_{s},stopped_{s},meanWaitingTime_{s},meanTravelTime_{s},meanSpeed_{s}')
-                if s != samples[-1]:
-                    f.write(',')
-
-            f.write('\n')
-
-        with open(filename, 'a') as f:
-            # Data
-            for key in self.config:
-                if not (key == "coeff_matrix" or key == "load_vector"):
-                    f.write(f'{self.config[key]},')
-
-            for s in samples:
-                loaded = summary_data.loc[s]['step_loaded']
-                inserted = summary_data.loc[s]['step_inserted']
-                running = summary_data.loc[s]['step_running']
-                waiting = summary_data.loc[s]['step_waiting']
-                ended = summary_data.loc[s]['step_ended']
-                halting = summary_data.loc[s]['step_halting']
-                stopped = summary_data.loc[s]['step_stopped']
-                mean_waiting_time = summary_data.loc[s]['step_meanWaitingTime']
-                mean_travel_time = summary_data.loc[s]['step_meanTravelTime']
-                mean_speed = summary_data.loc[s]['step_meanSpeed']
-                f.write(f'{loaded},{inserted},{running},{waiting},{ended},{halting},{stopped},{mean_waiting_time},{mean_travel_time},{mean_speed}')
-                if s != samples[-1]:
-                    f.write(',')
-
-            f.write('\n')
-
     def generate_file_names(self):
         """
         Generates file names for all SUMO config files.
@@ -224,10 +151,6 @@ class Experiment:
             'routes': f'{self.name}.rou.xml',
             'network': f'{self.name}.net.xml',
             'detectors': f'{self.name}.det.xml',
-            'summaryxml': f'summary_{self.name}.xml',
-            'summarycsv': f'summary_{self.name}.csv',
-            'queuexml': f'queue_{self.name}.xml',
-            'queuecsv': f'queue_{self.name}.csv',
             'detectors_out': 'detectors.out'
         }
 

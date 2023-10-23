@@ -24,21 +24,6 @@ class TwoCrossroadsNetwork:
     GREEN_LIGHT_HORIZONTAL_2 = 2
     GREEN_LIGHT_VERTICAL_2 = 0
 
-    DEFAULT_CONFIG = {
-        'lane_length': 100,
-        'max_speed': 30,
-        'green_time': 30,
-        'yellow_time': 3,
-        'stop_generation_time': 1000,
-        'flow_frequency': 600,
-        'period_time': 300,
-        'min_duration_tl': 30,
-        'max_duration_tl': 60,
-        'vehicle_threshold': 5,
-        'simulation_duration': 1000,
-        'boolean_detector_length': 7
-    }
-
     CONFIG_PARAMETER_LIST = [
         'exp_name', 'lane_length', 'max_speed', 'green_time', 'yellow_time',
         'stop_generation_time', 'flow_frequency', 'period_time', 'load_vector', 'coeff_matrix', 'min_duration_tl',
@@ -47,7 +32,7 @@ class TwoCrossroadsNetwork:
 
     ### Networks ###
 
-    def generate_infrastructures(self, config={}):
+    def generate_infrastructures(self, config):
         """
         Generate the sumo infrastructures for a network with two consecutive crossroads.
         The infrastructures can be customized with the config dict passed as parameter.
@@ -80,30 +65,33 @@ class TwoCrossroadsNetwork:
         :rtype: sumo_experiments.src.components.NetworkBuilder
         """
 
-        # Get new parameters from config
-        current_config = self.DEFAULT_CONFIG
         for key in config:
             if key not in self.CONFIG_PARAMETER_LIST:
-                warnings.warn(f"The config parameter '{key}' is not a valid parameter.", stacklevel=2)
-            current_config[key] = config[key]
+                warnings.warn(f"The config parameter {key} is not a valid parameter.", stacklevel=2)
 
         # Select parameters
-        len_north_1 = current_config['north_1_length'] if 'north_1_length' in current_config else current_config['lane_length']
-        len_north_2 = current_config['north_2_length'] if 'north_2_length' in current_config else current_config['lane_length']
-        len_south_1 = current_config['south_1_length'] if 'south_1_length' in current_config else current_config['lane_length']
-        len_south_2 = current_config['south_2_length'] if 'south_2_length' in current_config else current_config['lane_length']
-        len_east = current_config['east_length'] if 'east_length' in current_config else current_config['lane_length']
-        len_west = current_config['west_length'] if 'west_length' in current_config else current_config['lane_length']
-        len_center = current_config['center_length'] if 'west_length' in current_config else current_config['lane_length']
-        gt_north_south_1 = current_config['green_time_north_south_1'] if 'green_time_north_south_1' in current_config else current_config['green_time']
-        gt_west_east_1 = current_config['green_time_west_east_1'] if 'green_time_west_east_1' in current_config else current_config['green_time']
-        gt_north_south_2 = current_config['green_time_north_south_2'] if 'green_time_north_south_2' in current_config else current_config['green_time']
-        gt_west_east_2 = current_config['green_time_west_east_2'] if 'green_time_west_east_2' in current_config else current_config['green_time']
-        yt_north_south_1 = current_config['yellow_time_north_south_1'] if 'yellow_time_north_south_1' in current_config else current_config['yellow_time']
-        yt_west_east_1 = current_config['yellow_time_west_east_1'] if 'yellow_time_west_east_1' in current_config else current_config['yellow_time']
-        yt_north_south_2 = current_config['yellow_time_north_south_2'] if 'yellow_time_north_south_2' in current_config else current_config['yellow_time']
-        yt_west_east_2 = current_config['yellow_time_west_east_2'] if 'yellow_time_west_east_2' in current_config else current_config['yellow_time']
-        max_speed = current_config['max_speed']
+        len_north_1 = config['north_1_length'] if 'north_1_length' in config else config['lane_length']
+        len_north_2 = config['north_2_length'] if 'north_2_length' in config else config['lane_length']
+        len_south_1 = config['south_1_length'] if 'south_1_length' in config else config['lane_length']
+        len_south_2 = config['south_2_length'] if 'south_2_length' in config else config['lane_length']
+        len_east = config['east_length'] if 'east_length' in config else config['lane_length']
+        len_west = config['west_length'] if 'west_length' in config else config['lane_length']
+        len_center = config['center_length'] if 'west_length' in config else config['lane_length']
+        if 'max_duration_tl' in config:
+            gt_north_south_1 = config['max_duration_tl']
+            gt_west_east_1 = config['max_duration_tl']
+            gt_north_south_2 = config['max_duration_tl']
+            gt_west_east_2 = config['max_duration_tl']
+        else:
+            gt_north_south_1 = config['green_time_north_south_1'] if 'green_time_north_south_1' in config else config['green_time']
+            gt_west_east_1 = config['green_time_west_east_1'] if 'green_time_west_east_1' in config else config['green_time']
+            gt_north_south_2 = config['green_time_north_south_2'] if 'green_time_north_south_2' in config else config['green_time']
+            gt_west_east_2 = config['green_time_west_east_2'] if 'green_time_west_east_2' in config else config['green_time']
+        yt_north_south_1 = config['yellow_time_north_south_1'] if 'yellow_time_north_south_1' in config else config['yellow_time']
+        yt_west_east_1 = config['yellow_time_west_east_1'] if 'yellow_time_west_east_1' in config else config['yellow_time']
+        yt_north_south_2 = config['yellow_time_north_south_2'] if 'yellow_time_north_south_2' in config else config['yellow_time']
+        yt_west_east_2 = config['yellow_time_west_east_2'] if 'yellow_time_west_east_2' in config else config['yellow_time']
+        max_speed = config['max_speed']
 
         net = InfrastructureBuilder()
 
@@ -185,7 +173,7 @@ class TwoCrossroadsNetwork:
 
     ### Routes ###
 
-    def generate_flows_only_ahead(self, config={}):
+    def generate_flows_only_ahead(self, config):
         """
         Generate flows for a network with two consecutive crossroads.
         At the intersections, vehicles can not turn. They can only go ahead.
@@ -213,24 +201,20 @@ class TwoCrossroadsNetwork:
         :return: All flows in a FlowBuilder object.
         :rtype: sumo_experiments.src.components.FlowBuilder
         """
-        # Get new parameters from config
-        current_config = self.DEFAULT_CONFIG
-        for key in config:
-            current_config[key] = config[key]
 
         # Select parameters
-        stop_generation_time_north_1 = current_config['stop_generation_time_north_1'] if 'stop_generation_time_north_1' in current_config else current_config['stop_generation_time']
-        stop_generation_time_north_2 = current_config['stop_generation_time_north_2'] if 'stop_generation_time_north_2' in current_config else current_config['stop_generation_time']
-        stop_generation_time_east = current_config['stop_generation_time_east'] if 'stop_generation_time_east' in current_config else current_config['stop_generation_time']
-        stop_generation_time_south_1 = current_config['stop_generation_time_south_1'] if 'stop_generation_time_south_1' in current_config else current_config['stop_generation_time']
-        stop_generation_time_south_2 = current_config['stop_generation_time_south_2'] if 'stop_generation_time_south_2' in current_config else current_config['stop_generation_time']
-        stop_generation_time_west = current_config['stop_generation_time_west'] if 'stop_generation_time_west' in current_config else current_config['stop_generation_time']
-        flow_frequency_north_1 = current_config['flow_frequency_north_1'] if 'flow_frequency_north_1' in current_config else current_config['flow_frequency']
-        flow_frequency_north_2 = current_config['flow_frequency_north_2'] if 'flow_frequency_north_2' in current_config else current_config['flow_frequency']
-        flow_frequency_east = current_config['flow_frequency_east'] if 'flow_frequency_east' in current_config else current_config['flow_frequency']
-        flow_frequency_south_1 = current_config['flow_frequency_south_1'] if 'flow_frequency_south_1' in current_config else current_config['flow_frequency']
-        flow_frequency_south_2 = current_config['flow_frequency_south_2'] if 'flow_frequency_south_2' in current_config else current_config['flow_frequency']
-        flow_frequency_west = current_config['flow_frequency_west'] if 'flow_frequency_west' in current_config else current_config['flow_frequency']
+        stop_generation_time_north_1 = config['stop_generation_time_north_1'] if 'stop_generation_time_north_1' in config else config['stop_generation_time']
+        stop_generation_time_north_2 = config['stop_generation_time_north_2'] if 'stop_generation_time_north_2' in config else config['stop_generation_time']
+        stop_generation_time_east = config['stop_generation_time_east'] if 'stop_generation_time_east' in config else config['stop_generation_time']
+        stop_generation_time_south_1 = config['stop_generation_time_south_1'] if 'stop_generation_time_south_1' in config else config['stop_generation_time']
+        stop_generation_time_south_2 = config['stop_generation_time_south_2'] if 'stop_generation_time_south_2' in config else config['stop_generation_time']
+        stop_generation_time_west = config['stop_generation_time_west'] if 'stop_generation_time_west' in config else config['stop_generation_time']
+        flow_frequency_north_1 = config['flow_frequency_north_1'] if 'flow_frequency_north_1' in config else config['flow_frequency']
+        flow_frequency_north_2 = config['flow_frequency_north_2'] if 'flow_frequency_north_2' in config else config['flow_frequency']
+        flow_frequency_east = config['flow_frequency_east'] if 'flow_frequency_east' in config else config['flow_frequency']
+        flow_frequency_south_1 = config['flow_frequency_south_1'] if 'flow_frequency_south_1' in config else config['flow_frequency']
+        flow_frequency_south_2 = config['flow_frequency_south_2'] if 'flow_frequency_south_2' in config else config['flow_frequency']
+        flow_frequency_west = config['flow_frequency_west'] if 'flow_frequency_west' in config else config['flow_frequency']
 
         routes = FlowBuilder()
 
@@ -246,7 +230,7 @@ class TwoCrossroadsNetwork:
         return routes
 
 
-    def generate_flows_all_directions(self, config={}):
+    def generate_flows_all_directions(self, config):
         """
         Generate flows for a network with two consecutive crossroads.
         At the intersections, vehicles can go to any direction.
@@ -274,24 +258,20 @@ class TwoCrossroadsNetwork:
         :return: All flows in a FlowBuilder object.
         :rtype: sumo_experiments.src.components.FlowBuilder
         """
-        # Get new parameters from config
-        current_config = self.DEFAULT_CONFIG
-        for key in config:
-            current_config[key] = config[key]
 
         # Select parameters
-        stop_generation_time_north_1 = current_config['stop_generation_time_north_1'] if 'stop_generation_time_north_1' in current_config else current_config['stop_generation_time']
-        stop_generation_time_north_2 = current_config['stop_generation_time_north_2'] if 'stop_generation_time_north_2' in current_config else current_config['stop_generation_time']
-        stop_generation_time_east = current_config['stop_generation_time_east'] if 'stop_generation_time_east' in current_config else current_config['stop_generation_time']
-        stop_generation_time_south_1 = current_config['stop_generation_time_south_1'] if 'stop_generation_time_south_1' in current_config else current_config['stop_generation_time']
-        stop_generation_time_south_2 = current_config['stop_generation_time_south_2'] if 'stop_generation_time_south_2' in current_config else current_config['stop_generation_time']
-        stop_generation_time_west = current_config['stop_generation_time_west'] if 'stop_generation_time_west' in current_config else current_config['stop_generation_time']
-        flow_frequency_north_1 = current_config['flow_frequency_north_1'] if 'flow_frequency_north_1' in current_config else current_config['flow_frequency']
-        flow_frequency_north_2 = current_config['flow_frequency_north_2'] if 'flow_frequency_north_2' in current_config else current_config['flow_frequency']
-        flow_frequency_east = current_config['flow_frequency_east'] if 'flow_frequency_east' in current_config else current_config['flow_frequency']
-        flow_frequency_south_1 = current_config['flow_frequency_south_1'] if 'flow_frequency_south_1' in current_config else current_config['flow_frequency']
-        flow_frequency_south_2 = current_config['flow_frequency_south_2'] if 'flow_frequency_south_2' in current_config else current_config['flow_frequency']
-        flow_frequency_west = current_config['flow_frequency_west'] if 'flow_frequency_west' in current_config else current_config['flow_frequency']
+        stop_generation_time_north_1 = config['stop_generation_time_north_1'] if 'stop_generation_time_north_1' in config else config['stop_generation_time']
+        stop_generation_time_north_2 = config['stop_generation_time_north_2'] if 'stop_generation_time_north_2' in config else config['stop_generation_time']
+        stop_generation_time_east = config['stop_generation_time_east'] if 'stop_generation_time_east' in config else config['stop_generation_time']
+        stop_generation_time_south_1 = config['stop_generation_time_south_1'] if 'stop_generation_time_south_1' in config else config['stop_generation_time']
+        stop_generation_time_south_2 = config['stop_generation_time_south_2'] if 'stop_generation_time_south_2' in config else config['stop_generation_time']
+        stop_generation_time_west = config['stop_generation_time_west'] if 'stop_generation_time_west' in config else config['stop_generation_time']
+        flow_frequency_north_1 = config['flow_frequency_north_1'] if 'flow_frequency_north_1' in config else config['flow_frequency']
+        flow_frequency_north_2 = config['flow_frequency_north_2'] if 'flow_frequency_north_2' in config else config['flow_frequency']
+        flow_frequency_east = config['flow_frequency_east'] if 'flow_frequency_east' in config else config['flow_frequency']
+        flow_frequency_south_1 = config['flow_frequency_south_1'] if 'flow_frequency_south_1' in config else config['flow_frequency']
+        flow_frequency_south_2 = config['flow_frequency_south_2'] if 'flow_frequency_south_2' in config else config['flow_frequency']
+        flow_frequency_west = config['flow_frequency_west'] if 'flow_frequency_west' in config else config['flow_frequency']
 
         routes = FlowBuilder()
 
@@ -342,7 +322,7 @@ class TwoCrossroadsNetwork:
         return routes
 
 
-    def generate_flows_with_matrix(self, config={}):
+    def generate_flows_with_matrix(self, config):
         """
         Generate flows for a network with two consecutive crossroads.
         At the intersections, vehicles can go to any direction.
@@ -364,15 +344,10 @@ class TwoCrossroadsNetwork:
         :rtype: sumo_experiments.src.components.FlowBuilder
         """
 
-        # Get new parameters from config
-        current_config = self.DEFAULT_CONFIG
-        for key in config:
-            current_config[key] = config[key]
-
         # Select parameters
-        coeffs_matrix = current_config['coeff_matrix']
-        load_vector = current_config['load_vector']
-        period_time = current_config['period_time']
+        coeffs_matrix = config['coeff_matrix']
+        load_vector = config['load_vector']
+        period_time = config['period_time']
 
         flows = FlowBuilder()
 
@@ -462,7 +437,7 @@ class TwoCrossroadsNetwork:
 
     ### Detectors ###
 
-    def generate_numerical_dectectors(self, config={}):
+    def generate_numerical_dectectors(self, config):
         """
         Generate a DetectorBuilder with a numerical detector for each lane going to an intersection.
         A numerical detector counts and returns the number of vehicles on its scope. In SUMO, a numerical
@@ -514,22 +489,15 @@ class TwoCrossroadsNetwork:
         :rtype: sumo_experiments.src.components.DetectorBuilder
         """
 
-        # Get new parameters from config
-        current_config = self.DEFAULT_CONFIG
-        for key in config:
-            if key not in self.CONFIG_PARAMETER_LIST:
-                warnings.warn(f"The config parameter '{key}' is not a valid parameter.", stacklevel=2)
-            current_config[key] = config[key]
-
         # Select parameters
-        boolean_detector_length = current_config['boolean_detector_length']
-        len_north_1 = current_config['north_1_length'] if 'north_1_length' in current_config else current_config['lane_length']
-        len_north_2 = current_config['north_2_length'] if 'north_2_length' in current_config else current_config['lane_length']
-        len_south_1 = current_config['south_1_length'] if 'south_1_length' in current_config else current_config['lane_length']
-        len_south_2 = current_config['south_2_length'] if 'south_2_length' in current_config else current_config['lane_length']
-        len_east = current_config['east_length'] if 'east_length' in current_config else current_config['lane_length']
-        len_west = current_config['west_length'] if 'west_length' in current_config else current_config['lane_length']
-        len_center = current_config['center_length'] if 'west_length' in current_config else current_config['lane_length']
+        boolean_detector_length = config['boolean_detector_length']
+        len_north_1 = config['north_1_length'] if 'north_1_length' in config else config['lane_length']
+        len_north_2 = config['north_2_length'] if 'north_2_length' in config else config['lane_length']
+        len_south_1 = config['south_1_length'] if 'south_1_length' in config else config['lane_length']
+        len_south_2 = config['south_2_length'] if 'south_2_length' in config else config['lane_length']
+        len_east = config['east_length'] if 'east_length' in config else config['lane_length']
+        len_west = config['west_length'] if 'west_length' in config else config['lane_length']
+        len_center = config['center_length'] if 'west_length' in config else config['lane_length']
 
         detectors = DetectorBuilder()
 
@@ -551,7 +519,7 @@ class TwoCrossroadsNetwork:
 
     ### Strategies ###
 
-    def boolean_detection(self, config={}):
+    def boolean_detection(self, config):
         """
         To be used with a network equipped with boolean detectors.
 
@@ -581,71 +549,61 @@ class TwoCrossroadsNetwork:
         :type config: dict
         """
 
-        # Get new parameters from config
-        current_config = self.DEFAULT_CONFIG
-        for key in config:
-            current_config[key] = config[key]
+        if 'cooldown_step' not in config:
+            config['cooldown_step'] = [0, 0]
 
         # Select parameters
-        min_duration_tl = current_config["min_duration_tl"]
-        max_duration_tl = current_config["max_duration_tl"]
-        simulation_duration = current_config['simulation_duration']
+        min_duration_tl = config["min_duration_tl"]
+        max_duration_tl = config["max_duration_tl"]
+        cooldown_step_tl_1 = config['cooldown_step'][0]
+        cooldown_step_tl_2 = config['cooldown_step'][1]
 
-        step = 0
-        cooldown_step_tl_1 = 0  # Current phase duration for intersection 1
-        cooldown_step_tl_2 = 0  # Current phase duration for intersection 2
+        # First intersection
+        if cooldown_step_tl_1 > min_duration_tl:
+            if traci.trafficlight.getPhase("c1") == self.GREEN_LIGHT_HORIZONTAL_1:
+                quelqun_en_attente = (traci.lanearea.getLastStepVehicleNumber(
+                    "n1c1") >= 1 or traci.lanearea.getLastStepVehicleNumber("s1c1") >= 1)
+                autre_voie_vide = (traci.lanearea.getLastStepVehicleNumber(
+                    "wc1") == 0 and traci.lanearea.getLastStepVehicleNumber("c2c1") == 0)
+                if (quelqun_en_attente and autre_voie_vide) or cooldown_step_tl_1 > max_duration_tl:
+                    traci.trafficlight.setPhase("c1", self.GREEN_LIGHT_HORIZONTAL_1 + 1)  # Passage au orange
+                    cooldown_step_tl_1 = 0
 
-        while step < simulation_duration:
+            elif traci.trafficlight.getPhase("c1") == self.GREEN_LIGHT_VERTICAL_1:
+                quelqun_en_attente = (traci.lanearea.getLastStepVehicleNumber(
+                    "wc1") >= 1 or traci.lanearea.getLastStepVehicleNumber("c2c1") >= 1)
+                autre_voie_vide = (traci.lanearea.getLastStepVehicleNumber(
+                    "n1c1") == 0 and traci.lanearea.getLastStepVehicleNumber("s1c1") == 0)
+                if (quelqun_en_attente and autre_voie_vide) or cooldown_step_tl_1 > max_duration_tl:
+                    traci.trafficlight.setPhase("c1", self.GREEN_LIGHT_VERTICAL_1 + 1)
+                    cooldown_step_tl_1 = 0
 
-            traci.simulationStep()
+        # Second intersection
+        if cooldown_step_tl_2 > min_duration_tl:
+            if traci.trafficlight.getPhase("c2") == self.GREEN_LIGHT_HORIZONTAL_2:
+                quelqun_en_attente = (traci.lanearea.getLastStepVehicleNumber(
+                    "n2c2") >= 1 or traci.lanearea.getLastStepVehicleNumber("s2c2") >= 1)
+                autre_voie_vide = (traci.lanearea.getLastStepVehicleNumber(
+                    "ec2") == 0 and traci.lanearea.getLastStepVehicleNumber("c1c2") == 0)
+                if (quelqun_en_attente and autre_voie_vide) or cooldown_step_tl_2 > max_duration_tl:
+                    traci.trafficlight.setPhase("c2", self.GREEN_LIGHT_HORIZONTAL_2 + 1)
+                    cooldown_step_tl_2 = 0
 
-            # First intersection
-            if cooldown_step_tl_1 > min_duration_tl:
-                if traci.trafficlight.getPhase("c1") == self.GREEN_LIGHT_HORIZONTAL_1:
-                    quelqun_en_attente = (traci.lanearea.getLastStepVehicleNumber(
-                        "n1c1") >= 1 or traci.lanearea.getLastStepVehicleNumber("s1c1") >= 1)
-                    autre_voie_vide = (traci.lanearea.getLastStepVehicleNumber(
-                        "wc1") == 0 and traci.lanearea.getLastStepVehicleNumber("c2c1") == 0)
-                    if (quelqun_en_attente and autre_voie_vide) or cooldown_step_tl_1 > max_duration_tl:
-                        traci.trafficlight.setPhase("c1", self.GREEN_LIGHT_HORIZONTAL_1 + 1)  # Passage au orange
-                        cooldown_step_tl_1 = 0
+            elif traci.trafficlight.getPhase("c2") == self.GREEN_LIGHT_VERTICAL_2:
+                quelqun_en_attente = (traci.lanearea.getLastStepVehicleNumber(
+                    "ec2") >= 1 or traci.lanearea.getLastStepVehicleNumber("c1c2") >= 1)
+                autre_voie_vide = (traci.lanearea.getLastStepVehicleNumber(
+                    "n2c2") == 0 and traci.lanearea.getLastStepVehicleNumber("s2c2") == 0)
+                if (quelqun_en_attente and autre_voie_vide) or cooldown_step_tl_2 > max_duration_tl:
+                    traci.trafficlight.setPhase("c2", self.GREEN_LIGHT_VERTICAL_2 + 1)
+                    cooldown_step_tl_2 = 0
 
-                elif traci.trafficlight.getPhase("c1") == self.GREEN_LIGHT_VERTICAL_1:
-                    quelqun_en_attente = (traci.lanearea.getLastStepVehicleNumber(
-                        "wc1") >= 1 or traci.lanearea.getLastStepVehicleNumber("c2c1") >= 1)
-                    autre_voie_vide = (traci.lanearea.getLastStepVehicleNumber(
-                        "n1c1") == 0 and traci.lanearea.getLastStepVehicleNumber("s1c1") == 0)
-                    if (quelqun_en_attente and autre_voie_vide) or cooldown_step_tl_1 > max_duration_tl:
-                        traci.trafficlight.setPhase("c1", self.GREEN_LIGHT_VERTICAL_1 + 1)
-                        cooldown_step_tl_1 = 0
+        cooldown_step_tl_1 += 1
+        cooldown_step_tl_2 += 1
+        config['cooldown_step'] = [cooldown_step_tl_1, cooldown_step_tl_2]
+        return config
 
-            # Second intersection
-            if cooldown_step_tl_2 > min_duration_tl:
-                if traci.trafficlight.getPhase("c2") == self.GREEN_LIGHT_HORIZONTAL_2:
-                    quelqun_en_attente = (traci.lanearea.getLastStepVehicleNumber(
-                        "n2c2") >= 1 or traci.lanearea.getLastStepVehicleNumber("s2c2") >= 1)
-                    autre_voie_vide = (traci.lanearea.getLastStepVehicleNumber(
-                        "ec2") == 0 and traci.lanearea.getLastStepVehicleNumber("c1c2") == 0)
-                    if (quelqun_en_attente and autre_voie_vide) or cooldown_step_tl_2 > max_duration_tl:
-                        traci.trafficlight.setPhase("c2", self.GREEN_LIGHT_HORIZONTAL_2 + 1)
-                        cooldown_step_tl_2 = 0
-
-                elif traci.trafficlight.getPhase("c2") == self.GREEN_LIGHT_VERTICAL_2:
-                    quelqun_en_attente = (traci.lanearea.getLastStepVehicleNumber(
-                        "ec2") >= 1 or traci.lanearea.getLastStepVehicleNumber("c1c2") >= 1)
-                    autre_voie_vide = (traci.lanearea.getLastStepVehicleNumber(
-                        "n2c2") == 0 and traci.lanearea.getLastStepVehicleNumber("s2c2") == 0)
-                    if (quelqun_en_attente and autre_voie_vide) or cooldown_step_tl_2 > max_duration_tl:
-                        traci.trafficlight.setPhase("c2", self.GREEN_LIGHT_VERTICAL_2 + 1)
-                        cooldown_step_tl_2 = 0
-
-            step += 1
-            cooldown_step_tl_1 += 1
-            cooldown_step_tl_2 += 1
-
-        return
-
-    def numerical_detection_all_vehicles(self, config={}):
+    def numerical_detection_all_vehicles(self, config):
         """
         To be used with a network equipped with numerical detectors.
 
@@ -677,63 +635,54 @@ class TwoCrossroadsNetwork:
         :type config: dict
         """
 
-        # Get new parameters from config
-        current_config = self.DEFAULT_CONFIG
-        for key in config:
-            current_config[key] = config[key]
+        if 'cooldown_step' not in config:
+            config['cooldown_step'] = [0, 0]
 
         # Select parameters
-        min_duration_tl = current_config["min_duration_tl"]
-        max_duration_tl = current_config["max_duration_tl"]
-        vehicle_threshold = current_config["vehicle_threshold"]
-        simulation_duration = current_config['simulation_duration']
+        min_duration_tl = config["min_duration_tl"]
+        max_duration_tl = config["max_duration_tl"]
+        vehicle_threshold = config["vehicle_threshold"]
+        cooldown_step_tl_1 = config['cooldown_step'][0]
+        cooldown_step_tl_2 = config['cooldown_step'][1]
 
-        step = 0
-        cooldown_step_tl_1 = 0  # Current phase duration for intersection 1
-        cooldown_step_tl_2 = 0  # Current phase duration for intersection 2
+        # Premier carrefour
+        if cooldown_step_tl_1 > min_duration_tl:
+            if traci.trafficlight.getPhase("c1") == self.GREEN_LIGHT_VERTICAL_1:
+                if traci.lanearea.getLastStepVehicleNumber(
+                        "wc1") >= vehicle_threshold or traci.lanearea.getLastStepVehicleNumber(
+                        "c2c1") >= vehicle_threshold or cooldown_step_tl_1 > max_duration_tl:
+                    traci.trafficlight.setPhase("c1", self.GREEN_LIGHT_VERTICAL_1 + 1)  # Passage au orange
+                    cooldown_step_tl_1 = 0
 
-        while step < simulation_duration:
-            traci.simulationStep()
+            elif traci.trafficlight.getPhase("c1") == self.GREEN_LIGHT_HORIZONTAL_1:
+                if traci.lanearea.getLastStepVehicleNumber(
+                        "s1c1") >= vehicle_threshold or traci.lanearea.getLastStepVehicleNumber(
+                        "n1c1") >= vehicle_threshold or cooldown_step_tl_1 > max_duration_tl:
+                    traci.trafficlight.setPhase("c1", self.GREEN_LIGHT_HORIZONTAL_1 + 1)
+                    cooldown_step_tl_1 = 0
 
-            # Premier carrefour
-            if cooldown_step_tl_1 > min_duration_tl:
-                if traci.trafficlight.getPhase("c1") == self.GREEN_LIGHT_VERTICAL_1:
-                    if traci.lanearea.getLastStepVehicleNumber(
-                            "wc1") >= vehicle_threshold or traci.lanearea.getLastStepVehicleNumber(
-                            "c2c1") >= vehicle_threshold or cooldown_step_tl_1 > max_duration_tl:
-                        traci.trafficlight.setPhase("c1", self.GREEN_LIGHT_VERTICAL_1 + 1)  # Passage au orange
-                        cooldown_step_tl_1 = 0
+        # Deuxième carrefour
+        if cooldown_step_tl_2 > min_duration_tl:
+            if traci.trafficlight.getPhase("c2") == self.GREEN_LIGHT_VERTICAL_2:
+                if traci.lanearea.getLastStepVehicleNumber(
+                        "c1c2") >= vehicle_threshold or traci.lanearea.getLastStepVehicleNumber(
+                        "ec2") >= vehicle_threshold or cooldown_step_tl_2 > max_duration_tl:
+                    traci.trafficlight.setPhase("c2", self.GREEN_LIGHT_VERTICAL_2 + 1)
+                    cooldown_step_tl_2 = 0
 
-                elif traci.trafficlight.getPhase("c1") == self.GREEN_LIGHT_HORIZONTAL_1:
-                    if traci.lanearea.getLastStepVehicleNumber(
-                            "s1c1") >= vehicle_threshold or traci.lanearea.getLastStepVehicleNumber(
-                            "n1c1") >= vehicle_threshold or cooldown_step_tl_1 > max_duration_tl:
-                        traci.trafficlight.setPhase("c1", self.GREEN_LIGHT_HORIZONTAL_1 + 1)
-                        cooldown_step_tl_1 = 0
+            elif traci.trafficlight.getPhase("c2") == self.GREEN_LIGHT_HORIZONTAL_1:
+                if traci.lanearea.getLastStepVehicleNumber(
+                        "s2c2") >= vehicle_threshold or traci.lanearea.getLastStepVehicleNumber(
+                        "n2c2") >= vehicle_threshold or cooldown_step_tl_2 > max_duration_tl:
+                    traci.trafficlight.setPhase("c2", self.GREEN_LIGHT_HORIZONTAL_1 + 1)
+                    cooldown_step_tl_2 = 0
 
-            # Deuxième carrefour
-            if cooldown_step_tl_2 > min_duration_tl:
-                if traci.trafficlight.getPhase("c2") == self.GREEN_LIGHT_VERTICAL_2:
-                    if traci.lanearea.getLastStepVehicleNumber(
-                            "c1c2") >= vehicle_threshold or traci.lanearea.getLastStepVehicleNumber(
-                            "ec2") >= vehicle_threshold or cooldown_step_tl_2 > max_duration_tl:
-                        traci.trafficlight.setPhase("c2", self.GREEN_LIGHT_VERTICAL_2 + 1)
-                        cooldown_step_tl_2 = 0
+        cooldown_step_tl_1 += 1
+        cooldown_step_tl_2 += 1
+        config['cooldown_step'] = [cooldown_step_tl_1, cooldown_step_tl_2]
+        return config
 
-                elif traci.trafficlight.getPhase("c2") == self.GREEN_LIGHT_HORIZONTAL_1:
-                    if traci.lanearea.getLastStepVehicleNumber(
-                            "s2c2") >= vehicle_threshold or traci.lanearea.getLastStepVehicleNumber(
-                            "n2c2") >= vehicle_threshold or cooldown_step_tl_2 > max_duration_tl:
-                        traci.trafficlight.setPhase("c2", self.GREEN_LIGHT_HORIZONTAL_1 + 1)
-                        cooldown_step_tl_2 = 0
-
-            step += 1
-            cooldown_step_tl_1 += 1
-            cooldown_step_tl_2 += 1
-
-        return
-
-    def numerical_detections_stopped_vehicles(self, config={}):
+    def numerical_detections_stopped_vehicles(self, config):
         """
         To be used with a network equipped with numerical detectors.
 
@@ -765,54 +714,45 @@ class TwoCrossroadsNetwork:
         :type config: dict
         """
 
-        # Get new parameters from config
-        current_config = self.DEFAULT_CONFIG
-        for key in config:
-            current_config[key] = config[key]
+        if 'cooldown_step' not in config:
+            config['cooldown_step'] = [0, 0]
 
         # Select parameters
-        min_duration_tl = current_config["min_duration_tl"]
-        max_duration_tl = current_config["max_duration_tl"]
-        vehicle_threshold = current_config["vehicle_threshold"]
-        simulation_duration = current_config['simulation_duration']
+        min_duration_tl = config["min_duration_tl"]
+        max_duration_tl = config["max_duration_tl"]
+        vehicle_threshold = config["vehicle_threshold"]
+        cooldown_step_tl_1 = config['cooldown_step'][0]
+        cooldown_step_tl_2 = config['cooldown_step'][1]
 
-        step = 0
-        cooldown_step_tl_1 = 0  # Nombre de pas depuis la dernière actualisation du feu 1
-        cooldown_step_tl_2 = 0  # Nombre de pas depuis la dernière actualisation du feu 2
+        # Premier carrefour
+        if cooldown_step_tl_1 > min_duration_tl:
+            if traci.trafficlight.getPhase("c1") == self.GREEN_LIGHT_VERTICAL_1:
+                if traci.lanearea.getJamLengthVehicle("wc1") >= vehicle_threshold or traci.lanearea.getJamLengthVehicle(
+                        "c2c1") >= vehicle_threshold or cooldown_step_tl_1 > max_duration_tl:
+                    traci.trafficlight.setPhase("c1", self.GREEN_LIGHT_VERTICAL_1 + 1)  # Passage au orange
+                    cooldown_step_tl_1 = 0
 
-        while step < simulation_duration:
-            traci.simulationStep()
+            elif traci.trafficlight.getPhase("c1") == self.GREEN_LIGHT_HORIZONTAL_1:
+                if traci.lanearea.getJamLengthVehicle("s1c1") >= vehicle_threshold or traci.lanearea.getJamLengthVehicle(
+                        "n1c1") >= vehicle_threshold or cooldown_step_tl_1 > max_duration_tl:
+                    traci.trafficlight.setPhase("c1", self.GREEN_LIGHT_HORIZONTAL_1 + 1)
+                    cooldown_step_tl_1 = 0
 
-            # Premier carrefour
-            if cooldown_step_tl_1 > min_duration_tl:
-                if traci.trafficlight.getPhase("c1") == self.GREEN_LIGHT_VERTICAL_1:
-                    if traci.lanearea.getJamLengthVehicle("wc1") >= vehicle_threshold or traci.lanearea.getJamLengthVehicle(
-                            "c2c1") >= vehicle_threshold or cooldown_step_tl_1 > max_duration_tl:
-                        traci.trafficlight.setPhase("c1", self.GREEN_LIGHT_VERTICAL_1 + 1)  # Passage au orange
-                        cooldown_step_tl_1 = 0
+        # Deuxième carrefour
+        if cooldown_step_tl_2 > min_duration_tl:
+            if traci.trafficlight.getPhase("c2") == self.GREEN_LIGHT_VERTICAL_2:
+                if traci.lanearea.getJamLengthVehicle("c1c2") >= vehicle_threshold or traci.lanearea.getJamLengthVehicle(
+                        "ec2") >= vehicle_threshold or cooldown_step_tl_2 > max_duration_tl:
+                    traci.trafficlight.setPhase("c2", self.GREEN_LIGHT_VERTICAL_2 + 1)
+                    cooldown_step_tl_2 = 0
 
-                elif traci.trafficlight.getPhase("c1") == self.GREEN_LIGHT_HORIZONTAL_1:
-                    if traci.lanearea.getJamLengthVehicle("s1c1") >= vehicle_threshold or traci.lanearea.getJamLengthVehicle(
-                            "n1c1") >= vehicle_threshold or cooldown_step_tl_1 > max_duration_tl:
-                        traci.trafficlight.setPhase("c1", self.GREEN_LIGHT_HORIZONTAL_1 + 1)
-                        cooldown_step_tl_1 = 0
+            elif traci.trafficlight.getPhase("c2") == self.GREEN_LIGHT_HORIZONTAL_2:
+                if traci.lanearea.getJamLengthVehicle("s2c2") >= vehicle_threshold or traci.lanearea.getJamLengthVehicle(
+                        "n2c2") >= vehicle_threshold or cooldown_step_tl_2 > max_duration_tl:
+                    traci.trafficlight.setPhase("c2", self.GREEN_LIGHT_HORIZONTAL_2 + 1)  # WE orange, SN red, then normal transition to phase 0
+                    cooldown_step_tl_2 = 0
 
-            # Deuxième carrefour
-            if cooldown_step_tl_2 > min_duration_tl:
-                if traci.trafficlight.getPhase("c2") == self.GREEN_LIGHT_VERTICAL_2:
-                    if traci.lanearea.getJamLengthVehicle("c1c2") >= vehicle_threshold or traci.lanearea.getJamLengthVehicle(
-                            "ec2") >= vehicle_threshold or cooldown_step_tl_2 > max_duration_tl:
-                        traci.trafficlight.setPhase("c2", self.GREEN_LIGHT_VERTICAL_2 + 1)
-                        cooldown_step_tl_2 = 0
-
-                elif traci.trafficlight.getPhase("c2") == self.GREEN_LIGHT_HORIZONTAL_2:
-                    if traci.lanearea.getJamLengthVehicle("s2c2") >= vehicle_threshold or traci.lanearea.getJamLengthVehicle(
-                            "n2c2") >= vehicle_threshold or cooldown_step_tl_2 > max_duration_tl:
-                        traci.trafficlight.setPhase("c2", self.GREEN_LIGHT_HORIZONTAL_2 + 1)  # WE orange, SN red, then normal transition to phase 0
-                        cooldown_step_tl_2 = 0
-
-            step += 1
-            cooldown_step_tl_1 += 1
-            cooldown_step_tl_2 += 1
-
-        return
+        cooldown_step_tl_1 += 1
+        cooldown_step_tl_2 += 1
+        config['cooldown_step'] = [cooldown_step_tl_1, cooldown_step_tl_2]
+        return config
