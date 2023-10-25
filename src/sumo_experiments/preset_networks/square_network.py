@@ -25,7 +25,8 @@ class SquareNetwork:
     CONFIG_PARAMETER_LIST = [
         'exp_name', 'lane_length', 'max_speed', 'green_time', 'yellow_time', 'minimum_edge_length', 'maximum_edge_length',
         'stop_generation_time', 'flow_frequency', 'period_time', 'load_vector', 'coeff_matrix', 'min_duration_tl',
-        'max_duration_tl', 'vehicle_threshold', 'simulation_duration', 'boolean_detector_length', 'square_side_length'
+        'max_duration_tl', 'vehicle_threshold', 'simulation_duration', 'boolean_detector_length', 'square_side_length',
+        'distribution'
     ]
 
 
@@ -333,6 +334,8 @@ class SquareNetwork:
         - "stop_generation_time" (int) : The default simulation step when flows will end
         - "flow_frequency" (int) : The default flows frequency (in vehicles/hour)
         - "square_side_length" (int) : The number of intersections that compose a side of the square
+        - "distribution" (str) : The distribution law for all flows. "uniform" inserts vehicles each n simulation steps
+        'binomial' inserts vehicle at each simulation step with a given probability. Each of the law respect the flow frequency.
 
         :param config: Customized flows configuration. Check documentation to see all parameters.
         :type config: dict
@@ -344,6 +347,7 @@ class SquareNetwork:
         stop_generation_time = config['stop_generation_time']
         flow_frequency = config['flow_frequency']
         square_side_length = config["square_side_length"]
+        distribution = config['distribution']
 
         routes = FlowBuilder()
 
@@ -374,7 +378,8 @@ class SquareNetwork:
                             to_edge=liste_sorties[x],
                             end=stop_generation_time,
                             frequency=flow_frequency,
-                            v_type='car0')
+                            v_type='car0',
+                            distribution=distribution)
 
         return routes
 
@@ -390,6 +395,8 @@ class SquareNetwork:
         - "stop_generation_time" (int) : The default simulation step when flows will end
         - "flow_frequency" (int) : The default flows frequency (in vehicles/hour)
         - "square_side_length" (int) : The number of intersections that compose a side of the square
+        - "distribution" (str) : The distribution law for all flows. "uniform" inserts vehicles each n simulation steps
+        'binomial' inserts vehicle at each simulation step with a given probability. Each of the law respect the flow frequency.
 
         :param config: Customized flows configuration. Check documentation to see all parameters.
         :type config: dict
@@ -401,6 +408,7 @@ class SquareNetwork:
         stop_generation_time = config['stop_generation_time']
         flow_frequency = config['flow_frequency']
         square_side_length = config["square_side_length"]
+        distribution = config['distribution']
 
         routes = FlowBuilder()
 
@@ -433,7 +441,8 @@ class SquareNetwork:
                                     to_edge=liste_sorties[j],
                                     end=stop_generation_time,
                                     frequency=flow_frequency // ((square_side_length * 4) - 1),
-                                    v_type='car0')
+                                    v_type='car0',
+                                    distribution=distribution)
 
         return routes
 
@@ -454,6 +463,8 @@ class SquareNetwork:
         - "load_vector" (numpy.ndarray) : The vehicle frequency on the network for each period
         - "period_time" (int) : The period duration (in simulation steps)
         - "square_side_length" (int) : The number of intersections that compose a side of the square
+        - "distribution" (str) : The distribution law for all flows. "uniform" inserts vehicles each n simulation steps
+        'binomial' inserts vehicle at each simulation step with a given probability. Each of the law respect the flow frequency.
 
         :param config: Customized flows configuration. Check documentation to see all parameters.
         :type config: dict
@@ -466,6 +477,7 @@ class SquareNetwork:
         load_vector = config['load_vector']
         period_time = config['period_time']
         square_side_length = config['square_side_length']
+        distribution = config['distribution']
 
         routes = FlowBuilder()
 
@@ -508,7 +520,7 @@ class SquareNetwork:
                                         end=flow_end,
                                         frequency=flows[compteur],
                                         v_type='car0',
-                                        distribution="binomial")
+                                        distribution=distribution)
                         compteur += 1
 
         return routes

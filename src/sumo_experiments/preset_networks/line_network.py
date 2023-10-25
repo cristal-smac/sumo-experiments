@@ -27,7 +27,7 @@ class LineNetwork:
     CONFIG_PARAMETER_LIST = [
         'exp_name', 'lane_length', 'max_speed', 'green_time', 'yellow_time', 'nb_intersections', 'boolean_detector_length',
         'stop_generation_time', 'flow_frequency', 'period_time', 'load_vector', 'coeff_matrix', 'min_duration_tl',
-        'max_duration_tl', 'vehicle_threshold', 'simulation_duration'
+        'max_duration_tl', 'vehicle_threshold', 'simulation_duration', 'distribution'
     ]
 
     ### Networks ###
@@ -170,6 +170,8 @@ class LineNetwork:
         - "stop_generation_time" (int) : The default simulation step when flows will end
         - "flow_frequency" (int) : The default flows frequency (in vehicles/hour)
         - "nb_intersections" (int >= 2) : The number of intersections of the network
+        - "distribution" (str) : The distribution law for all flows. "uniform" inserts vehicles each n simulation steps
+        'binomial' inserts vehicle at each simulation step with a given probability. Each of the law respect the flow frequency.
 
         :param config: Customized flows configuration. Check documentation to see all parameters.
         :type config: dict
@@ -181,6 +183,7 @@ class LineNetwork:
         stop_generation_time = config['stop_generation_time']
         flow_frequency = config['flow_frequency']
         nb_intersections = config['nb_intersections']
+        distribution = config['distribution']
 
         routes = FlowBuilder()
 
@@ -188,11 +191,11 @@ class LineNetwork:
         routes.add_v_type(id='car0')
 
         # Create flows
-        routes.add_flow(id='flow_we', from_edge='edge_wc1', to_edge=f'edge_c{nb_intersections}e', end=stop_generation_time, frequency=flow_frequency, v_type='car0')
-        routes.add_flow(id='flow_ew', from_edge=f'edge_ec{nb_intersections}', to_edge='edge_c1w', end=stop_generation_time, frequency=flow_frequency, v_type='car0')
+        routes.add_flow(id='flow_we', from_edge='edge_wc1', to_edge=f'edge_c{nb_intersections}e', end=stop_generation_time, frequency=flow_frequency, v_type='car0', distribution=distribution)
+        routes.add_flow(id='flow_ew', from_edge=f'edge_ec{nb_intersections}', to_edge='edge_c1w', end=stop_generation_time, frequency=flow_frequency, v_type='car0', distribution=distribution)
         for i in range(1, nb_intersections + 1):
-            routes.add_flow(id=f'flow_n{i}s{i}', from_edge=f'edge_n{i}c{i}', to_edge=f'edge_c{i}s{i}', end=stop_generation_time, frequency=flow_frequency, v_type='car0')
-            routes.add_flow(id=f'flow_s{i}n{i}', from_edge=f'edge_s{i}c{i}', to_edge=f'edge_c{i}n{i}', end=stop_generation_time, frequency=flow_frequency, v_type='car0')
+            routes.add_flow(id=f'flow_n{i}s{i}', from_edge=f'edge_n{i}c{i}', to_edge=f'edge_c{i}s{i}', end=stop_generation_time, frequency=flow_frequency, v_type='car0', distribution=distribution)
+            routes.add_flow(id=f'flow_s{i}n{i}', from_edge=f'edge_s{i}c{i}', to_edge=f'edge_c{i}n{i}', end=stop_generation_time, frequency=flow_frequency, v_type='car0', distribution=distribution)
 
         return routes
 
@@ -208,6 +211,8 @@ class LineNetwork:
         - "stop_generation_time" (int) : The default simulation step when flows will end
         - "flow_frequency" (int) : The default flows frequency (in vehicles/hour)
         - "nb_intersections" (int >= 2) : The number of intersections of the network
+        - "distribution" (str) : The distribution law for all flows. "uniform" inserts vehicles each n simulation steps
+        'binomial' inserts vehicle at each simulation step with a given probability. Each of the law respect the flow frequency.
 
         :param config: Customized flows configuration. Check documentation to see all parameters.
         :type config: dict
@@ -219,6 +224,7 @@ class LineNetwork:
         stop_generation_time = config['stop_generation_time']
         flow_frequency = config['flow_frequency']
         nb_intersections = config['nb_intersections']
+        distribution = config['distribution']
 
         routes = FlowBuilder()
 
@@ -246,7 +252,7 @@ class LineNetwork:
         for entry in entries:
             for ex in exits:
                 if entries.index(entry) != exits.index(ex):
-                    routes.add_flow(id=f'flow_{entry}_{ex}', from_edge=entry, to_edge=ex, end=stop_generation_time, frequency=flow_frequency // (len(exits) - 1), v_type='car0', distribution='binomial')
+                    routes.add_flow(id=f'flow_{entry}_{ex}', from_edge=entry, to_edge=ex, end=stop_generation_time, frequency=flow_frequency // (len(exits) - 1), v_type='car0', distribution=distribution)
 
         return routes
 
@@ -267,6 +273,8 @@ class LineNetwork:
         - "load_vector" (numpy.ndarray) : The vehicle frequency on the network for each period
         - "period_time" (int) : The period duration (in simulation steps)
         - "nb_intersections" (int >= 2) : The number of intersections of the network
+        - "distribution" (str) : The distribution law for all flows. "uniform" inserts vehicles each n simulation steps
+        'binomial' inserts vehicle at each simulation step with a given probability. Each of the law respect the flow frequency.
 
         :param config: Customized flows configuration. Check documentation to see all parameters.
         :type config: dict
@@ -279,6 +287,7 @@ class LineNetwork:
         load_vector = config['load_vector']
         period_time = config['period_time']
         nb_intersections = config['nb_intersections']
+        distribution = config['distribution']
 
         routes = FlowBuilder()
 
@@ -320,7 +329,7 @@ class LineNetwork:
                                         from_edge=entry, to_edge=ex,
                                         begin=flow_start, end=flow_end,
                                         frequency=flow_values[index_coeff],
-                                        v_type='car0', distribution='binomial')
+                                        v_type='car0', distribution=distribution)
                         index_coeff += 1
 
         return routes
