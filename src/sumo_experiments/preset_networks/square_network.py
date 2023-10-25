@@ -23,13 +23,9 @@ class SquareNetwork:
     NS_GREEN_LIGHT = 2
 
     CONFIG_PARAMETER_LIST = [
-        'exp_name', 'lane_length', 'max_speed', 'green_time', 'yellow_time',
+        'exp_name', 'lane_length', 'max_speed', 'green_time', 'yellow_time', 'minimum_edge_length', 'maximum_edge_length',
         'stop_generation_time', 'flow_frequency', 'period_time', 'load_vector', 'coeff_matrix', 'min_duration_tl',
-        'max_duration_tl', 'vehicle_threshold', 'simulation_duration', 'north_length', 'east_length',
-        'south_length', 'west_length', 'green_time_north_south', 'green_time_west_east', 'yellow_time_north_south',
-        'yellow_time_west_east', 'stop_generation_time_north', 'stop_generation_time_east', 'stop_generation_time_south',
-        'stop_generation_time_west', 'flow_frequency_north', 'flow_frequency_east', 'flow_frequency_south', 'flow_frequency_west',
-        'boolean_detector_length', 'simulation_duration', 'square_side_length'
+        'max_duration_tl', 'vehicle_threshold', 'simulation_duration', 'boolean_detector_length', 'square_side_length'
     ]
 
 

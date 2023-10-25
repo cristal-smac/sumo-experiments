@@ -25,7 +25,7 @@ class LineNetwork:
     GREEN_LIGHT_VERTICAL = 2
 
     CONFIG_PARAMETER_LIST = [
-        'exp_name', 'lane_length', 'max_speed', 'green_time', 'yellow_time',
+        'exp_name', 'lane_length', 'max_speed', 'green_time', 'yellow_time', 'nb_intersections', 'boolean_detector_length',
         'stop_generation_time', 'flow_frequency', 'period_time', 'load_vector', 'coeff_matrix', 'min_duration_tl',
         'max_duration_tl', 'vehicle_threshold', 'simulation_duration'
     ]
@@ -133,7 +133,7 @@ class LineNetwork:
         id_last_inter = nb_intersections
         net.add_connection(from_edge=f'edge_c{id_last_inter - 1}c{id_last_inter}', to_edge=f'edge_c{id_last_inter}e')
         net.add_connection(from_edge=f'edge_c{id_last_inter - 1}c{id_last_inter}', to_edge=f'edge_c{id_last_inter}n{id_last_inter}')
-        net.add_connection(from_edge=f'edge_c{id_last_inter - 1}c{id_last_inter}', to_edge=f'edge_c{i}s{i}')
+        net.add_connection(from_edge=f'edge_c{id_last_inter - 1}c{id_last_inter}', to_edge=f'edge_c{id_last_inter}s{id_last_inter}')
         net.add_connection(from_edge=f'edge_n{id_last_inter}c{id_last_inter}', to_edge=f'edge_c{id_last_inter}c{id_last_inter - 1}')
         net.add_connection(from_edge=f'edge_n{id_last_inter}c{id_last_inter}', to_edge=f'edge_c{id_last_inter}s{id_last_inter}')
         net.add_connection(from_edge=f'edge_n{id_last_inter}c{id_last_inter}', to_edge=f'edge_c{id_last_inter}e')
@@ -310,16 +310,18 @@ class LineNetwork:
             flow_start = period_time * i
             flow_end = period_time * (i+1)
 
+            index_coeff = 0
             for entry in entries:
                 index_entry = entries.index(entry)
                 for ex in exits:
                     index_exit = exits.index(ex)
                     if index_entry != index_exit:
-                        routes.add_flow(id=f'flow_{entry}_{ex}',
+                        routes.add_flow(id=f'flow_{entry}_{ex}_{i}',
                                         from_edge=entry, to_edge=ex,
                                         begin=flow_start, end=flow_end,
-                                        frequency=flow_values[len(entries) * index_entry + index_exit],
+                                        frequency=flow_values[index_coeff],
                                         v_type='car0', distribution='binomial')
+                        index_coeff += 1
 
         return routes
 
@@ -327,7 +329,7 @@ class LineNetwork:
 
     ### Detectors ###
 
-    def generate_numerical_dectectors(self, config):
+    def generate_numerical_detectors(self, config):
         """
         Generate a DetectorBuilder with a numerical detector for each lane going to an intersection.
         A numerical detector counts and returns the number of vehicles on its scope. In SUMO, a numerical
@@ -545,7 +547,7 @@ class LineNetwork:
         config['cooldown_step'] = cooldown_step
         return config
 
-    def numerical_detections_stopped_vehicles(self, config):
+    def numerical_detection_stopped_vehicles(self, config):
         """
         To be used with a network equipped with numerical detectors.
 

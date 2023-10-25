@@ -501,7 +501,7 @@ class OneCrossroadNetwork:
 
         cooldown_step += 1
         config['cooldown_step'] = cooldown_step
-        return
+        return config
 
     def numerical_detection_all_vehicles(self, config):
         """
@@ -559,4 +559,4 @@ class OneCrossroadNetwork:
 
         cooldown_step += 1
         config['cooldown_step'] = cooldown_step
-        return
+        return config
