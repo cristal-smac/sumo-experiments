@@ -303,13 +303,13 @@ class OneCrossroadNetwork:
             flows.add_flow(id=f'{i}_flow_ns', from_edge='edge_nc', to_edge='edge_cs', begin=flow_start, end=flow_end, frequency=flow_values[1], v_type='car0', distribution="binomial")
             flows.add_flow(id=f'{i}_flow_nw', from_edge='edge_nc', to_edge='edge_cw', begin=flow_start, end=flow_end, frequency=flow_values[2], v_type='car0', distribution="binomial")
             # From east
-            flows.add_flow(id=f'{i}_flow_es', from_edge='edge_ec', to_edge='edge_cs', begin=flow_start, end=flow_end, frequency=flow_values[3], v_type='car0', distribution="binomial")
-            flows.add_flow(id=f'{i}_flow_ew', from_edge='edge_ec', to_edge='edge_cw', begin=flow_start, end=flow_end, frequency=flow_values[4], v_type='car0', distribution="binomial")
-            flows.add_flow(id=f'{i}_flow_en', from_edge='edge_ec', to_edge='edge_cn', begin=flow_start, end=flow_end, frequency=flow_values[5], v_type='car0', distribution="binomial")
+            flows.add_flow(id=f'{i}_flow_en', from_edge='edge_ec', to_edge='edge_cn', begin=flow_start, end=flow_end, frequency=flow_values[3], v_type='car0', distribution="binomial")
+            flows.add_flow(id=f'{i}_flow_es', from_edge='edge_ec', to_edge='edge_cs', begin=flow_start, end=flow_end, frequency=flow_values[4], v_type='car0', distribution="binomial")
+            flows.add_flow(id=f'{i}_flow_ew', from_edge='edge_ec', to_edge='edge_cw', begin=flow_start, end=flow_end, frequency=flow_values[5], v_type='car0', distribution="binomial")
             # From south
-            flows.add_flow(id=f'{i}_flow_sw', from_edge='edge_sc', to_edge='edge_cw', begin=flow_start, end=flow_end, frequency=flow_values[6], v_type='car0', distribution="binomial")
-            flows.add_flow(id=f'{i}_flow_sn', from_edge='edge_sc', to_edge='edge_cn', begin=flow_start, end=flow_end, frequency=flow_values[7], v_type='car0', distribution="binomial")
-            flows.add_flow(id=f'{i}_flow_se', from_edge='edge_sc', to_edge='edge_ce', begin=flow_start, end=flow_end, frequency=flow_values[8], v_type='car0', distribution="binomial")
+            flows.add_flow(id=f'{i}_flow_sn', from_edge='edge_sc', to_edge='edge_cn', begin=flow_start, end=flow_end, frequency=flow_values[6], v_type='car0', distribution="binomial")
+            flows.add_flow(id=f'{i}_flow_se', from_edge='edge_sc', to_edge='edge_ce', begin=flow_start, end=flow_end, frequency=flow_values[7], v_type='car0', distribution="binomial")
+            flows.add_flow(id=f'{i}_flow_sw', from_edge='edge_sc', to_edge='edge_cw', begin=flow_start, end=flow_end, frequency=flow_values[8], v_type='car0', distribution="binomial")
             # From west
             flows.add_flow(id=f'{i}_flow_wn', from_edge='edge_wc', to_edge='edge_cn', begin=flow_start, end=flow_end, frequency=flow_values[9], v_type='car0', distribution="binomial")
             flows.add_flow(id=f'{i}_flow_we', from_edge='edge_wc', to_edge='edge_ce', begin=flow_start, end=flow_end, frequency=flow_values[10], v_type='car0', distribution="binomial")
