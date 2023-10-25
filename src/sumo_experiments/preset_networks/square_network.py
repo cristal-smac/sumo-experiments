@@ -432,7 +432,7 @@ class SquareNetwork:
                                     from_edge=liste_entrees[i],
                                     to_edge=liste_sorties[j],
                                     end=stop_generation_time,
-                                    frequency=flow_frequency,
+                                    frequency=flow_frequency // ((square_side_length * 4) - 1),
                                     v_type='car0')
 
         return routes
