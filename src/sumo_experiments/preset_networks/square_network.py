@@ -29,6 +29,12 @@ class SquareNetwork:
         'distribution'
     ]
 
+    def __init__(self):
+        """
+        Init of class
+        """
+        self.edges_length = {}
+
 
     ### Network ###
 
@@ -75,11 +81,11 @@ class SquareNetwork:
         if square_side_length <= 1:
             raise ValueError("The 'square_side_length' parameter must be greater than 1.")
 
-        node_coordinates = range(square_side_length + 2)
-        offset_values_x = [np.random.uniform(minimum_length, maximum_length) for _ in range(square_side_length + 2)]
-        offset_values_y = [np.random.uniform(minimum_length, maximum_length) for _ in range(square_side_length + 2)]
-        offset_x = dict(zip(node_coordinates, offset_values_x))
-        offset_y = dict(zip(node_coordinates, offset_values_y))
+        # Generate and save edges length
+        offset_values_x = [np.random.uniform(minimum_length, maximum_length) for _ in range(square_side_length + 1)]
+        offset_values_y = [np.random.uniform(minimum_length, maximum_length) for _ in range(square_side_length + 1)]
+        x_positions = [0] + offset_values_x
+        y_positions = [0] + offset_values_y
 
         # We add the nodes
         for x in range(square_side_length + 2):
@@ -89,12 +95,12 @@ class SquareNetwork:
                 if not self.is_corner(x, y, square_side_length):
                     # If node is on boarder, we configure it as a network entry
                     if (x in [0, square_side_length + 1]) or (y in [0, square_side_length + 1]):
-                        net.add_node(id=f'x{x}-y{y}', x=x * maximum_length + offset_x[x],
-                                     y=y * maximum_length + offset_y[y])
+                        net.add_node(id=f'x{x}-y{y}', x=sum(offset_values_x[:x]),
+                                     y=sum(offset_values_y[:y]))
                     # Else, it's a traffic light
                     else:
-                        net.add_node(id=f'x{x}-y{y}', x=x * maximum_length + offset_x[x],
-                                     y=y * maximum_length + offset_y[y], type='traffic_light', tl_program=f'x{x}-y{y}')
+                        net.add_node(id=f'x{x}-y{y}', x=sum(offset_values_x[:x]),
+                                     y=sum(offset_values_y[:y]), type='traffic_light', tl_program=f'x{x}-y{y}')
 
         # We add an edge type
         net.add_edge_type(id='default', params={'numLanes': 1, 'speed': max_speed})
@@ -110,17 +116,25 @@ class SquareNetwork:
                         if x < square_side_length + 1:
                             net.add_edge(id=f'edge_x{x}-y{y}_x{x + 1}-y{y}', from_node=f'x{x}-y{y}',
                                          to_node=f'x{x + 1}-y{y}', edge_type='default')
+                            self.edges_length[f'edge_x{x}-y{y}_x{x + 1}-y{y}'] = x_positions[x+1]
                         if x > 0:
                             net.add_edge(id=f'edge_x{x}-y{y}_x{x - 1}-y{y}', from_node=f'x{x}-y{y}',
                                          to_node=f'x{x - 1}-y{y}', edge_type='default')
+                            self.edges_length[f'edge_x{x}-y{y}_x{x - 1}-y{y}'] = x_positions[x]
                     # We join current node with node above and below (if they exist, and if current is not on boarder)
                     if x not in [0, square_side_length + 1]:
                         if y < square_side_length + 1:
                             net.add_edge(id=f'edge_x{x}-y{y}_x{x}-y{y + 1}', from_node=f'x{x}-y{y}',
                                          to_node=f'x{x}-y{y + 1}', edge_type='default')
+                            self.edges_length[f'edge_x{x}-y{y}_x{x}-y{y + 1}'] = y_positions[y + 1]
                         if y > 0:
                             net.add_edge(id=f'edge_x{x}-y{y}_x{x}-y{y - 1}', from_node=f'x{x}-y{y}',
                                          to_node=f'x{x}-y{y - 1}', edge_type='default')
+                            self.edges_length[f'edge_x{x}-y{y}_x{x}-y{y - 1}'] = y_positions[y]
+
+        print(x_positions)
+        print(y_positions)
+        print(self.edges_length)
 
         # We add the connections
         for x in range(square_side_length + 2):
@@ -591,10 +605,12 @@ class SquareNetwork:
         :rtype: sumo_experiments.src.components.DetectorBuilder
         """
 
+        print(self.edges_length)
+
         # Select parameters
-        lane_length = config['lane_length']
         boolean_detector_length = config['boolean_detector_length']
         square_side_length = config['square_side_length']
+        lane_length = config['lane_length']
 
         detectors = DetectorBuilder()
 
@@ -607,41 +623,49 @@ class SquareNetwork:
                     if y not in [0, square_side_length + 1]:
                         if x < square_side_length:
                             if x == 0:
+                                lane_length_x = self.edges_length[f'edge_x{x}-y{y}_x{x + 1}-y{y}'] if self.edges_length != {} else lane_length
                                 detectors.add_lane_area_detector(id=f'detector_x{x}-y{y}_x{x + 1}-y{y}',
                                                                  lane=f'edge_x{x}-y{y}_x{x + 1}-y{y}_0',
-                                                                 pos=(lane_length - boolean_detector_length - 7.2))
+                                                                 pos=(lane_length_x - boolean_detector_length - 7.2))
                             else:
+                                lane_length_x = self.edges_length[f'edge_x{x}-y{y}_x{x + 1}-y{y}'] if self.edges_length != {} else lane_length
                                 detectors.add_lane_area_detector(id=f'detector_x{x}-y{y}_x{x + 1}-y{y}',
                                                                  lane=f'edge_x{x}-y{y}_x{x + 1}-y{y}_0',
-                                                                 pos=(lane_length - boolean_detector_length - 7.2 * 2))
+                                                                 pos=(lane_length_x - boolean_detector_length - 7.2 * 2))
                         if x > 1:
                             if x == square_side_length + 1:
+                                lane_length_x = self.edges_length[f'edge_x{x}-y{y}_x{x - 1}-y{y}'] if self.edges_length != {} else lane_length
                                 detectors.add_lane_area_detector(id=f'detector_x{x}-y{y}_x{x - 1}-y{y}',
                                                                  lane=f'edge_x{x}-y{y}_x{x - 1}-y{y}_0',
-                                                                 pos=(lane_length - boolean_detector_length - 7.2))
+                                                                 pos=(lane_length_x - boolean_detector_length - 7.2))
                             else:
+                                lane_length_x = self.edges_length[f'edge_x{x}-y{y}_x{x - 1}-y{y}'] if self.edges_length != {} else lane_length
                                 detectors.add_lane_area_detector(id=f'detector_x{x}-y{y}_x{x - 1}-y{y}',
                                                                  lane=f'edge_x{x}-y{y}_x{x - 1}-y{y}_0',
-                                                                 pos=(lane_length - boolean_detector_length - 7.2 * 2))
+                                                                 pos=(lane_length_x - boolean_detector_length - 7.2 * 2))
                     if x not in [0, square_side_length + 1]:
                         if y < square_side_length:
                             if y == 0:
+                                lane_length_y = self.edges_length[f'edge_x{x}-y{y}_x{x}-y{y + 1}'] if self.edges_length != {} else lane_length
                                 detectors.add_lane_area_detector(id=f'detector_x{x}-y{y}_x{x}-y{y + 1}',
                                                                  lane=f'edge_x{x}-y{y}_x{x}-y{y + 1}_0',
-                                                                 pos=(lane_length - boolean_detector_length - 7.2))
+                                                                 pos=(lane_length_y - boolean_detector_length - 7.2))
                             else:
+                                lane_length_y = self.edges_length[f'edge_x{x}-y{y}_x{x}-y{y + 1}'] if self.edges_length != {} else lane_length
                                 detectors.add_lane_area_detector(id=f'detector_x{x}-y{y}_x{x}-y{y + 1}',
                                                                  lane=f'edge_x{x}-y{y}_x{x}-y{y + 1}_0',
-                                                                 pos=(lane_length - boolean_detector_length - 7.2 * 2))
+                                                                 pos=(lane_length_y - boolean_detector_length - 7.2 * 2))
                         if y > 1:
                             if y == square_side_length + 1:
+                                lane_length_y = self.edges_length[f'edge_x{x}-y{y}_x{x}-y{y - 1}'] if self.edges_length != {} else lane_length
                                 detectors.add_lane_area_detector(id=f'detector_x{x}-y{y}_x{x}-y{y - 1}',
                                                                  lane=f'edge_x{x}-y{y}_x{x}-y{y - 1}_0',
-                                                                 pos=(lane_length - boolean_detector_length - 7.2))
+                                                                 pos=(lane_length_y - boolean_detector_length - 7.2))
                             else:
+                                lane_length_y = self.edges_length[f'edge_x{x}-y{y}_x{x}-y{y - 1}'] if self.edges_length != {} else lane_length
                                 detectors.add_lane_area_detector(id=f'detector_x{x}-y{y}_x{x}-y{y - 1}',
                                                                  lane=f'edge_x{x}-y{y}_x{x}-y{y - 1}_0',
-                                                                 pos=(lane_length - boolean_detector_length - 7.2 * 2))
+                                                                 pos=(lane_length_y - boolean_detector_length - 7.2 * 2))
 
         return detectors
 
