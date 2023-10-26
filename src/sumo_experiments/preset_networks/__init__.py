@@ -1,3 +1,3 @@
-from .simple_crossroad import OneCrossroadNetwork
-from .double_crossroad import TwoCrossroadsNetwork
-from .square_crossroad import SquareNetwork
+from .one_crossroad_network import OneCrossroadNetwork
+from .line_network import LineNetwork
+from .square_network import SquareNetwork

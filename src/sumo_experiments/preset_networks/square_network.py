@@ -22,33 +22,19 @@ class SquareNetwork:
     WE_GREEN_LIGHT = 0
     NS_GREEN_LIGHT = 2
 
-    DEFAULT_CONFIG = {
-        'lane_length': 100,
-        'max_speed': 30,
-        'green_time': 30,
-        'yellow_time': 3,
-        'stop_generation_time': 1000,
-        'flow_density': 300,
-        'period_time': 300,
-        'min_duration_tl': 30,
-        'max_duration_tl': 60,
-        'vehicle_threshold': 5,
-        'simulation_duration': 1000,
-        'boolean_detector_length': 7,
-        'square_side_length': 2,
-        'minimum_edge_length': 50,
-        'maximum_edge_length': 100
-    }
-
     CONFIG_PARAMETER_LIST = [
-        'exp_name', 'lane_length', 'max_speed', 'green_time', 'yellow_time',
-        'stop_generation_time', 'flow_density', 'period_time', 'load_vector', 'coeff_matrix', 'min_duration_tl',
-        'max_duration_tl', 'vehicle_threshold', 'simulation_duration', 'north_length', 'east_length',
-        'south_length', 'west_length', 'green_time_north_south', 'green_time_west_east', 'yellow_time_north_south',
-        'yellow_time_west_east', 'stop_generation_time_north', 'stop_generation_time_east', 'stop_generation_time_south',
-        'stop_generation_time_west', 'flow_density_north', 'flow_density_east', 'flow_density_south', 'flow_density_west',
-        'boolean_detector_length', 'simulation_duration', 'square_side_length'
+        'exp_name', 'lane_length', 'max_speed', 'green_time', 'yellow_time', 'minimum_edge_length', 'maximum_edge_length',
+        'stop_generation_time', 'flow_frequency', 'period_time', 'load_vector', 'coeff_matrix', 'min_duration_tl',
+        'max_duration_tl', 'vehicle_threshold', 'simulation_duration', 'boolean_detector_length', 'square_side_length',
+        'distribution'
     ]
+
+    def __init__(self):
+        """
+        Init of class
+        """
+        self.edges_length = {}
+        self.random = False
 
 
     ### Network ###
@@ -75,20 +61,22 @@ class SquareNetwork:
         :rtype: sumo_experiments.src.components.NetworkBuilder
         """
 
-        # Get new parameters from config
-        current_config = self.DEFAULT_CONFIG
+        self.random = True
+
         for key in config:
             if key not in self.CONFIG_PARAMETER_LIST:
                 warnings.warn(f"The config parameter {key} is not a valid parameter.", stacklevel=2)
-            current_config[key] = config[key]
 
         # Select parameters
-        minimum_length = current_config['minimum_edge_length']
-        maximum_length = current_config['maximum_edge_length']
-        green_time = current_config['green_time']
-        yellow_time = current_config['yellow_time']
-        max_speed = current_config['max_speed']
-        square_side_length = current_config["square_side_length"]
+        minimum_length = config['minimum_edge_length']
+        maximum_length = config['maximum_edge_length']
+        if 'max_duration_tl' in config:
+            green_time = config['max_duration_tl']
+        else:
+            green_time = config['green_time']
+        yellow_time = config['yellow_time']
+        max_speed = config['max_speed']
+        square_side_length = config["square_side_length"]
 
         net = InfrastructureBuilder()
 
@@ -96,11 +84,11 @@ class SquareNetwork:
         if square_side_length <= 1:
             raise ValueError("The 'square_side_length' parameter must be greater than 1.")
 
-        node_coordinates = range(square_side_length + 2)
-        offset_values_x = [np.random.uniform(minimum_length, maximum_length) for _ in range(square_side_length + 2)]
-        offset_values_y = [np.random.uniform(minimum_length, maximum_length) for _ in range(square_side_length + 2)]
-        offset_x = dict(zip(node_coordinates, offset_values_x))
-        offset_y = dict(zip(node_coordinates, offset_values_y))
+        # Generate and save edges length
+        offset_values_x = [np.random.uniform(minimum_length, maximum_length) for _ in range(square_side_length + 1)]
+        offset_values_y = [np.random.uniform(minimum_length, maximum_length) for _ in range(square_side_length + 1)]
+        x_positions = [0] + offset_values_x
+        y_positions = [0] + offset_values_y
 
         # We add the nodes
         for x in range(square_side_length + 2):
@@ -110,12 +98,12 @@ class SquareNetwork:
                 if not self.is_corner(x, y, square_side_length):
                     # If node is on boarder, we configure it as a network entry
                     if (x in [0, square_side_length + 1]) or (y in [0, square_side_length + 1]):
-                        net.add_node(id=f'x{x}-y{y}', x=x * maximum_length + offset_x[x],
-                                     y=y * maximum_length + offset_y[y])
+                        net.add_node(id=f'x{x}-y{y}', x=sum(offset_values_x[:x]),
+                                     y=sum(offset_values_y[:y]))
                     # Else, it's a traffic light
                     else:
-                        net.add_node(id=f'x{x}-y{y}', x=x * maximum_length + offset_x[x],
-                                     y=y * maximum_length + offset_y[y], type='traffic_light', tl_program=f'x{x}-y{y}')
+                        net.add_node(id=f'x{x}-y{y}', x=sum(offset_values_x[:x]),
+                                     y=sum(offset_values_y[:y]), type='traffic_light', tl_program=f'x{x}-y{y}')
 
         # We add an edge type
         net.add_edge_type(id='default', params={'numLanes': 1, 'speed': max_speed})
@@ -131,17 +119,25 @@ class SquareNetwork:
                         if x < square_side_length + 1:
                             net.add_edge(id=f'edge_x{x}-y{y}_x{x + 1}-y{y}', from_node=f'x{x}-y{y}',
                                          to_node=f'x{x + 1}-y{y}', edge_type='default')
+                            self.edges_length[f'edge_x{x}-y{y}_x{x + 1}-y{y}'] = x_positions[x+1]
                         if x > 0:
                             net.add_edge(id=f'edge_x{x}-y{y}_x{x - 1}-y{y}', from_node=f'x{x}-y{y}',
                                          to_node=f'x{x - 1}-y{y}', edge_type='default')
+                            self.edges_length[f'edge_x{x}-y{y}_x{x - 1}-y{y}'] = x_positions[x]
                     # We join current node with node above and below (if they exist, and if current is not on boarder)
                     if x not in [0, square_side_length + 1]:
                         if y < square_side_length + 1:
                             net.add_edge(id=f'edge_x{x}-y{y}_x{x}-y{y + 1}', from_node=f'x{x}-y{y}',
                                          to_node=f'x{x}-y{y + 1}', edge_type='default')
+                            self.edges_length[f'edge_x{x}-y{y}_x{x}-y{y + 1}'] = y_positions[y + 1]
                         if y > 0:
                             net.add_edge(id=f'edge_x{x}-y{y}_x{x}-y{y - 1}', from_node=f'x{x}-y{y}',
                                          to_node=f'x{x}-y{y - 1}', edge_type='default')
+                            self.edges_length[f'edge_x{x}-y{y}_x{x}-y{y - 1}'] = y_positions[y]
+
+        print(x_positions)
+        print(y_positions)
+        print(self.edges_length)
 
         # We add the connections
         for x in range(square_side_length + 2):
@@ -223,19 +219,20 @@ class SquareNetwork:
         :rtype: sumo_experiments.src.components.NetworkBuilder
         """
 
-        # Get new parameters from config
-        current_config = self.DEFAULT_CONFIG
+        self.random = False
         for key in config:
             if key not in self.CONFIG_PARAMETER_LIST:
                 warnings.warn(f"The config parameter {key} is not a valid parameter.", stacklevel=2)
-            current_config[key] = config[key]
 
         # Select parameters
-        lane_length = current_config['lane_length']
-        green_time = current_config['green_time']
-        yellow_time = current_config['yellow_time']
-        max_speed = current_config['max_speed']
-        square_side_length = current_config["square_side_length"]
+        lane_length = config['lane_length']
+        if 'max_duration_tl' in config:
+            green_time = config['max_duration_tl']
+        else:
+            green_time = config['green_time']
+        yellow_time = config['yellow_time']
+        max_speed = config['max_speed']
+        square_side_length = config["square_side_length"]
 
         net = InfrastructureBuilder()
 
@@ -348,30 +345,27 @@ class SquareNetwork:
         """
         Generate flows for a square network.
         At the intersection, vehicles can not turn. They can only go ahead.
-        The config parameter can contain more parameter to define the density of vehicles from each entry, and the
+        The config parameter can contain more parameter to define the frequency of vehicles from each entry, and the
         simulation step where the flow will end.
 
         Valid parameters for config :
         - "stop_generation_time" (int) : The default simulation step when flows will end
-        - "flow_density" (int) : The default flows density (in vehicles/hour)
+        - "flow_frequency" (int) : The default flows frequency (in vehicles/hour)
         - "square_side_length" (int) : The number of intersections that compose a side of the square
+        - "distribution" (str) : The distribution law for all flows. "uniform" inserts vehicles each n simulation steps
+        'binomial' inserts vehicle at each simulation step with a given probability. Each of the law respect the flow frequency.
 
         :param config: Customized flows configuration. Check documentation to see all parameters.
         :type config: dict
         :return: All flows in a FlowBuilder object.
         :rtype: sumo_experiments.src.components.FlowBuilder
         """
-        # Get new parameters from config
-        current_config = self.DEFAULT_CONFIG
-        for key in config:
-            if key not in self.CONFIG_PARAMETER_LIST:
-                warnings.warn(f"The config parameter {key} is not a valid parameter.", stacklevel=2)
-            current_config[key] = config[key]
 
         # Select parameters
-        stop_generation_time = current_config['stop_generation_time']
-        flow_density = current_config['flow_density']
-        square_side_length = current_config["square_side_length"]
+        stop_generation_time = config['stop_generation_time']
+        flow_frequency = config['flow_frequency']
+        square_side_length = config["square_side_length"]
+        distribution = config['distribution']
 
         routes = FlowBuilder()
 
@@ -393,7 +387,7 @@ class SquareNetwork:
             liste_sorties.append(f'edge_x{square_side_length}-y{y}_x{square_side_length + 1}-y{y}')
 
         # We add the vehicle type
-        routes.add_vType(id='car0')
+        routes.add_v_type(id='car0')
 
         # We create a flow for each entry with the correspondant exit
         for x in range(len(liste_entrees)):
@@ -401,8 +395,9 @@ class SquareNetwork:
                             from_edge=liste_entrees[x],
                             to_edge=liste_sorties[x],
                             end=stop_generation_time,
-                            density=flow_density,
-                            v_type='car0')
+                            frequency=flow_frequency,
+                            v_type='car0',
+                            distribution=distribution)
 
         return routes
 
@@ -411,30 +406,27 @@ class SquareNetwork:
         """
         Generate flows for a square network.
         At the intersection, vehicles can go left, right or ahead. The proportion for each exit is uniform.
-        The config parameter can contain more parameter to define the density of vehicles from each entry, and the
+        The config parameter can contain more parameter to define the frequency of vehicles from each entry, and the
         simulation step where the flow will end.
 
         Valid parameters for config :
         - "stop_generation_time" (int) : The default simulation step when flows will end
-        - "flow_density" (int) : The default flows density (in vehicles/hour)
+        - "flow_frequency" (int) : The default flows frequency (in vehicles/hour)
         - "square_side_length" (int) : The number of intersections that compose a side of the square
+        - "distribution" (str) : The distribution law for all flows. "uniform" inserts vehicles each n simulation steps
+        'binomial' inserts vehicle at each simulation step with a given probability. Each of the law respect the flow frequency.
 
         :param config: Customized flows configuration. Check documentation to see all parameters.
         :type config: dict
         :return: All flows in a FlowBuilder object.
         :rtype: sumo_experiments.src.components.FlowBuilder
         """
-        # Get new parameters from config
-        current_config = self.DEFAULT_CONFIG
-        for key in config:
-            if key not in self.CONFIG_PARAMETER_LIST:
-                warnings.warn(f"The config parameter {key} is not a valid parameter.", stacklevel=2)
-            current_config[key] = config[key]
 
         # Select parameters
-        stop_generation_time = current_config['stop_generation_time']
-        flow_density = current_config['flow_density']
-        square_side_length = current_config["square_side_length"]
+        stop_generation_time = config['stop_generation_time']
+        flow_frequency = config['flow_frequency']
+        square_side_length = config["square_side_length"]
+        distribution = config['distribution']
 
         routes = FlowBuilder()
 
@@ -456,7 +448,7 @@ class SquareNetwork:
             liste_sorties.append(f'edge_x1-y{y}_x0-y{y}')
 
         # We add the vehicle type
-        routes.add_vType(id='car0')
+        routes.add_v_type(id='car0')
 
         for i in range(len(liste_entrees)):
             for j in range(len(liste_sorties)):
@@ -466,8 +458,9 @@ class SquareNetwork:
                                     from_edge=liste_entrees[i],
                                     to_edge=liste_sorties[j],
                                     end=stop_generation_time,
-                                    density=flow_density,
-                                    v_type='car0')
+                                    frequency=flow_frequency // ((square_side_length * 4) - 1),
+                                    v_type='car0',
+                                    distribution=distribution)
 
         return routes
 
@@ -476,34 +469,33 @@ class SquareNetwork:
         """
         Generate flows for a square network.
         At the intersection, vehicles can go left, right or ahead.
-        The vehicle density varies over time, following a scheme describe in a load vector and a coefficient matrix.
-        The load vector describes, for each period, the density of vehicle entering the network.
+        The vehicle frequency varies over time, following a scheme describe in a load vector and a coefficient matrix.
+        The load vector describes, for each period, the frequency of vehicle entering the network.
         The coefficient matrix describes the proportion of load that will follow each route.
-        Each scheme of density last a time defined in simulation steps.
-        The config parameter can contain more parameter to define the density of vehicles from each entry, and the
+        Each scheme of frequency last a time defined in simulation steps.
+        The config parameter can contain more parameter to define the frequency of vehicles from each entry, and the
         simulation step where the flow will end.
 
         Valid parameters for config :
         - "coeff_matrix" (numpy.ndarray) : The proportion of vehicles on each route
-        - "load_vector" (numpy.ndarray) : The vehicle density on the network for each period
+        - "load_vector" (numpy.ndarray) : The vehicle frequency on the network for each period
         - "period_time" (int) : The period duration (in simulation steps)
         - "square_side_length" (int) : The number of intersections that compose a side of the square
+        - "distribution" (str) : The distribution law for all flows. "uniform" inserts vehicles each n simulation steps
+        'binomial' inserts vehicle at each simulation step with a given probability. Each of the law respect the flow frequency.
 
         :param config: Customized flows configuration. Check documentation to see all parameters.
         :type config: dict
         :return: All flows in a FlowBuilder object.
         :rtype: sumo_experiments.src.components.FlowBuilder
         """
-        # Get new parameters from config
-        current_config = self.DEFAULT_CONFIG
-        for key in config:
-            current_config[key] = config[key]
 
         # Select parameters
-        coeffs_matrix = current_config['coeff_matrix']
-        load_vector = current_config['load_vector']
-        period_time = current_config['period_time']
-        square_side_length = current_config['square_side_length']
+        coeffs_matrix = config['coeff_matrix']
+        load_vector = config['load_vector']
+        period_time = config['period_time']
+        square_side_length = config['square_side_length']
+        distribution = config['distribution']
 
         routes = FlowBuilder()
 
@@ -525,7 +517,7 @@ class SquareNetwork:
             liste_sorties.append(f'edge_x1-y{y}_x0-y{y}')
 
         # We add the vehicle type
-        routes.add_vType(id='car0')
+        routes.add_v_type(id='car0')
 
         for period in range(len(load_vector)):
 
@@ -544,9 +536,9 @@ class SquareNetwork:
                                         to_edge=liste_sorties[j],
                                         begin=flow_start,
                                         end=flow_end,
-                                        density=flows[compteur],
+                                        frequency=flows[compteur],
                                         v_type='car0',
-                                        distribution="binomial")
+                                        distribution=distribution)
                         compteur += 1
 
         return routes
@@ -571,13 +563,8 @@ class SquareNetwork:
         :rtype: sumo_experiments.src.components.DetectorBuilder
         """
 
-        # Get new parameters from config
-        current_config = self.DEFAULT_CONFIG
-        for key in config:
-            current_config[key] = config[key]
-
         # Select parameters
-        square_side_length = current_config['square_side_length']
+        square_side_length = config['square_side_length']
 
         detectors = DetectorBuilder()
 
@@ -589,18 +576,18 @@ class SquareNetwork:
                 if not self.is_corner(x, y, square_side_length):
                     if y not in [0, square_side_length + 1]:
                         if x < square_side_length:
-                            detectors.add_laneAreaDetector(id=f'detector_x{x}-y{y}_x{x + 1}-y{y}',
-                                                            lane=f'edge_x{x}-y{y}_x{x + 1}-y{y}_0')
+                            detectors.add_lane_area_detector(id=f'detector_x{x}-y{y}_x{x + 1}-y{y}',
+                                                             lane=f'edge_x{x}-y{y}_x{x + 1}-y{y}_0')
                         if x > 1:
-                            detectors.add_laneAreaDetector(id=f'detector_x{x}-y{y}_x{x - 1}-y{y}',
-                                                            lane=f'edge_x{x}-y{y}_x{x - 1}-y{y}_0')
+                            detectors.add_lane_area_detector(id=f'detector_x{x}-y{y}_x{x - 1}-y{y}',
+                                                             lane=f'edge_x{x}-y{y}_x{x - 1}-y{y}_0')
                     if x not in [0, square_side_length + 1]:
                         if y < square_side_length:
-                            detectors.add_laneAreaDetector(id=f'detector_x{x}-y{y}_x{x}-y{y + 1}',
-                                                            lane=f'edge_x{x}-y{y}_x{x}-y{y + 1}_0')
+                            detectors.add_lane_area_detector(id=f'detector_x{x}-y{y}_x{x}-y{y + 1}',
+                                                             lane=f'edge_x{x}-y{y}_x{x}-y{y + 1}_0')
                         if y > 1:
-                            detectors.add_laneAreaDetector(id=f'detector_x{x}-y{y}_x{x}-y{y - 1}',
-                                                            lane=f'edge_x{x}-y{y}_x{x}-y{y - 1}_0')
+                            detectors.add_lane_area_detector(id=f'detector_x{x}-y{y}_x{x}-y{y - 1}',
+                                                             lane=f'edge_x{x}-y{y}_x{x}-y{y - 1}_0')
 
         return detectors
 
@@ -621,15 +608,13 @@ class SquareNetwork:
         :return: An empty DetectorBuilder object.
         :rtype: sumo_experiments.src.components.DetectorBuilder
         """
-        # Get new parameters from config
-        current_config = self.DEFAULT_CONFIG
-        for key in config:
-            current_config[key] = config[key]
+
+        print(self.edges_length)
 
         # Select parameters
-        lane_length = current_config['lane_length']
-        boolean_detector_length = current_config['boolean_detector_length']
-        square_side_length = current_config['square_side_length']
+        boolean_detector_length = config['boolean_detector_length']
+        square_side_length = config['square_side_length']
+        lane_length = config['lane_length']
 
         detectors = DetectorBuilder()
 
@@ -642,41 +627,49 @@ class SquareNetwork:
                     if y not in [0, square_side_length + 1]:
                         if x < square_side_length:
                             if x == 0:
-                                detectors.add_laneAreaDetector(id=f'detector_x{x}-y{y}_x{x + 1}-y{y}',
-                                                                lane=f'edge_x{x}-y{y}_x{x + 1}-y{y}_0',
-                                                                pos=(lane_length - boolean_detector_length - 7.2))
+                                lane_length_x = self.edges_length[f'edge_x{x}-y{y}_x{x + 1}-y{y}'] if self.random else lane_length
+                                detectors.add_lane_area_detector(id=f'detector_x{x}-y{y}_x{x + 1}-y{y}',
+                                                                 lane=f'edge_x{x}-y{y}_x{x + 1}-y{y}_0',
+                                                                 pos=(lane_length_x - boolean_detector_length - 7.2))
                             else:
-                                detectors.add_laneAreaDetector(id=f'detector_x{x}-y{y}_x{x + 1}-y{y}',
-                                                                lane=f'edge_x{x}-y{y}_x{x + 1}-y{y}_0',
-                                                                pos=(lane_length - boolean_detector_length - 7.2 * 2))
+                                lane_length_x = self.edges_length[f'edge_x{x}-y{y}_x{x + 1}-y{y}'] if self.random else lane_length
+                                detectors.add_lane_area_detector(id=f'detector_x{x}-y{y}_x{x + 1}-y{y}',
+                                                                 lane=f'edge_x{x}-y{y}_x{x + 1}-y{y}_0',
+                                                                 pos=(lane_length_x - boolean_detector_length - 7.2 * 2))
                         if x > 1:
                             if x == square_side_length + 1:
-                                detectors.add_laneAreaDetector(id=f'detector_x{x}-y{y}_x{x - 1}-y{y}',
-                                                                lane=f'edge_x{x}-y{y}_x{x - 1}-y{y}_0',
-                                                                pos=(lane_length - boolean_detector_length - 7.2))
+                                lane_length_x = self.edges_length[f'edge_x{x}-y{y}_x{x - 1}-y{y}'] if self.random else lane_length
+                                detectors.add_lane_area_detector(id=f'detector_x{x}-y{y}_x{x - 1}-y{y}',
+                                                                 lane=f'edge_x{x}-y{y}_x{x - 1}-y{y}_0',
+                                                                 pos=(lane_length_x - boolean_detector_length - 7.2))
                             else:
-                                detectors.add_laneAreaDetector(id=f'detector_x{x}-y{y}_x{x - 1}-y{y}',
-                                                                lane=f'edge_x{x}-y{y}_x{x - 1}-y{y}_0',
-                                                                pos=(lane_length - boolean_detector_length - 7.2 * 2))
+                                lane_length_x = self.edges_length[f'edge_x{x}-y{y}_x{x - 1}-y{y}'] if self.random else lane_length
+                                detectors.add_lane_area_detector(id=f'detector_x{x}-y{y}_x{x - 1}-y{y}',
+                                                                 lane=f'edge_x{x}-y{y}_x{x - 1}-y{y}_0',
+                                                                 pos=(lane_length_x - boolean_detector_length - 7.2 * 2))
                     if x not in [0, square_side_length + 1]:
                         if y < square_side_length:
                             if y == 0:
-                                detectors.add_laneAreaDetector(id=f'detector_x{x}-y{y}_x{x}-y{y + 1}',
-                                                                lane=f'edge_x{x}-y{y}_x{x}-y{y + 1}_0',
-                                                                pos=(lane_length - boolean_detector_length - 7.2))
+                                lane_length_y = self.edges_length[f'edge_x{x}-y{y}_x{x}-y{y + 1}'] if self.random else lane_length
+                                detectors.add_lane_area_detector(id=f'detector_x{x}-y{y}_x{x}-y{y + 1}',
+                                                                 lane=f'edge_x{x}-y{y}_x{x}-y{y + 1}_0',
+                                                                 pos=(lane_length_y - boolean_detector_length - 7.2))
                             else:
-                                detectors.add_laneAreaDetector(id=f'detector_x{x}-y{y}_x{x}-y{y + 1}',
-                                                                lane=f'edge_x{x}-y{y}_x{x}-y{y + 1}_0',
-                                                                pos=(lane_length - boolean_detector_length - 7.2 * 2))
+                                lane_length_y = self.edges_length[f'edge_x{x}-y{y}_x{x}-y{y + 1}'] if self.random else lane_length
+                                detectors.add_lane_area_detector(id=f'detector_x{x}-y{y}_x{x}-y{y + 1}',
+                                                                 lane=f'edge_x{x}-y{y}_x{x}-y{y + 1}_0',
+                                                                 pos=(lane_length_y - boolean_detector_length - 7.2 * 2))
                         if y > 1:
                             if y == square_side_length + 1:
-                                detectors.add_laneAreaDetector(id=f'detector_x{x}-y{y}_x{x}-y{y - 1}',
-                                                                lane=f'edge_x{x}-y{y}_x{x}-y{y - 1}_0',
-                                                                pos=(lane_length - boolean_detector_length - 7.2))
+                                lane_length_y = self.edges_length[f'edge_x{x}-y{y}_x{x}-y{y - 1}'] if self.random else lane_length
+                                detectors.add_lane_area_detector(id=f'detector_x{x}-y{y}_x{x}-y{y - 1}',
+                                                                 lane=f'edge_x{x}-y{y}_x{x}-y{y - 1}_0',
+                                                                 pos=(lane_length_y - boolean_detector_length - 7.2))
                             else:
-                                detectors.add_laneAreaDetector(id=f'detector_x{x}-y{y}_x{x}-y{y - 1}',
-                                                                lane=f'edge_x{x}-y{y}_x{x}-y{y - 1}_0',
-                                                                pos=(lane_length - boolean_detector_length - 7.2 * 2))
+                                lane_length_y = self.edges_length[f'edge_x{x}-y{y}_x{x}-y{y - 1}'] if self.random else lane_length
+                                detectors.add_lane_area_detector(id=f'detector_x{x}-y{y}_x{x}-y{y - 1}',
+                                                                 lane=f'edge_x{x}-y{y}_x{x}-y{y - 1}_0',
+                                                                 pos=(lane_length_y - boolean_detector_length - 7.2 * 2))
 
         return detectors
 
@@ -715,56 +708,49 @@ class SquareNetwork:
         :type config: dict
         """
 
-        # Get new parameters from config
-        current_config = self.DEFAULT_CONFIG
-        for key in config:
-            current_config[key] = config[key]
+        square_side_length = config['square_side_length']
+        if 'cooldown_step' not in config:
+            config['cooldown_step'] = np.zeros((square_side_length, square_side_length))
 
         # Select parameters
-        min_duration_tl = current_config["min_duration_tl"]
-        max_duration_tl = current_config["max_duration_tl"]
-        simulation_duration = current_config['simulation_duration']
-        square_side_length = current_config['square_side_length']
+        min_duration_tl = config["min_duration_tl"]
+        max_duration_tl = config["max_duration_tl"]
+        cooldown_step = config['cooldown_step']
 
-        cooldown_step = np.zeros((square_side_length, square_side_length))
-        step = 0
+        for x in range(1, square_side_length + 1):
+            for y in range(1, square_side_length + 1):
 
-        while step < simulation_duration:
-            traci.simulationStep()
+                if cooldown_step[x - 1, y - 1] > min_duration_tl:
+                    if traci.trafficlight.getPhase(f'x{x}-y{y}') == self.WE_GREEN_LIGHT:
+                        quelqun_en_attente = (traci.lanearea.getLastStepVehicleNumber(
+                            f'detector_x{x}-y{y + 1}_x{x}-y{y}') >= 1 \
+                                              or traci.lanearea.getLastStepVehicleNumber(
+                                    f'detector_x{x}-y{y - 1}_x{x}-y{y}') >= 1)
+                        autre_voie_vide = (traci.lanearea.getLastStepVehicleNumber(
+                            f'detector_x{x - 1}-y{y}_x{x}-y{y}') == 0 \
+                                           and traci.lanearea.getLastStepVehicleNumber(
+                                    f'detector_x{x + 1}-y{y}_x{x}-y{y}') == 0)
+                        if (quelqun_en_attente and autre_voie_vide) or cooldown_step[x - 1, y - 1] > max_duration_tl:
+                            traci.trafficlight.setPhase(f'x{x}-y{y}', self.WE_GREEN_LIGHT + 1)  # Passage au orange
+                            cooldown_step[x - 1, y - 1] = 0
 
-            for x in range(1, square_side_length + 1):
-                for y in range(1, square_side_length + 1):
+                    elif traci.trafficlight.getPhase(f'x{x}-y{y}') == self.NS_GREEN_LIGHT:
+                        quelqun_en_attente = (traci.lanearea.getLastStepVehicleNumber(
+                            f'detector_x{x - 1}-y{y}_x{x}-y{y}') >= 1 \
+                                              or traci.lanearea.getLastStepVehicleNumber(
+                                    f'detector_x{x + 1}-y{y}_x{x}-y{y}') >= 1)
+                        autre_voie_vide = (traci.lanearea.getLastStepVehicleNumber(
+                            f'detector_x{x}-y{y + 1}_x{x}-y{y}') == 0 \
+                                           and traci.lanearea.getLastStepVehicleNumber(
+                                    f'detector_x{x}-y{y - 1}_x{x}-y{y}') == 0)
+                        if (quelqun_en_attente and autre_voie_vide) or cooldown_step[x - 1, y - 1] > max_duration_tl:
+                            traci.trafficlight.setPhase(f'x{x}-y{y}', self.NS_GREEN_LIGHT + 1)
+                            cooldown_step[x - 1, y - 1] = 0
 
-                    if cooldown_step[x - 1, y - 1] > min_duration_tl:
-                        if traci.trafficlight.getPhase(f'x{x}-y{y}') == self.WE_GREEN_LIGHT:
-                            quelqun_en_attente = (traci.lanearea.getLastStepVehicleNumber(
-                                f'detector_x{x}-y{y + 1}_x{x}-y{y}') >= 1 \
-                                                  or traci.lanearea.getLastStepVehicleNumber(
-                                        f'detector_x{x}-y{y - 1}_x{x}-y{y}') >= 1)
-                            autre_voie_vide = (traci.lanearea.getLastStepVehicleNumber(
-                                f'detector_x{x - 1}-y{y}_x{x}-y{y}') == 0 \
-                                               and traci.lanearea.getLastStepVehicleNumber(
-                                        f'detector_x{x + 1}-y{y}_x{x}-y{y}') == 0)
-                            if (quelqun_en_attente and autre_voie_vide) or cooldown_step[x - 1, y - 1] > max_duration_tl:
-                                traci.trafficlight.setPhase(f'x{x}-y{y}', self.WE_GREEN_LIGHT + 1)  # Passage au orange
-                                cooldown_step[x - 1, y - 1] = 0
+                cooldown_step[x - 1, y - 1] += 1
 
-                        elif traci.trafficlight.getPhase(f'x{x}-y{y}') == self.NS_GREEN_LIGHT:
-                            quelqun_en_attente = (traci.lanearea.getLastStepVehicleNumber(
-                                f'detector_x{x - 1}-y{y}_x{x}-y{y}') >= 1 \
-                                                  or traci.lanearea.getLastStepVehicleNumber(
-                                        f'detector_x{x + 1}-y{y}_x{x}-y{y}') >= 1)
-                            autre_voie_vide = (traci.lanearea.getLastStepVehicleNumber(
-                                f'detector_x{x}-y{y + 1}_x{x}-y{y}') == 0 \
-                                               and traci.lanearea.getLastStepVehicleNumber(
-                                        f'detector_x{x}-y{y - 1}_x{x}-y{y}') == 0)
-                            if (quelqun_en_attente and autre_voie_vide) or cooldown_step[x - 1, y - 1] > max_duration_tl:
-                                traci.trafficlight.setPhase(f'x{x}-y{y}', self.NS_GREEN_LIGHT + 1)
-                                cooldown_step[x - 1, y - 1] = 0
-
-                    cooldown_step[x - 1, y - 1] += 1
-
-            step += 1
+        config['cooldown_step'] = cooldown_step
+        return config
 
     def numerical_detection_all_vehicles(self, config):
         """
@@ -798,53 +784,46 @@ class SquareNetwork:
         :param config: Customized flows configuration. Check documentation to see all parameters.
         :type config: dict
         """
-        # Get new parameters from config
-        current_config = self.DEFAULT_CONFIG
-        for key in config:
-            current_config[key] = config[key]
+
+        square_side_length = config['square_side_length']
+        if 'cooldown_step' not in config:
+            config['cooldown_step'] = np.zeros((square_side_length, square_side_length))
 
         # Select parameters
-        min_duration_tl = current_config["min_duration_tl"]
-        max_duration_tl = current_config["max_duration_tl"]
-        simulation_duration = current_config['simulation_duration']
-        vehicle_threshold = current_config["vehicle_threshold"]
-        square_side_length = current_config['square_side_length']
+        min_duration_tl = config["min_duration_tl"]
+        max_duration_tl = config["max_duration_tl"]
+        vehicle_threshold = config["vehicle_threshold"]
+        cooldown_step = config['cooldown_step']
 
-        cooldown_step = np.zeros((square_side_length, square_side_length))
-        step = 0
+        for x in range(1, square_side_length + 1):
+            for y in range(1, square_side_length + 1):
 
-        while step < simulation_duration:
-            traci.simulationStep()
+                if cooldown_step[x - 1, y - 1] > min_duration_tl:
 
-            for x in range(1, square_side_length + 1):
-                for y in range(1, square_side_length + 1):
+                    if traci.trafficlight.getPhase(f'x{x}-y{y}') == self.NS_GREEN_LIGHT:
 
-                    if cooldown_step[x - 1, y - 1] > min_duration_tl:
+                        if traci.lanearea.getLastStepVehicleNumber(
+                                f'detector_x{x - 1}-y{y}_x{x}-y{y}') >= vehicle_threshold \
+                                or traci.lanearea.getLastStepVehicleNumber(
+                            f'detector_x{x + 1}-y{y}_x{x}-y{y}') >= vehicle_threshold \
+                                or cooldown_step[x - 1, y - 1] > max_duration_tl:
+                            traci.trafficlight.setPhase(f'x{x}-y{y}', self.NS_GREEN_LIGHT + 1)  # Passage au orange
+                            cooldown_step[x - 1, y - 1] = 0
 
-                        if traci.trafficlight.getPhase(f'x{x}-y{y}') == self.NS_GREEN_LIGHT:
+                    elif traci.trafficlight.getPhase(f'x{x}-y{y}') == self.WE_GREEN_LIGHT:
 
-                            if traci.lanearea.getLastStepVehicleNumber(
-                                    f'detector_x{x - 1}-y{y}_x{x}-y{y}') >= vehicle_threshold \
-                                    or traci.lanearea.getLastStepVehicleNumber(
-                                f'detector_x{x + 1}-y{y}_x{x}-y{y}') >= vehicle_threshold \
-                                    or cooldown_step[x - 1, y - 1] > max_duration_tl:
-                                traci.trafficlight.setPhase(f'x{x}-y{y}', self.NS_GREEN_LIGHT + 1)  # Passage au orange
-                                cooldown_step[x - 1, y - 1] = 0
+                        if traci.lanearea.getLastStepVehicleNumber(
+                                f'detector_x{x}-y{y + 1}_x{x}-y{y}') >= vehicle_threshold \
+                                or traci.lanearea.getLastStepVehicleNumber(
+                            f'detector_x{x}-y{y - 1}_x{x}-y{y}') >= vehicle_threshold \
+                                or cooldown_step[x - 1, y - 1] > max_duration_tl:
+                            traci.trafficlight.setPhase(f'x{x}-y{y}', self.WE_GREEN_LIGHT + 1)  # Passage au orange
+                            cooldown_step[x - 1, y - 1] = 0
 
+                cooldown_step[x - 1, y - 1] += 1
 
-                        elif traci.trafficlight.getPhase(f'x{x}-y{y}') == self.WE_GREEN_LIGHT:
-
-                            if traci.lanearea.getLastStepVehicleNumber(
-                                    f'detector_x{x}-y{y + 1}_x{x}-y{y}') >= vehicle_threshold \
-                                    or traci.lanearea.getLastStepVehicleNumber(
-                                f'detector_x{x}-y{y - 1}_x{x}-y{y}') >= vehicle_threshold \
-                                    or cooldown_step[x - 1, y - 1] > max_duration_tl:
-                                traci.trafficlight.setPhase(f'x{x}-y{y}', self.WE_GREEN_LIGHT + 1)  # Passage au orange
-                                cooldown_step[x - 1, y - 1] = 0
-
-                    cooldown_step[x - 1, y - 1] += 1
-
-            step += 1
+        config['cooldown_step'] = cooldown_step
+        return config
 
     def numerical_detection_stopped_vehicles(self, config):
         """
@@ -878,51 +857,45 @@ class SquareNetwork:
         :param config: Customized flows configuration. Check documentation to see all parameters.
         :type config: dict
         """
-        # Get new parameters from config
-        current_config = self.DEFAULT_CONFIG
-        for key in config:
-            current_config[key] = config[key]
+
+        square_side_length = config['square_side_length']
+        if 'cooldown_step' not in config:
+            config['cooldown_step'] = np.zeros((square_side_length, square_side_length))
 
         # Select parameters
-        min_duration_tl = current_config["min_duration_tl"]
-        max_duration_tl = current_config["max_duration_tl"]
-        simulation_duration = current_config['simulation_duration']
-        vehicle_threshold = current_config["vehicle_threshold"]
-        square_side_length = current_config['square_side_length']
+        min_duration_tl = config["min_duration_tl"]
+        max_duration_tl = config["max_duration_tl"]
+        vehicle_threshold = config["vehicle_threshold"]
+        cooldown_step = config['cooldown_step']
 
-        cooldown_step = np.zeros((square_side_length, square_side_length))
-        step = 0
+        for x in range(1, square_side_length + 1):
+            for y in range(1, square_side_length + 1):
 
-        while step < simulation_duration:
-            traci.simulationStep()
+                if cooldown_step[x - 1, y - 1] > min_duration_tl:
 
-            for x in range(1, square_side_length + 1):
-                for y in range(1, square_side_length + 1):
+                    if traci.trafficlight.getPhase(f'x{x}-y{y}') == self.NS_GREEN_LIGHT:
 
-                    if cooldown_step[x - 1, y - 1] > min_duration_tl:
-
-                        if traci.trafficlight.getPhase(f'x{x}-y{y}') == self.NS_GREEN_LIGHT:
-
-                            if traci.lanearea.getJamLengthVehicle(f'detector_x{x - 1}-y{y}_x{x}-y{y}') >= vehicle_threshold \
-                                    or traci.lanearea.getJamLengthVehicle(
-                                f'detector_x{x + 1}-y{y}_x{x}-y{y}') >= vehicle_threshold \
-                                    or cooldown_step[x - 1, y - 1] > max_duration_tl:
-                                traci.trafficlight.setPhase(f'x{x}-y{y}', self.NS_GREEN_LIGHT + 1)  # Passage au orange
-                                cooldown_step[x - 1, y - 1] = 0
+                        if traci.lanearea.getJamLengthVehicle(f'detector_x{x - 1}-y{y}_x{x}-y{y}') >= vehicle_threshold \
+                                or traci.lanearea.getJamLengthVehicle(
+                            f'detector_x{x + 1}-y{y}_x{x}-y{y}') >= vehicle_threshold \
+                                or cooldown_step[x - 1, y - 1] > max_duration_tl:
+                            traci.trafficlight.setPhase(f'x{x}-y{y}', self.NS_GREEN_LIGHT + 1)  # Passage au orange
+                            cooldown_step[x - 1, y - 1] = 0
 
 
-                        elif traci.trafficlight.getPhase(f'x{x}-y{y}') == self.WE_GREEN_LIGHT:
+                    elif traci.trafficlight.getPhase(f'x{x}-y{y}') == self.WE_GREEN_LIGHT:
 
-                            if traci.lanearea.getJamLengthVehicle(f'detector_x{x}-y{y + 1}_x{x}-y{y}') >= vehicle_threshold \
-                                    or traci.lanearea.getJamLengthVehicle(
-                                f'detector_x{x}-y{y - 1}_x{x}-y{y}') >= vehicle_threshold \
-                                    or cooldown_step[x - 1, y - 1] > max_duration_tl:
-                                traci.trafficlight.setPhase(f'x{x}-y{y}', self.WE_GREEN_LIGHT + 1)  # Passage au orange
-                                cooldown_step[x - 1, y - 1] = 0
+                        if traci.lanearea.getJamLengthVehicle(f'detector_x{x}-y{y + 1}_x{x}-y{y}') >= vehicle_threshold \
+                                or traci.lanearea.getJamLengthVehicle(
+                            f'detector_x{x}-y{y - 1}_x{x}-y{y}') >= vehicle_threshold \
+                                or cooldown_step[x - 1, y - 1] > max_duration_tl:
+                            traci.trafficlight.setPhase(f'x{x}-y{y}', self.WE_GREEN_LIGHT + 1)  # Passage au orange
+                            cooldown_step[x - 1, y - 1] = 0
 
-                    cooldown_step[x - 1, y - 1] += 1
+                cooldown_step[x - 1, y - 1] += 1
 
-            step += 1
+        config['cooldown_step'] = cooldown_step
+        return config
 
     def is_corner(self, x, y, square_side_length):
         """
