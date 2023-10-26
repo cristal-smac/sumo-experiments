@@ -34,6 +34,7 @@ class SquareNetwork:
         Init of class
         """
         self.edges_length = {}
+        self.random = False
 
 
     ### Network ###
@@ -59,6 +60,8 @@ class SquareNetwork:
         :return: All infrastructures in a NetworkBuilder object.
         :rtype: sumo_experiments.src.components.NetworkBuilder
         """
+
+        self.random = True
 
         for key in config:
             if key not in self.CONFIG_PARAMETER_LIST:
@@ -216,6 +219,7 @@ class SquareNetwork:
         :rtype: sumo_experiments.src.components.NetworkBuilder
         """
 
+        self.random = False
         for key in config:
             if key not in self.CONFIG_PARAMETER_LIST:
                 warnings.warn(f"The config parameter {key} is not a valid parameter.", stacklevel=2)
@@ -623,46 +627,46 @@ class SquareNetwork:
                     if y not in [0, square_side_length + 1]:
                         if x < square_side_length:
                             if x == 0:
-                                lane_length_x = self.edges_length[f'edge_x{x}-y{y}_x{x + 1}-y{y}'] if self.edges_length != {} else lane_length
+                                lane_length_x = self.edges_length[f'edge_x{x}-y{y}_x{x + 1}-y{y}'] if self.random else lane_length
                                 detectors.add_lane_area_detector(id=f'detector_x{x}-y{y}_x{x + 1}-y{y}',
                                                                  lane=f'edge_x{x}-y{y}_x{x + 1}-y{y}_0',
                                                                  pos=(lane_length_x - boolean_detector_length - 7.2))
                             else:
-                                lane_length_x = self.edges_length[f'edge_x{x}-y{y}_x{x + 1}-y{y}'] if self.edges_length != {} else lane_length
+                                lane_length_x = self.edges_length[f'edge_x{x}-y{y}_x{x + 1}-y{y}'] if self.random else lane_length
                                 detectors.add_lane_area_detector(id=f'detector_x{x}-y{y}_x{x + 1}-y{y}',
                                                                  lane=f'edge_x{x}-y{y}_x{x + 1}-y{y}_0',
                                                                  pos=(lane_length_x - boolean_detector_length - 7.2 * 2))
                         if x > 1:
                             if x == square_side_length + 1:
-                                lane_length_x = self.edges_length[f'edge_x{x}-y{y}_x{x - 1}-y{y}'] if self.edges_length != {} else lane_length
+                                lane_length_x = self.edges_length[f'edge_x{x}-y{y}_x{x - 1}-y{y}'] if self.random else lane_length
                                 detectors.add_lane_area_detector(id=f'detector_x{x}-y{y}_x{x - 1}-y{y}',
                                                                  lane=f'edge_x{x}-y{y}_x{x - 1}-y{y}_0',
                                                                  pos=(lane_length_x - boolean_detector_length - 7.2))
                             else:
-                                lane_length_x = self.edges_length[f'edge_x{x}-y{y}_x{x - 1}-y{y}'] if self.edges_length != {} else lane_length
+                                lane_length_x = self.edges_length[f'edge_x{x}-y{y}_x{x - 1}-y{y}'] if self.random else lane_length
                                 detectors.add_lane_area_detector(id=f'detector_x{x}-y{y}_x{x - 1}-y{y}',
                                                                  lane=f'edge_x{x}-y{y}_x{x - 1}-y{y}_0',
                                                                  pos=(lane_length_x - boolean_detector_length - 7.2 * 2))
                     if x not in [0, square_side_length + 1]:
                         if y < square_side_length:
                             if y == 0:
-                                lane_length_y = self.edges_length[f'edge_x{x}-y{y}_x{x}-y{y + 1}'] if self.edges_length != {} else lane_length
+                                lane_length_y = self.edges_length[f'edge_x{x}-y{y}_x{x}-y{y + 1}'] if self.random else lane_length
                                 detectors.add_lane_area_detector(id=f'detector_x{x}-y{y}_x{x}-y{y + 1}',
                                                                  lane=f'edge_x{x}-y{y}_x{x}-y{y + 1}_0',
                                                                  pos=(lane_length_y - boolean_detector_length - 7.2))
                             else:
-                                lane_length_y = self.edges_length[f'edge_x{x}-y{y}_x{x}-y{y + 1}'] if self.edges_length != {} else lane_length
+                                lane_length_y = self.edges_length[f'edge_x{x}-y{y}_x{x}-y{y + 1}'] if self.random else lane_length
                                 detectors.add_lane_area_detector(id=f'detector_x{x}-y{y}_x{x}-y{y + 1}',
                                                                  lane=f'edge_x{x}-y{y}_x{x}-y{y + 1}_0',
                                                                  pos=(lane_length_y - boolean_detector_length - 7.2 * 2))
                         if y > 1:
                             if y == square_side_length + 1:
-                                lane_length_y = self.edges_length[f'edge_x{x}-y{y}_x{x}-y{y - 1}'] if self.edges_length != {} else lane_length
+                                lane_length_y = self.edges_length[f'edge_x{x}-y{y}_x{x}-y{y - 1}'] if self.random else lane_length
                                 detectors.add_lane_area_detector(id=f'detector_x{x}-y{y}_x{x}-y{y - 1}',
                                                                  lane=f'edge_x{x}-y{y}_x{x}-y{y - 1}_0',
                                                                  pos=(lane_length_y - boolean_detector_length - 7.2))
                             else:
-                                lane_length_y = self.edges_length[f'edge_x{x}-y{y}_x{x}-y{y - 1}'] if self.edges_length != {} else lane_length
+                                lane_length_y = self.edges_length[f'edge_x{x}-y{y}_x{x}-y{y - 1}'] if self.random else lane_length
                                 detectors.add_lane_area_detector(id=f'detector_x{x}-y{y}_x{x}-y{y - 1}',
                                                                  lane=f'edge_x{x}-y{y}_x{x}-y{y - 1}_0',
                                                                  pos=(lane_length_y - boolean_detector_length - 7.2 * 2))
