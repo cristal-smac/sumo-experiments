@@ -4,7 +4,7 @@ requires = ["hatchling"]
 
 [project]
 name = "sumo-experiments"
-version = "2.0.0"
+version = "2.1.0"
 authors = [
     { name="Jules Bompard", email="jules.bompard.etu@univ-lille.fr" },
     { name="Antoine Nongaillard", email="antoine.nongaillard@univ-lille.fr"},
