@@ -8,6 +8,8 @@ class ResultsPlotter:
     """
     The DetectorBuilder class can be used to plot the results of a series of experiments. Experiments results must be
     saved in a CSV file, with the 'export_results_to_csv' function, to be read by the plotter.
+
+    deprecated:: 2.0.0
     """
 
     def __init__(self, file, sampling_rate, max_ticks, save_folder):

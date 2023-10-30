@@ -1,5 +1,6 @@
 import pandas as pd
 import traci
+import numpy as np
 
 
 class TraciWrapper:
@@ -52,14 +53,26 @@ class TraciWrapper:
         :param config: The config with all parameters for all functions wrapped
         :return: dict
         """
-        self.data = {'simulation_step': []}
+        self.data = {'simulation_step': [], 'mean_travel_time': [], 'exiting_vehicles': []}
         current_config = config
         simulation_duration = current_config['simulation_duration']
         step = 0
+        running_vehicles = {}
 
         while step < simulation_duration:
 
             traci.simulationStep()
+            simulation_time = traci.simulation.getTime()
+
+            # We catch each inserted vehicle ID
+            for id in traci.simulation.getDepartedIDList():
+                running_vehicles[id] = simulation_time
+
+            # We compute travel time for each leaving vehicle
+            travel_times = []
+            for id in traci.simulation.getArrivedIDList():
+                travel_times.append(simulation_time - running_vehicles[id])
+                del running_vehicles[id]
 
             # Statistical functions
             for stats_function in self.stats_functions:
@@ -76,6 +89,8 @@ class TraciWrapper:
                 current_config = res
 
             self.data['simulation_step'].append(step + 1)
+            self.data['mean_travel_time'].append(np.mean(travel_times))
+            self.data['exiting_vehicles'].append(len(travel_times))
             step += 1
 
         return pd.DataFrame.from_dict(self.data)
