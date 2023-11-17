@@ -138,7 +138,7 @@ def get_fuel_consumption_data(config):
     fuel_consumption = []
     vehicles = traci.vehicle.getIDList()
     for vehicle in vehicles:
-        fuel_consumption.append(traci.vehicle.getCO2Emission(vehicle))
+        fuel_consumption.append(traci.vehicle.getFuelConsumption(vehicle))
     res = {
         'mean_fuel_consumption': np.mean(fuel_consumption) if len(fuel_consumption) > 0 else np.nan,
         'sum_fuel_consumption': np.sum(fuel_consumption) if len(fuel_consumption) > 0 else np.nan,

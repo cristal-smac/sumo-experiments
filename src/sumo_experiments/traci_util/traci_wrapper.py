@@ -89,7 +89,7 @@ class TraciWrapper:
                 current_config = res
 
             self.data['simulation_step'].append(step + 1)
-            self.data['mean_travel_time'].append(np.mean(travel_times))
+            self.data['mean_travel_time'].append(np.nanmean(travel_times) if len(travel_times) > 0 else np.nan)
             self.data['exiting_vehicles'].append(len(travel_times))
             step += 1
 
