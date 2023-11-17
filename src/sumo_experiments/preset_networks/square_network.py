@@ -135,10 +135,6 @@ class SquareNetwork:
                                          to_node=f'x{x}-y{y - 1}', edge_type='default')
                             self.edges_length[f'edge_x{x}-y{y}_x{x}-y{y - 1}'] = y_positions[y]
 
-        print(x_positions)
-        print(y_positions)
-        print(self.edges_length)
-
         # We add the connections
         for x in range(square_side_length + 2):
             for y in range(square_side_length + 2):
@@ -608,8 +604,6 @@ class SquareNetwork:
         :return: An empty DetectorBuilder object.
         :rtype: sumo_experiments.src.components.DetectorBuilder
         """
-
-        print(self.edges_length)
 
         # Select parameters
         boolean_detector_length = config['boolean_detector_length']

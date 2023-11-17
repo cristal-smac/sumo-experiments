@@ -402,8 +402,6 @@ class LineNetwork:
                 detectors.add_lane_area_detector(id=f"c{i}c{i + 1}", lane=f"edge_c{i}c{i + 1}_0", pos=(lane_length - boolean_detector_length - 14))
         detectors.add_lane_area_detector(id=f"ec{nb_intersections}", lane=f"edge_ec{nb_intersections}_0", pos=(lane_length - boolean_detector_length - 7.2))
 
-        print(detectors.laneAreaDetectors)
-
         return detectors
 
 
