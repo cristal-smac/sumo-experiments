@@ -40,7 +40,7 @@ class Experiment:
         self.config = {'exp_name': name}
         self.files = {}
 
-    def run(self, gui=False, seed=None, no_warnings=True):
+    def run(self, gui=False, seed=None, no_warnings=True, nb_threads=1):
         """
         Launch an SUMO simulation with the network configuration.
         First build the configuration files and then launch SUMO.
@@ -61,14 +61,14 @@ class Experiment:
         if no_warnings:
             cmd += ' --no-warnings'
         os.system(cmd)
-        args = self.build_arguments(seed, no_warnings)
+        args = self.build_arguments(seed, no_warnings, nb_threads)
 
         if gui:
             os.system(f'$SUMO_HOME/bin/sumo-gui {args}')
         else:
             os.system(f'$SUMO_HOME/bin/sumo {args}')
 
-    def run_traci(self, traci_function, gui=False, seed=None, no_warnings=True):
+    def run_traci(self, traci_function, gui=False, seed=None, no_warnings=True, nb_threads=1):
         """
         Launch an SUMO simulation with the network configuration.
         First build the configuration files and then launch SUMO.
@@ -93,7 +93,7 @@ class Experiment:
         if no_warnings:
             cmd += ' --no-warnings'
         os.system(cmd)
-        args = self.build_arguments(seed, no_warnings)
+        args = self.build_arguments(seed, no_warnings, nb_threads)
 
         if gui:
             traci.start(["sumo-gui"] + args.split())
@@ -116,7 +116,7 @@ class Experiment:
             if os.path.exists(file):
                 os.remove(file)
 
-    def build_arguments(self, seed, no_warnings):
+    def build_arguments(self, seed, no_warnings, nb_threads):
         """
         Build the arguments to launch SUMO with a command line.
         """
@@ -132,7 +132,8 @@ class Experiment:
         else:
             args += '--random '
         if no_warnings:
-            args += '--no-warnings'
+            args += '--no-warnings '
+        args += f'--threads {nb_threads} '
         return args
 
     def set_parameter(self, name, value):
