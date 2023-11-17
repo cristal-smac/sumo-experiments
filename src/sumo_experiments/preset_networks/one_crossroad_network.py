@@ -28,7 +28,7 @@ class OneCrossroadNetwork:
         'south_length', 'west_length', 'green_time_north_south', 'green_time_west_east', 'yellow_time_north_south',
         'yellow_time_west_east', 'stop_generation_time_north', 'stop_generation_time_east', 'stop_generation_time_south',
         'stop_generation_time_west', 'flow_frequency_north', 'flow_frequency_east', 'flow_frequency_south', 'flow_frequency_west',
-        'boolean_detector_length', 'simulation_duration', 'distribution'
+        'boolean_detector_length', 'simulation_duration', 'distribution', 'data_frequency'
     ]
 
 

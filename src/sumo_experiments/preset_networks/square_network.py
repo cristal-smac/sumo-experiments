@@ -26,7 +26,7 @@ class SquareNetwork:
         'exp_name', 'lane_length', 'max_speed', 'green_time', 'yellow_time', 'minimum_edge_length', 'maximum_edge_length',
         'stop_generation_time', 'flow_frequency', 'period_time', 'load_vector', 'coeff_matrix', 'min_duration_tl',
         'max_duration_tl', 'vehicle_threshold', 'simulation_duration', 'boolean_detector_length', 'square_side_length',
-        'distribution'
+        'distribution', 'data_frequency'
     ]
 
     def __init__(self):

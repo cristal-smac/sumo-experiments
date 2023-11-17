@@ -27,7 +27,7 @@ class LineNetwork:
     CONFIG_PARAMETER_LIST = [
         'exp_name', 'lane_length', 'max_speed', 'green_time', 'yellow_time', 'nb_intersections', 'boolean_detector_length',
         'stop_generation_time', 'flow_frequency', 'period_time', 'load_vector', 'coeff_matrix', 'min_duration_tl',
-        'max_duration_tl', 'vehicle_threshold', 'simulation_duration', 'distribution'
+        'max_duration_tl', 'vehicle_threshold', 'simulation_duration', 'distribution', 'data_frequency'
     ]
 
     ### Networks ###
