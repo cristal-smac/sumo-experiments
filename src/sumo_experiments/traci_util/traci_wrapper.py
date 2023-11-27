@@ -17,13 +17,15 @@ class TraciWrapper:
     The order of the functions is important : think about it when you use this wrapper.
     """
 
-    def __init__(self):
+    def __init__(self, simulation_duration, data_frequency=1):
         """
         Init of class
         """
         self.stats_functions = []
         self.behavioural_functions = []
         self.data = {'simulation_step': []}
+        self.simulation_duration = simulation_duration
+        self.data_frequency = data_frequency
 
     def add_stats_function(self, function):
         """
@@ -47,22 +49,18 @@ class TraciWrapper:
         """
         self.behavioural_functions.append(function)
 
-    def final_function(self, config):
+    def final_function(self):
         """
         The final function combine all functions added to the wrapper to make only one.
-        :param config: The config with all parameters for all functions wrapped
         :return: dict
         """
         self.data = {'simulation_step': [], 'mean_travel_time': [], 'exiting_vehicles': []}
-        current_config = config
-        simulation_duration = current_config['simulation_duration']
-        data_frequency = current_config['data_frequency'] if 'data_frequency' in current_config else 1
         step = 0
         running_vehicles = {}
         current_travel_times = []
         current_exiting_vehicles = []
 
-        while step < simulation_duration:
+        while step < self.simulation_duration:
 
             traci.simulationStep()
 
@@ -81,11 +79,11 @@ class TraciWrapper:
             current_travel_times.append(np.nanmean(travel_times) if len(travel_times) > 0 else np.nan)
             current_exiting_vehicles.append(len(travel_times))
 
-            if step % data_frequency == 0:
+            if step % self.data_frequency == 0:
 
                 # Statistical functions
                 for stats_function in self.stats_functions:
-                    res = stats_function(current_config)
+                    res = stats_function()
                     for key in res:
                         if key in self.data:
                             self.data[key].append(res[key])
@@ -93,9 +91,8 @@ class TraciWrapper:
                             self.data[key] = [res[key]]
 
                 # Behavioural functions
-                for bahavioural_function in self.behavioural_functions:
-                    res = bahavioural_function(current_config)
-                    current_config = res
+                for behavioural_function in self.behavioural_functions:
+                    behavioural_function()
 
                 self.data['simulation_step'].append(step + 1)
                 filter = [False if i == 0 else True for i in current_exiting_vehicles]

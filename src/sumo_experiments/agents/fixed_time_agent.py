@@ -1,4 +1,4 @@
-from agent import Agent
+from src.sumo_experiments.agents import Agent
 import traci
 
 
@@ -19,6 +19,7 @@ class FixedTimeAgent(Agent):
         :type phases_durations: iterable object
         """
         super().__init__()
+        self.started = False
         self.id_intersection = id_intersection
         self.phases_durations = phases_durations
         self.current_phase = 0
@@ -32,11 +33,15 @@ class FixedTimeAgent(Agent):
         :return: True if the agent switched to another phase, False otherwise
         :rtype: bool
         """
-        if self.countdown >= self.phases_durations[self.current_phase]:
+        if not self.started:
+            traci.trafficlight.setPhase(self.id_tls_program, 0)
+            traci.trafficlight.setPhaseDuration(self.id_tls_program, self.phases_durations[0])
+            self.started = True
+        if self.countdown >= self.phases_durations[self.current_phase % self.nb_phases]:
             self.current_phase += 1
             self.countdown = 0
             traci.trafficlight.setPhase(self.id_tls_program, self.current_phase % self.nb_phases)
-            traci.trafficlight.setPhaseDuration(self.id_tls_program, self.phases_durations[self.current_phase + 5])
+            traci.trafficlight.setPhaseDuration(self.id_tls_program, self.phases_durations[self.current_phase % self.nb_phases] + 5)
         else:
             self.countdown += 1
 
