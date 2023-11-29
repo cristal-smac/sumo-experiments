@@ -13,3 +13,10 @@ class Agent(ABC):
         :return: Nothing
         """
         pass
+
+    @abstractmethod
+    def _start_agent(self):
+        """
+        Start the agent at the beginning of the simulation.
+        """
+        pass

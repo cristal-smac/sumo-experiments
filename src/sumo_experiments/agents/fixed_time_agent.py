@@ -15,7 +15,7 @@ class FixedTimeAgent(Agent):
         :type id_intersection: str
         :param id_tls_program: The id of the traffic light program related to the intersection
         :type id_tls_program: str
-        :param phases_durations: The durations of each traffic light phase (length = number of phases)
+        :param phases_durations: The durations of each traffic light phase (length = number of phases), including yellows
         :type phases_durations: iterable object
         """
         super().__init__()
@@ -34,14 +34,23 @@ class FixedTimeAgent(Agent):
         :rtype: bool
         """
         if not self.started:
-            traci.trafficlight.setPhase(self.id_tls_program, 0)
-            traci.trafficlight.setPhaseDuration(self.id_tls_program, self.phases_durations[0])
-            self.started = True
+            self._start_agent()
+            return True
         if self.countdown >= self.phases_durations[self.current_phase % self.nb_phases]:
             self.current_phase += 1
             self.countdown = 0
             traci.trafficlight.setPhase(self.id_tls_program, self.current_phase % self.nb_phases)
             traci.trafficlight.setPhaseDuration(self.id_tls_program, self.phases_durations[self.current_phase % self.nb_phases] + 5)
+            return True
         else:
             self.countdown += 1
+            return False
+
+    def _start_agent(self):
+        """
+        Start the agent at the beginning of the simulation.
+        """
+        traci.trafficlight.setPhase(self.id_tls_program, 0)
+        traci.trafficlight.setPhaseDuration(self.id_tls_program, self.phases_durations[0])
+        self.started = True
 
