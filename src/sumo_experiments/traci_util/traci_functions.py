@@ -2,11 +2,9 @@ import traci
 import numpy as np
 
 
-def get_nb_vehicles(config):
+def get_nb_vehicles():
     """
     Return the number of running vehicles on the network.
-    :param config: Configuration data for the function
-    :type config: dict
     :return: A dictionary with number of vehicle value
     :rtype: dict
     """
@@ -17,11 +15,9 @@ def get_nb_vehicles(config):
     return res
 
 
-def get_acceleration_data(config):
+def get_acceleration_data():
     """
     Return acceleration data for all running vehicles on the network.
-    :param config: Configuration data for the function
-    :type config: dict
     :return: A dictionary with acceleration values
     :rtype: dict
     """
@@ -39,11 +35,9 @@ def get_acceleration_data(config):
     return res
 
 
-def get_speed_data(config):
+def get_speed_data():
     """
     Return speed data for all running vehicles on the network.
-    :param config: Configuration data for the function
-    :type config: dict
     :return: A dictionary with speed values
     :rtype: dict
     """
@@ -61,11 +55,9 @@ def get_speed_data(config):
     return res
 
 
-def get_co2_emissions_data(config):
+def get_co2_emissions_data():
     """
     Return CO2 emissions data for all running vehicles on the network.
-    :param config: Configuration data for the function
-    :type config: dict
     :return: A dictionary with CO2 values
     :rtype: dict
     """
@@ -83,11 +75,9 @@ def get_co2_emissions_data(config):
     return res
 
 
-def get_co_emissions_data(config):
+def get_co_emissions_data():
     """
     Return CO emissions data for all running vehicles on the network.
-    :param config: Configuration data for the function
-    :type config: dict
     :return: A dictionary with CO values
     :rtype: dict
     """
@@ -105,11 +95,9 @@ def get_co_emissions_data(config):
     return res
 
 
-def get_nox_emissions_data(config):
+def get_nox_emissions_data():
     """
     Return NOx emissions data for all running vehicles on the network.
-    :param config: Configuration data for the function
-    :type config: dict
     :return: A dictionary with NOx values
     :rtype: dict
     """
@@ -127,18 +115,16 @@ def get_nox_emissions_data(config):
     return res
 
 
-def get_fuel_consumption_data(config):
+def get_fuel_consumption_data():
     """
     Return fuel consumption data for all running vehicles on the network.
-    :param config: Configuration data for the function
-    :type config: dict
     :return: A dictionary with speed values
     :rtype: dict
     """
     fuel_consumption = []
     vehicles = traci.vehicle.getIDList()
     for vehicle in vehicles:
-        fuel_consumption.append(traci.vehicle.getCO2Emission(vehicle))
+        fuel_consumption.append(traci.vehicle.getFuelConsumption(vehicle))
     res = {
         'mean_fuel_consumption': np.mean(fuel_consumption) if len(fuel_consumption) > 0 else np.nan,
         'sum_fuel_consumption': np.sum(fuel_consumption) if len(fuel_consumption) > 0 else np.nan,

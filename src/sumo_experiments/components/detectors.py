@@ -29,13 +29,17 @@ class DetectorBuilder:
         tree = ET.ElementTree(xml_additional)
         tree.write(filenames['detectors'])
 
-    def add_lane_area_detector(self, id, lane, pos=0, end_pos=-0.1, freq=100000):
+    def add_lane_area_detector(self, id, edge, lane, type, pos=0, end_pos=-0.1, freq=100000):
         """
         Add a E2 detector to the object.
         :param id: ID of detector
         :type id: str
+        :param edge: The edge where to place the detector
+        :type edge: str
         :param lane: The lane where to place the detector
-        :type lane: str
+        :type lane: int
+        :param type: The type of detector, 'boolean' or 'numerical'
+        :type type: str
         :param pos: The beginning of the detection area on the lane
         :type pos: float
         :param end_pos: The end of the detection area on the lane
@@ -45,7 +49,7 @@ class DetectorBuilder:
         :param file: The file where the detector will be saved
         :type file: str
         """
-        self.laneAreaDetectors[id] = LaneAreaDetector(id, lane, pos, end_pos, freq, 'detectors.out')
+        self.laneAreaDetectors[id] = LaneAreaDetector(id, edge, lane, type, pos, end_pos, freq, 'detectors.out')
 
     def build_lane_area_detectors(self, xml):
         """
@@ -63,13 +67,17 @@ class LaneAreaDetector:
     Class defining an E2 detector to be integrated into a SUMO simulation
     """
 
-    def __init__(self, id, lane, pos, end_pos, freq, file):
+    def __init__(self, id, edge, lane, type, pos, end_pos, freq, file):
         """
         Init of class.
         :param id: ID of detector
         :type id: str
+        :param edge: The edge where to place the detector
+        :type edge: str
         :param lane: The lane where to place the detector
-        :type lane: str
+        :type lane: int
+        :param type: The type of detector, 'boolean' or 'numerical'
+        :type type: str
         :param pos: The beginning of the detection area on the lane
         :type pos: float
         :param end_pos: The end of the detection area on the lane
@@ -80,7 +88,9 @@ class LaneAreaDetector:
         :type file: str
         """
         self.id = str(id)
+        self.edge = str(edge)
         self.lane = str(lane)
+        self.type = type
         self.pos = str(pos)
         self.end_pos = str(end_pos)
         self.freq = str(freq)
@@ -95,7 +105,7 @@ class LaneAreaDetector:
         ET.SubElement(xml,
                       'laneAreaDetector',
                       {'id': self.id,
-                            'lane': self.lane,
+                            'lane': f'{self.edge}_{self.lane}',
                             'pos': self.pos,
                             'endPos': self.end_pos,
                             'freq': self.freq,

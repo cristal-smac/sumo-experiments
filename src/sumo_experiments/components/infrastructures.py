@@ -22,7 +22,7 @@ class InfrastructureBuilder:
         self.connections = []
         self.tlprograms = {}
 
-    def build(self, filenames):
+    def build(self, filenames, no_warning=True):
         """
         Generate the XML configuration files with all infrastructures.
         :param filenames: The dictionnary with all filenames for configuration.
@@ -35,8 +35,10 @@ class InfrastructureBuilder:
         self.build_traffic_light_programs(filenames['trafic_light_programs'])
 
         # Crée le réseau à partir des éléments construits précédemment
-        os.system(
-            f'netconvert -n {filenames["nodes"]} -e {filenames["edges"]} -x {filenames["connections"]} -i {filenames["trafic_light_programs"]} -t {filenames["types"]} -o {filenames["network"]}')
+        cmd = f'netconvert -n {filenames["nodes"]} -e {filenames["edges"]} -x {filenames["connections"]} -i {filenames["trafic_light_programs"]} -t {filenames["types"]} -o {filenames["network"]}'
+        if no_warning:
+            cmd += ' --no-warnings'
+        os.system(cmd)
 
     def add_node(self, id, x, y, type='', tl_program=''):
         """

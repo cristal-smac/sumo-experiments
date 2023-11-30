@@ -27,51 +27,61 @@ class Experiment:
         :param name: The name of the experiment
         :type name: str
         :param infrastructures: The function that creates the network infrastructures. Must return a InfrastructureBuilder object.
-        :type infrastructures: function
+        :type infrastructures: InfrastructureBuilder
         :param flows: The function that creates network flows. Must return a FlowBuilder object.
-        :type flows: function
+        :type flows: FlowBuilder
         :param detectors: The function that creates network detectors. Must return a DetectorBuilder object.
-        :type detectors: function
+        :type detectors: DetectorBuilder
         """
         self.infrastructures = infrastructures
         self.flows = flows
         self.detectors = detectors
         self.name = name
-        self.config = {'exp_name': name}
         self.files = {}
 
-    def run(self, gui=False, seed=None, no_warnings=True):
+    def run(self, simulation_duration, gui=False, seed=None, no_warnings=True, nb_threads=1):
         """
         Launch an SUMO simulation with the network configuration.
         First build the configuration files and then launch SUMO.
+        :param simulation_duration: The simulation duration in simulation steps
+        :type simulation_duration: int
         :param gui: True to run SUMO in graphical mode. False otherwise.
         :type gui: bool
         :param seed: The seed of the simulation. Same seeds = same simulations.
         :type seed: int
         :param no_warnings: If set to True, no warnings when executing SUMO.
         :type no_warnings: bool
+        :param nb_threads: Number of thread to run SUMO
+        :type nb_threads: int
         """
         self.generate_file_names()
-        self.flows(self.config).build(self.files)
-        self.infrastructures(self.config).build(self.files)
+        self.flows.build(self.files)
+        self.infrastructures.build(self.files, no_warnings)
         if self.detectors is not None:
-            self.detectors(self.config).build(self.files)
+            self.detectors.build(self.files)
 
-        os.system(f'$SUMO_HOME/bin/netconvert -n {self.files["nodes"]} -e {self.files["edges"]} -x {self.files["connections"]} -i {self.files["trafic_light_programs"]} -t {self.files["types"]} -o {self.files["network"]}')
-        args = self.build_arguments(seed, no_warnings)
+        cmd = f'$SUMO_HOME/bin/netconvert -n {self.files["nodes"]} -e {self.files["edges"]} -x {self.files["connections"]} -i {self.files["trafic_light_programs"]} -t {self.files["types"]} -o {self.files["network"]}'
+        if no_warnings:
+            cmd += ' --no-warnings'
+        os.system(cmd)
+        args = self.build_arguments(simulation_duration, seed, no_warnings, nb_threads)
 
         if gui:
             os.system(f'$SUMO_HOME/bin/sumo-gui {args}')
         else:
             os.system(f'$SUMO_HOME/bin/sumo {args}')
 
-    def run_traci(self, traci_function, gui=False, seed=None, no_warnings=True):
+    def run_traci(self, traci_function, gui=False, seed=None, no_warnings=True, nb_threads=1):
         """
         Launch an SUMO simulation with the network configuration.
         First build the configuration files and then launch SUMO.
         This function uses TraCi, which means that the infrastructures can be controlled
         simulation steps by simpulation steps. So a function using TraCi must be defined
         to run SUMO with TraCi.
+        :param simulation_duration: The simulation duration in simulation steps
+        :type simulation_duration: int
+        :param data_frequency: The data collection frequency
+        :type data_frequency: int
         :param traci_function: The function using TraCi package and that can control infrastructures.
         :type: function
         :param gui: True to run SUMO in graphical mode. False otherwise.
@@ -80,21 +90,26 @@ class Experiment:
         :type seed: int
         :param no_warnings: If set to True, no warnings when executing SUMO.
         :type no_warnings: bool
+        :param nb_threads: Number of thread to run SUMO
+        :type nb_threads: int
         """
         self.generate_file_names()
-        self.flows(self.config).build(self.files)
-        self.infrastructures(self.config).build(self.files)
+        self.flows.build(self.files)
+        self.infrastructures.build(self.files)
         if self.detectors is not None:
-            self.detectors(self.config).build(self.files)
-        os.system(f'$SUMO_HOME/bin/netconvert -n {self.files["nodes"]} -e {self.files["edges"]} -x {self.files["connections"]} -i {self.files["trafic_light_programs"]} -t {self.files["types"]} -o {self.files["network"]}')
-        args = self.build_arguments(seed, no_warnings)
+            self.detectors.build(self.files)
+        cmd = f'$SUMO_HOME/bin/netconvert -n {self.files["nodes"]} -e {self.files["edges"]} -x {self.files["connections"]} -i {self.files["trafic_light_programs"]} -t {self.files["types"]} -o {self.files["network"]}'
+        if no_warnings:
+            cmd += ' --no-warnings'
+        os.system(cmd)
+        args = self.build_arguments(None, seed, no_warnings, nb_threads)
 
         if gui:
             traci.start(["sumo-gui"] + args.split())
         else:
             traci.start(["sumo"] + args.split())
 
-        res = traci_function(self.config)
+        res = traci_function()
 
         traci.close()
 
@@ -110,7 +125,7 @@ class Experiment:
             if os.path.exists(file):
                 os.remove(file)
 
-    def build_arguments(self, seed, no_warnings):
+    def build_arguments(self, simulation_duration, seed, no_warnings, nb_threads):
         """
         Build the arguments to launch SUMO with a command line.
         """
@@ -119,24 +134,16 @@ class Experiment:
         args += f'-r {self.files["routes"]} '
         if self.detectors is not None:
             args += f'-a {self.files["detectors"]} '
-        if 'simulation_duration' in self.config:
-            args += f'-e {self.config["simulation_duration"] + 1} '
+        if simulation_duration is not None:
+            args += f'-e {simulation_duration + 1} '
         if seed is not None:
             args += f'--seed {seed} '
         else:
             args += '--random '
         if no_warnings:
-            args += '--no-warnings'
+            args += '--no-warnings '
+        args += f'--threads {nb_threads} '
         return args
-
-    def set_parameter(self, name, value):
-        """
-        Add a parameter to the experiment configuration.
-        :param name: The name of the parameter
-        :type name: str
-        :param value: The value of the parameter
-        """
-        self.config[name] = value
 
     def generate_file_names(self):
         """
