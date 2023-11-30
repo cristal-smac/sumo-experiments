@@ -2,22 +2,37 @@ from src.sumo_experiments.agents import Agent
 import traci
 
 
-class BooleanAgent(Agent):
+class NumericalAgent(Agent):
     """
-    Implements a boolean agent. An intersection managed by this agent must be equipped with boolean detectors, that only
-    detect if a vehicle is on its scope or not. If a detector detects a vehicle for a lane, and not for the lane of other
-    traffic light phases, then the traffic light is set to a phase that is green for this lane. While detectors detect
-    vehicles in lanes where traffic light is green, it remains green until there is no vehicle or the maximum green time
-    of the phase is reached.
+    Implements a numerical agent. An intersection managed by this agent must be equipped with numerical detectors, that
+    count how many vehicles are currently on the watched lane. If a numerical detector counts more vehicle on a red lane
+    than the defined threshold, then it will directly switch to green for this lane. The phases last at least a defined
+    minimum time and at maximum a defined maximum time. It's possible not to define maximum phases time. Then, phases
+    will last until the threshold on other lane is passed.
     """
 
-    def __init__(self, id_intersection, id_tls_program, intersection_relations, max_phases_durations=None, yellow_time=None):
+    def __init__(self,
+                 id_intersection,
+                 id_tls_program,
+                 intersection_relations,
+                 min_phases_durations,
+                 threshold,
+                 counted_vehicles='all',
+                 max_phases_durations=None,
+                 yellow_time=None):
         """
         Init of class.
         :param id_intersection: The id of the intersection the agent will control
         :type id_intersection: str
         :param id_tls_program: The id of the traffic light program related to the intersection
         :type id_tls_program: str
+        :param min_phases_durations: The minimum durations of each traffic light phase (except yellow phases). Can't be None.
+        :type min_phases_durations: dict
+        :param threshold: The threshold of vehicles that will release a phase switch
+        :type threshold: int
+        :param counted_vehicles: The vehicles that will be count. 'all' means that all vehicles detected by the numerical
+        detector will be counted. 'stopped' means that only stopped vehicles detected will be counted.
+        :type counted_vehicles: str
         :param max_phases_durations: The maximum durations of each traffic light phase (except yellow phases). If None,
         traffic lights will not switch to another phase until they are car detected on red lanes.
         :type max_phases_durations: dict
@@ -30,40 +45,59 @@ class BooleanAgent(Agent):
         self.started = False
         self.id_intersection = id_intersection
         self.id_tls_program = id_tls_program
+        self.min_phases_durations = min_phases_durations
         self.max_phases_durations = max_phases_durations
         self.yellow_time = yellow_time
         self.current_phase = 0
         self.countdown = 0
         self.relations = intersection_relations
         self.current_max_time_index = 0
+        self.threshold = threshold
+        if counted_vehicles == 'all':
+            self.count_function = traci.lanearea.getLastStepVehicleNumber
+        elif counted_vehicles == 'stopped':
+            self.count_function = traci.lanearea.getJamLengthVehicle
+        else:
+            raise ValueError('counted_vehicles argument is not valid.')
 
     def choose_action(self):
         """
-        Switch to the next phase when countdown is equal to the current phase duration.
+        If the threshold is passed for a defined lane and the minimum time is exceeded, switch to a phase that is green
+        for this lane.
         :return: True if the agent switched to another phase, False otherwise
         :rtype: bool
         """
         if not self.started:
             self._start_agent()
             return True
-        red_detectors = self._detectors_red_lanes()
-        green_detectors = self._detectors_green_lanes()
         if 'y' not in traci.trafficlight.getRedYellowGreenState(self.id_tls_program):
-            red_detection = any([traci.lanearea.getLastStepVehicleNumber(det.id) > 0 for det in red_detectors])
-            if red_detection:
-                green_detection = any([traci.lanearea.getLastStepVehicleNumber(det.id) > 0 for det in green_detectors])
-                if not green_detection:
+            # Check if minimum time is exceeded
+            if self.countdown > self.min_phases_durations[self.phases_index[self.current_phase % self.nb_phases]]:
+                red_detectors = self._detectors_red_lanes()
+                detectors_trigerred = [self.count_function(det.id) >= self.threshold for det in red_detectors]
+                if any(detectors_trigerred):
+                    edges = []
+                    for i in range(len(red_detectors)):
+                        if detectors_trigerred[i]:
+                            edges.append(red_detectors[i].edge)
+                    edges = set(edges)
                     self.current_phase += 1
                     traci.trafficlight.setPhase(self.id_tls_program, self.current_phase % self.nb_phases)
+                    green_detectors = set(self._detectors_green_lanes())
+                    cpt = 0
+                    while not edges.issubset(green_detectors) and cpt < self.nb_phases:
+                        self.current_phase += 1
+                        traci.trafficlight.setPhase(self.id_tls_program, self.current_phase % self.nb_phases)
+                        green_detectors = set(self._detectors_green_lanes())
+                        cpt += 1
+                    if cpt >= self.nb_phases:
+                        self.current_phase += 1
+                        traci.trafficlight.setPhase(self.id_tls_program, self.current_phase % self.nb_phases)
+                    self.countdown = 0
                     return True
-            elif self.max_phases_durations is not None:
-                if self.countdown > self.max_phases_durations[self.current_max_time_index % len(self.max_phases_durations)]:
-                    self.current_phase += 1
-                    traci.trafficlight.setPhase(self.id_tls_program, self.current_phase % self.nb_phases)
-                    return True
-        else:
-            self.countdown += 1
-        return False
+            else:
+                self.countdown += 1
+                return False
 
     def _detectors_red_lanes(self):
         """
@@ -83,7 +117,7 @@ class BooleanAgent(Agent):
                     lane_number = int(lane.split('_')[-1])
                     edge = lane[:-2]
                     edge_index = self.relations['related_edges'].index(edge)
-                    detector = self.relations['related_boolean_detectors'][edge_index][lane_number]
+                    detector = self.relations['related_numerical_detectors'][edge_index][lane_number]
                     if detector not in detectors:
                         detectors.append(detector)
         return detectors
@@ -106,7 +140,7 @@ class BooleanAgent(Agent):
                     lane_number = int(lane.split('_')[-1])
                     edge = lane[:-2]
                     edge_index = self.relations['related_edges'].index(edge)
-                    detector = self.relations['related_boolean_detectors'][edge_index][lane_number]
+                    detector = self.relations['related_numerical_detectors'][edge_index][lane_number]
                     if detector not in detectors:
                         detectors.append(detector)
         return detectors
@@ -116,8 +150,10 @@ class BooleanAgent(Agent):
         Start an agent at the beginning of the simulation.
         """
         self.nb_phases = len(traci.trafficlight.getAllProgramLogics(self.id_tls_program)[0].phases)
+        self.phases_index = {}
         tl_logic = traci.trafficlight.getAllProgramLogics(self.id_tls_program)[0]
         phase_index = 0
+        nb_phase = 0
         for phase in tl_logic.phases:
             if 'y' in phase.state:
                 if self.yellow_time is not None:
@@ -133,7 +169,9 @@ class BooleanAgent(Agent):
                     phase.duration = 10000
                     phase.maxDur = 10000
                     phase.minDur = 10000
+                self.phases_index[nb_phase] = phase_index
                 phase_index += 1
+            nb_phase += 1
         traci.trafficlight.setProgramLogic(self.id_tls_program, tl_logic)
         traci.trafficlight.setPhase(self.id_tls_program, 0)
         if self.max_phases_durations is not None:
