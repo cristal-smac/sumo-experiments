@@ -1,4 +1,4 @@
-from src.sumo_experiments.agents import Agent
+from sumo_experiments.agents import Agent
 import traci
 
 
