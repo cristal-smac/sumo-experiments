@@ -36,13 +36,25 @@ class Strategy(ABC):
             if infrastructures.nodes[key].type == 'traffic_light':
                 relations[key] = {'node_infos': infrastructures.nodes[key],
                                   'related_edges': [],
+                                  'related_exit_detectors': [],
                                   'related_boolean_detectors': [],
                                   'related_numerical_detectors': []}
         for key in infrastructures.edges:
             if infrastructures.edges[key].to_node in relations:
                 relations[infrastructures.edges[key].to_node]['related_edges'].append(key)
         for key in relations:
-            relations[key]['related_edges'] = self._order_edges(relations[key]['related_edges'], infrastructures)
+            relations[key]['related_edges'] = self._order_entry_edges(relations[key]['related_edges'], infrastructures)
+            exits_detectors = []
+            for edge in relations[key]['related_edges']:
+                exits_edge_detectors = []
+                for connection in infrastructures.connections:
+                    if connection.from_edge == edge:
+                        to_edge = connection.to_edge
+                        for detector in detectors.laneAreaDetectors:
+                            if detectors.laneAreaDetectors[detector].type == 'numerical' and detectors.laneAreaDetectors[detector].edge == to_edge:
+                                exits_edge_detectors.append(detectors.laneAreaDetectors[detector])
+                exits_detectors.append(exits_edge_detectors)
+            relations[key]['related_exit_detectors'] = exits_detectors
             boolean_detectors = []
             numerical_detectors = []
             for edge in relations[key]['related_edges']:
@@ -62,9 +74,9 @@ class Strategy(ABC):
 
 
 
-    def _order_edges(self, edges, infrastructures):
+    def _order_entry_edges(self, edges, infrastructures):
         """
-        Order edges related to a traffic light node to a sumo information link order.
+        Order entry edges related to a traffic light node to a sumo information link order.
         :param edges: The edges related to a traffic light node
         :type edges: list
         :param infrastructures: The infrastructures of the network
@@ -77,6 +89,33 @@ class Strategy(ABC):
             from_node = infrastructures.edges[edge_id].from_node
             from_node_coord = np.array((infrastructures.nodes[from_node].x, infrastructures.nodes[from_node].y))
             to_node = infrastructures.edges[edge_id].to_node
+            to_node_coord = np.array((infrastructures.nodes[to_node].x, infrastructures.nodes[to_node].y))
+            angle = math.atan2(from_node_coord[0] - to_node_coord[0], from_node_coord[1] - to_node_coord[1])
+            if from_node_coord[0] >= to_node_coord[0]:
+                new_edges.append((edge_id, np.degrees(angle)))
+            else:
+                new_edges.append((edge_id, np.degrees(angle) + 360))
+        new_edges.sort(key=lambda x: x[1])
+        new_edges = [edge[0] for edge in new_edges]
+        return new_edges
+
+    def _order_exit_edges(self, edges, infrastructures):
+        """
+        Order exit edges related to a traffic light node to a sumo information link order.
+        :param edges: The edges related to a traffic light node
+        :type edges: list
+        :param infrastructures: The infrastructures of the network
+        :type infrastructures: InfrastructureBuilder
+        :return: The ordered edges
+        :rtype: list
+        """
+        new_edges = []
+        for edge_id in edges:
+            # From node is actually to node
+            from_node = infrastructures.edges[edge_id].to_node
+            from_node_coord = np.array((infrastructures.nodes[from_node].x, infrastructures.nodes[from_node].y))
+            # To node is actually from node
+            to_node = infrastructures.edges[edge_id].from_node
             to_node_coord = np.array((infrastructures.nodes[to_node].x, infrastructures.nodes[to_node].y))
             angle = math.atan2(from_node_coord[0] - to_node_coord[0], from_node_coord[1] - to_node_coord[1])
             if from_node_coord[0] >= to_node_coord[0]:
