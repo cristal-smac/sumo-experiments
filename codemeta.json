@@ -9,11 +9,11 @@
     "name": "sumo-experiments",
     "version": "3.1.0",
     "description": "The sumo-experiments library implements a python interface for the Simulation of Urban MObility (SUMO) software.",
-    "Applicationcategory": "Research, Education",
+    "applicationCategory": "Research, Education",
     "releaseNotes": "Bug Fixes",
     "developmentStatus": "active",
     "isPartOf": "https://github.com/cristal-smac",
-    "referencePublication": "https://hal.science/hal-00732002",
+    "referencePublication": "",
     "keywords": [
         "Multi-agent Platform",
         "Multi-Agent Systems",
@@ -32,10 +32,10 @@
     "author": [
 	{
             "@type": "Person",
-            "@id": "https://orcid.org/0000-0001-8032-6323",
-            "givenName": "Jean-Christophe",
-            "familyName": "ROUTIER",
-            "email": "jean-christophe.routier@univ-lille.fr",
+            "@id": "",
+            "givenName": "Jules",
+            "familyName": "BOMPARD",
+            "email": "jules.bompard.etu@univ-lille.fr",
             "affiliation": {
                 "@type": "Organization",
                 "name": "Univ. Lille, CNRS, Centrale Lille, UMR 9189 - CRIStAL, F-59000 Lille, France"
@@ -51,26 +51,48 @@
                 "@type": "Organization",
                 "name": "Univ. Lille, CNRS, Centrale Lille, UMR 9189 - CRIStAL, F-59000 Lille, France"
             }
+        },
+        {
+            "@type": "Person",
+            "@id": "https://orcid.org/0000-0001-8551-0509",
+            "givenName": "Antoine",
+            "familyName": "NONGAILLARD",
+            "email": "antoine.nongaillard@univ-lille.fr",
+            "affiliation": {
+                "@type": "Organization",
+                "name": "Univ. Lille, CNRS, Centrale Lille, UMR 9189 - CRIStAL, F-59000 Lille, France"
+            }
         }
     ],
     "contributor": [
 	{
             "@type": "Person",
-            "@id": "https://orcid.org/0000-0001-8032-6323",
-            "givenName": "Jean-Christophe",
-            "familyName": "ROUTIER",
-            "email": "jean-christophe.routier@univ-lille.fr",
+            "@id": "",
+            "givenName": "Jules",
+            "familyName": "BOMPARD",
+            "email": "jules.bompard.etu@univ-lille.fr",
             "affiliation": {
                 "@type": "Organization",
                 "name": "Univ. Lille, CNRS, Centrale Lille, UMR 9189 - CRIStAL, F-59000 Lille, France"
             }
-	},
+		},
         {
             "@type": "Person",
             "@id": "https://orcid.org/0000-0003-2786-1209",
             "givenName": "Philippe",
             "familyName": "MATHIEU",
             "email": "philippe.mathieu@univ-lille.fr",
+            "affiliation": {
+                "@type": "Organization",
+                "name": "Univ. Lille, CNRS, Centrale Lille, UMR 9189 - CRIStAL, F-59000 Lille, France"
+            }
+        },
+        {
+            "@type": "Person",
+            "@id": "https://orcid.org/0000-0001-8551-0509",
+            "givenName": "Antoine",
+            "familyName": "NONGAILLARD",
+            "email": "antoine.nongaillard@univ-lille.fr",
             "affiliation": {
                 "@type": "Organization",
                 "name": "Univ. Lille, CNRS, Centrale Lille, UMR 9189 - CRIStAL, F-59000 Lille, France"
