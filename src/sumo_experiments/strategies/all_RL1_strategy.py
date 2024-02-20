@@ -13,7 +13,6 @@ class RL1Strategy(Strategy):
     def __init__(self,
                  infrastructures,
                  detectors,
-                 lengths_detectors,
                  yellow_times,
                  epsilons,
                  epsilon_updaters,
@@ -34,8 +33,6 @@ class RL1Strategy(Strategy):
         :type detectors: DetectorBuilder
         :param yellow_times: Yellow phases duration for all intersections
         :type yellow_times: dict
-        :param lengths_detectors: The range of all detectors, for all intersections.
-        :type lengths_detectors: dict
         :param epsilons: Epsilon value for the greedy action selection at the beginning of the simulation, for all intersections. Must be between 0 and 1 included.
         :type epsilons: dict
         :param epsilon_updaters: Coefficient that will be used to compute the new epsilon after each selection, if the episode number is greater than decreasing_episode, for all intersections. Must be between 0 and 1 included.
@@ -59,7 +56,6 @@ class RL1Strategy(Strategy):
         """
         super().__init__(infrastructures, detectors)
         self.agents = self._generate_agents(yellow_times,
-                                            lengths_detectors,
                                             epsilons,
                                             epsilon_updaters,
                                             min_epsilons,
@@ -88,7 +84,6 @@ class RL1Strategy(Strategy):
 
     def _generate_agents(self,
                          yellow_times,
-                         lengths_detectors,
                          epsilons,
                          epsilon_updaters,
                          min_epsilons,
@@ -103,8 +98,6 @@ class RL1Strategy(Strategy):
         Generate all agents for the strategy.
         :param yellow_times: Yellow phases duration for all intersections
         :type yellow_times: dict
-        :param lengths_detectors: The range of all detectors, for all intersections.
-        :type lengths_detectors: dict
         :param epsilons: Epsilon value for the greedy action selection at the beginning of the simulation, for all intersections. Must be between 0 and 1 included.
         :type epsilons: dict
         :param epsilon_updaters: Coefficient that will be used to compute the new epsilon after each selection, if the episode number is greater than decreasing_episode, for all intersections. Must be between 0 and 1 included.
@@ -132,7 +125,6 @@ class RL1Strategy(Strategy):
                              id_tls_program=self.relations[intersection]['node_infos'].tl,
                              yellow_time=yellow_times[intersection],
                              intersection_relations=self.relations[intersection],
-                             length_detector=lengths_detectors[intersection],
                              epsilon=epsilons[intersection],
                              epsilon_updater=epsilon_updaters[intersection],
                              min_epsilon=min_epsilons[intersection],

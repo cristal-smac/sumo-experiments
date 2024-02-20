@@ -26,7 +26,6 @@ class RLAgent1(Agent):
                  id_intersection,
                  id_tls_program,
                  intersection_relations,
-                 length_detector,
                  yellow_time=None,
                  epsilon=1,
                  epsilon_updater=0.999,
@@ -71,7 +70,6 @@ class RLAgent1(Agent):
         self.id_intersection = id_intersection
         self.id_tls_program = id_tls_program
         self.relations = intersection_relations
-        self.length_detector = length_detector
         self.yellow_time = yellow_time
         self.epsilon = epsilon
         self.epsilon_updater = epsilon_updater
