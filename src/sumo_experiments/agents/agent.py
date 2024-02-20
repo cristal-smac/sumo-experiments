@@ -6,6 +6,8 @@ class Agent(ABC):
     intersection in a SUMO simulation.
     """
 
+    VEHICLE_DEFAULT_LENGTH = 5
+
     @abstractmethod
     def choose_action(self):
         """
