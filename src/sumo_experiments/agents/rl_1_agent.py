@@ -1,15 +1,11 @@
 import random
 
-import matplotlib.pyplot as plt
-
 from sumo_experiments.agents import Agent
 import traci
 import numpy as np
 from keras.layers import Dense
 from keras.models import Sequential
 from keras.optimizers import RMSprop
-from collections import deque
-from tensorflow import gather_nd
 from keras.losses import mean_squared_error
 
 
@@ -292,91 +288,6 @@ class RLAgent1(Agent):
         model.add(Dense(self.ACTION_DIMENSION, activation='linear'))
         model.compile(optimizer=RMSprop(), loss=mean_squared_error, metrics=['accuracy'])
         return model
-
-    def _detectors_red_lanes(self):
-        """
-        Return the detectors related to red lanes entry for a phase.
-        :return: The list of all concerned detectors
-        :rtype: list
-        """
-        detectors = []
-        current_phase = traci.trafficlight.getRedYellowGreenState(self.id_tls_program)
-        phases = traci.trafficlight.getControlledLinks(self.id_tls_program)
-        for i in range(len(current_phase)):
-            link = current_phase[i]
-            if link == 'r':
-                link_infos = phases[i]
-                for info in link_infos:
-                    lane = info[0]
-                    lane_number = int(lane.split('_')[-1])
-                    edge = lane[:-2]
-                    edge_index = self.relations['related_edges'].index(edge)
-                    detector = self.relations['related_numerical_detectors'][edge_index][lane_number]
-                    if detector not in detectors:
-                        detectors.append(detector)
-        return detectors
-
-    def _detectors_green_lanes(self):
-        """
-        Return the detectors related to green lanes entry for a phase.
-        :return: The list of all concerned detectors
-        :rtype: list
-        """
-        detectors = []
-        current_phase = traci.trafficlight.getRedYellowGreenState(self.id_tls_program)
-        phases = traci.trafficlight.getControlledLinks(self.id_tls_program)
-        for i in range(len(current_phase)):
-            link = current_phase[i]
-            if link == 'g' or link == 'G':
-                link_infos = phases[i]
-                for info in link_infos:
-                    lane = info[0]
-                    lane_number = int(lane.split('_')[-1])
-                    edge = lane[:-2]
-                    edge_index = self.relations['related_edges'].index(edge)
-                    detector = self.relations['related_numerical_detectors'][edge_index][lane_number]
-                    if detector not in detectors:
-                        detectors.append(detector)
-        return detectors
-
-    def _exit_detectors(self):
-        """
-        Return the exit detectors for a phase.
-        :return: The list of all concerned detectors
-        :rtype: list
-        """
-        detectors = []
-        current_phase = traci.trafficlight.getRedYellowGreenState(self.id_tls_program)
-        phases = traci.trafficlight.getControlledLinks(self.id_tls_program)
-        for i in range(len(current_phase)):
-            link_infos = phases[i]
-            for info in link_infos:
-                lane = info[0]
-                lane_number = int(lane.split('_')[-1])
-                edge = lane[:-2]
-                edge_index = self.relations['related_edges'].index(edge)
-                if len(self.relations['related_exit_detectors'][edge_index]) != 0:
-                    detector = self.relations['related_exit_detectors'][edge_index][lane_number]
-                    if detector not in detectors:
-                        detectors.append(detector)
-        return detectors
-
-    def _compute_pressure(self, entry_detectors, exit_detectors):
-        """
-        Compute the pressure for a phase. The pressure is computed in vehicles.
-        :param entry_detectors: The entry detectors of the phase.
-        :type entry_detectors: list
-        :param exit_detectors: The exit detectors of the phase.
-        :type exit_detectors: list
-        :return: The pressure of the phase.
-        :rtype: int
-        """
-        pressure = 0
-        for detector in entry_detectors:
-            pressure += self.count_function(detector.id)
-        for detector in exit_detectors:
-            pressure -= self.count_function(detector.id)
-        return pressure
 
     def _start_agent(self):
         """
