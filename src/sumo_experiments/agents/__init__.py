@@ -5,5 +5,5 @@ from .numerical_agent import NumericalAgent
 from .max_pressure_agent import MaxPressureAgent
 from .sotl_agent import SOTLAgent
 from .lqf_agent import LQFAgent
-from .chen_2020_agent import Chen2020Agent
+from .rl_2_agent import RLAgent2
 from .rl_1_agent import RLAgent1
