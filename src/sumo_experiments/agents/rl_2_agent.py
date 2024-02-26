@@ -170,9 +170,9 @@ class RLAgent2(Agent):
         """
         batch_size = self.max_batch_size if len(self.replay_buffer) > self.max_batch_size else len(self.replay_buffer)
         # Create training batch from a replay buffer sampling
-        randomized_batch = random.sample(self.replay_buffer, batch_size)
-        current_state_batch = np.zeros(shape=(batch_size, self.state_dimension))
-        next_state_batch = np.zeros(shape=(batch_size, self.state_dimension))
+        randomized_batch = random.sample(self.replay_buffer, len(self.replay_buffer))
+        current_state_batch = np.zeros(shape=(len(self.replay_buffer), self.state_dimension))
+        next_state_batch = np.zeros(shape=(len(self.replay_buffer), self.state_dimension))
         # We add in the corresponding arrays the current states and next states
         for index, item in enumerate(randomized_batch):
             current_state_batch[index, :] = item[0]
@@ -181,7 +181,7 @@ class RLAgent2(Agent):
         Q_next_state = self.target_network.predict(next_state_batch, verbose=0)
         # Creating data to fit neural networks
         input_data = current_state_batch
-        output_data = np.zeros(shape=(batch_size, self.nb_actions))
+        output_data = np.zeros(shape=(len(self.replay_buffer), self.nb_actions))
         for index, (currentState, action, reward, nextState) in enumerate(randomized_batch):
             y = reward + self.gamma * np.max(Q_next_state[index])
             output_data[index, action] = y
