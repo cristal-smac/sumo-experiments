@@ -143,6 +143,7 @@ class Experiment:
         if no_warnings:
             args += '--no-warnings '
         args += f'--threads {nb_threads} '
+        args += '--time-to-teleport -1 '
         return args
 
     def generate_file_names(self):

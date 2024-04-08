@@ -54,11 +54,12 @@ class TraciWrapper:
         The final function combine all functions added to the wrapper to make only one.
         :return: dict
         """
-        self.data = {'simulation_step': [], 'mean_travel_time': [], 'exiting_vehicles': []}
+        self.data = {'simulation_step': [], 'mean_travel_time': [], 'exiting_vehicles': [], 'mean_CO2_per_travel': []}
         step = 0
         running_vehicles = {}
         current_travel_times = []
         current_exiting_vehicles = []
+        current_co2_travel = []
 
         while step < self.simulation_duration:
 
@@ -68,15 +69,30 @@ class TraciWrapper:
 
             # We catch each inserted vehicle ID
             for id in traci.simulation.getDepartedIDList():
-                running_vehicles[id] = simulation_time
+                running_vehicles[id] = {'simulation_time': simulation_time, 'sum_co2': 0}
 
-            # We compute travel time for each leaving vehicle
+            # Updating CO2 emissions
+            for id in traci.vehicle.getIDList():
+                running_vehicles[id]['sum_co2'] += traci.vehicle.getCO2Emission(id)
+
+            # We add travel time and co2 emissions for each leaving vehicle
             travel_times = []
+            co2_emissions = []
             for id in traci.simulation.getArrivedIDList():
-                travel_times.append(simulation_time - running_vehicles[id])
+                travel_times.append(simulation_time - running_vehicles[id]['simulation_time'])
+                co2_emissions.append(running_vehicles[id]['sum_co2'])
+
+            # Updating running list
+            currently_running = traci.vehicle.getIDList()
+            to_be_deleted = []
+            for id in running_vehicles:
+                if id not in currently_running:
+                    to_be_deleted.append(id)
+            for id in to_be_deleted:
                 del running_vehicles[id]
 
             current_travel_times.append(np.nanmean(travel_times) if len(travel_times) > 0 else np.nan)
+            current_co2_travel.append(np.nanmean(co2_emissions) if len(co2_emissions) > 0 else np.nan)
             current_exiting_vehicles.append(len(travel_times))
 
             if step % self.data_frequency == 0:
@@ -97,10 +113,13 @@ class TraciWrapper:
                 self.data['simulation_step'].append(step + 1)
                 filter = [False if i == 0 else True for i in current_exiting_vehicles]
                 current_travel_times = np.array(current_travel_times)
+                current_co2_travel = np.array(current_co2_travel)
                 current_exiting_vehicles = np.array(current_exiting_vehicles)
                 self.data['mean_travel_time'].append(np.average(current_travel_times[filter], weights=current_exiting_vehicles[filter]) if np.any(filter) else np.nan)
+                self.data['mean_CO2_per_travel'].append(np.average(current_co2_travel[filter], weights=current_exiting_vehicles[filter]) if np.any(filter) else np.nan)
                 self.data['exiting_vehicles'].append(np.nansum(current_exiting_vehicles))
                 current_travel_times = []
+                current_co2_travel = []
                 current_exiting_vehicles = []
             step += 1
 
