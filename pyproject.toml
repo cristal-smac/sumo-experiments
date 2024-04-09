@@ -23,9 +23,11 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Interface Engine/Protocol Translator",
 ]
 dependencies = [
-    "numpy >= 1.26.0, < 2",
+    "numpy >= 1.26.0, < 3",
     "pandas >= 2.1.1, < 3",
     "traci >= 1.18.0, < 2",
+    "keras > 3, < 4",
+    "tensorflow > 2, < 3"
 ]
 
 [project.urls]
