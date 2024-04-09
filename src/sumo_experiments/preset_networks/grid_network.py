@@ -1,5 +1,3 @@
-import warnings
-
 import numpy as np
 from sumo_experiments.components import InfrastructureBuilder, FlowBuilder, DetectorBuilder
 import traci
@@ -71,8 +69,8 @@ class GridNetwork:
         net = InfrastructureBuilder()
 
         # Generate and save edges length
-        offset_values_x = [np.random.uniform(minimum_edge_length, maximum_edge_length) for _ in range(square_side_length + 1)]
-        offset_values_y = [np.random.uniform(minimum_edge_length, maximum_edge_length) for _ in range(square_side_length + 1)]
+        offset_values_x = [np.random.uniform(minimum_edge_length, maximum_edge_length) for _ in range(self.width + 1)]
+        offset_values_y = [np.random.uniform(minimum_edge_length, maximum_edge_length) for _ in range(self.height + 1)]
         x_positions = [0] + offset_values_x
         y_positions = [0] + offset_values_y
 
