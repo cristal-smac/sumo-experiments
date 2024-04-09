@@ -2,7 +2,6 @@ import traci
 
 from sumo_experiments.strategies import Strategy
 from sumo_experiments.agents import RLAgent2
-import numpy as np
 
 
 class RL2Strategy(Strategy):

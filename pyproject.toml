@@ -4,7 +4,7 @@ requires = ["hatchling"]
 
 [project]
 name = "sumo-experiments"
-version = "3.2.1"
+version = "3.3"
 authors = [
     { name="Jules Bompard", email="jules.bompard.etu@univ-lille.fr" },
     { name="Antoine Nongaillard", email="antoine.nongaillard@univ-lille.fr"},
@@ -23,11 +23,8 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Interface Engine/Protocol Translator",
 ]
 dependencies = [
-    "matplotlib >= 3.8.0, < 4",
     "numpy >= 1.26.0, < 2",
-    "packaging >= 23.2, < 24",
     "pandas >= 2.1.1, < 3",
-    "sumolib >= 1.18.0, < 2",
     "traci >= 1.18.0, < 2",
 ]
 
