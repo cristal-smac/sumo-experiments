@@ -1,6 +1,5 @@
 from sumo_experiments.strategies import Strategy
 from sumo_experiments.agents import BooleanAgent
-import numpy as np
 
 
 class BooleanStrategy(Strategy):

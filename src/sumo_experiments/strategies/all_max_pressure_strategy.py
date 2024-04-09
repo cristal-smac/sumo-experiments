@@ -1,6 +1,5 @@
 from sumo_experiments.strategies import Strategy
 from sumo_experiments.agents import MaxPressureAgent
-import numpy as np
 
 
 class MaxPressureStrategy(Strategy):

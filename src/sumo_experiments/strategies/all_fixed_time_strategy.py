@@ -1,7 +1,5 @@
 from sumo_experiments.strategies import Strategy
 from sumo_experiments.agents import FixedTimeAgent
-import numpy as np
-
 
 class FixedTimeStrategy(Strategy):
     """
