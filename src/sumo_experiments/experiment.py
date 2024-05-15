@@ -18,19 +18,23 @@ class Experiment:
     configuration files.
     """
 
-    def __init__(self, name, infrastructures, flows, detectors=None):
+    def __init__(self, name, flows, net=None, infrastructures=None, detectors=None):
         """
         Init of class.
         :param name: The name of the experiment
         :type name: str
-        :param infrastructures: The function that creates the network infrastructures. Must return a InfrastructureBuilder object.
-        :type infrastructures: InfrastructureBuilder
-        :param flows: The function that creates network flows. Must return a FlowBuilder object.
+        :param flows: The flows of the network.
         :type flows: FlowBuilder
+        :param net: The name of the file that define the network to use. Can not be used if infrastructures is set.
+        :type net: str
+        :param infrastructures: The infrastructures of the network. Can not be used if net is set.
+        :type infrastructures: InfrastructureBuilder
         :param detectors: The function that creates network detectors. Must return a DetectorBuilder object.
         :type detectors: DetectorBuilder
         """
+        assert net is None or infrastructures is None, "infrastructures and net parameters can not both be set."
         self.infrastructures = infrastructures
+        self.net = net
         self.flows = flows
         self.detectors = detectors
         self.name = name
@@ -53,14 +57,16 @@ class Experiment:
         """
         self.generate_file_names()
         self.flows.build(self.files)
-        self.infrastructures.build(self.files, no_warnings)
+        if self.infrastructures is not None:
+            self.infrastructures.build(self.files, no_warnings)
         if self.detectors is not None:
             self.detectors.build(self.files)
 
-        cmd = f'$SUMO_HOME/bin/netconvert -n {self.files["nodes"]} -e {self.files["edges"]} -x {self.files["connections"]} -i {self.files["trafic_light_programs"]} -t {self.files["types"]} -o {self.files["network"]}'
-        if no_warnings:
-            cmd += ' --no-warnings'
-        os.system(cmd)
+        if self.net is None:
+            cmd = f'$SUMO_HOME/bin/netconvert -n {self.files["nodes"]} -e {self.files["edges"]} -x {self.files["connections"]} -i {self.files["trafic_light_programs"]} -t {self.files["types"]} -o {self.files["network"]}'
+            if no_warnings:
+                cmd += ' --no-warnings'
+            os.system(cmd)
         args = self.build_arguments(simulation_duration, seed, no_warnings, nb_threads)
 
         if gui:
@@ -127,7 +133,10 @@ class Experiment:
         Build the arguments to launch SUMO with a command line.
         """
         args = ''
-        args += f'-n {self.files["network"]} '
+        if self.net is None:
+            args += f'-n {self.files["network"]} '
+        else:
+            args += f'-n {self.net} '
         args += f'-r {self.files["routes"]} '
         if self.detectors is not None:
             args += f'-a {self.files["detectors"]} '

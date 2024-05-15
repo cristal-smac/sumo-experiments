@@ -3,3 +3,4 @@ pandas<3
 traci<2
 keras<4
 tensorflow<3
+networkx>3
