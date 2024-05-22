@@ -36,21 +36,29 @@ class FixedTimeAgent(Agent):
         if not self.started:
             self._start_agent()
             return True
-        if self.countdown >= self.phases_durations[self.current_phase % self.nb_phases]:
-            self.current_phase += 1
-            self.countdown = 0
-            traci.trafficlight.setPhase(self.id_tls_program, self.current_phase % self.nb_phases)
-            traci.trafficlight.setPhaseDuration(self.id_tls_program, self.phases_durations[self.current_phase % self.nb_phases] + 5)
-            return True
-        else:
-            self.countdown += 1
-            return False
 
     def _start_agent(self):
         """
         Start the agent at the beginning of the simulation.
         """
+        self.nb_phases = len(traci.trafficlight.getAllProgramLogics(self.id_tls_program)[0].phases)
+        self.phases_index = {}
+        tl_logic = traci.trafficlight.getAllProgramLogics(self.id_tls_program)[0]
+        phase_index = 0
+        nb_phase = 0
+        for phase in tl_logic.phases:
+            if 'y' in phase.state:
+                phase.duration = 3
+                phase.minDur = 3
+                phase.maxDur = 3
+            else:
+                self.phases_index[nb_phase] = phase_index
+                phase.duration = self.phases_durations[phase_index]
+                phase.maxDur = self.phases_durations[phase_index]
+                phase.minDur = self.phases_durations[phase_index]
+                phase_index += 1
+            nb_phase += 1
+        traci.trafficlight.setProgramLogic(self.id_tls_program, tl_logic)
         traci.trafficlight.setPhase(self.id_tls_program, 0)
-        traci.trafficlight.setPhaseDuration(self.id_tls_program, self.phases_durations[0])
         self.started = True
 
