@@ -308,7 +308,7 @@ class LineNetwork:
         detector is represented with a lane area detector whose scope is the entire lane,
         from the beginning to the end.
 
-        :return: An empty DetectorBuilder object.
+        :return: A DetectorBuilder object.
         :rtype: sumo_experiments.src.components.DetectorBuilder
         """
         detectors = DetectorBuilder()
@@ -330,14 +330,12 @@ class LineNetwork:
         A boolean detector returns if a vehicle is on its scope or not. In SUMO, a boolean
         detector is represented with a lane area detector whose scope is the entire lane,
         from the beginning to the end.
-
         :param boolean_detector_length: The scope size of the detectors (in meters)
         :type boolean_detector_length: int
-        :return: An empty DetectorBuilder object.
+        :return: A DetectorBuilder object.
         :rtype: sumo_experiments.src.components.DetectorBuilder
         """
         detectors = DetectorBuilder()
-
         detectors.add_lane_area_detector(id="b_wc1", edge="edge_wc1", lane=0, type='boolean', pos=(self.lane_length - boolean_detector_length - 7.2))
         for i in range(1, self.nb_intersections + 1):
             detectors.add_lane_area_detector(id=f"b_s{i}c{i}", edge=f"edge_s{i}c{i}", lane=0, type='boolean', pos=(self.lane_length - boolean_detector_length - 7.2))
@@ -346,10 +344,24 @@ class LineNetwork:
                 detectors.add_lane_area_detector(id=f"b_c{i + 1}c{i}", edge=f"edge_c{i + 1}c{i}", lane=0, type='boolean', pos=(self.lane_length - boolean_detector_length - 14))
                 detectors.add_lane_area_detector(id=f"b_c{i}c{i + 1}", edge=f"edge_c{i}c{i + 1}", lane=0, type='boolean', pos=(self.lane_length - boolean_detector_length - 14))
         detectors.add_lane_area_detector(id=f"b_ec{self.nb_intersections}", edge=f"edge_ec{self.nb_intersections}", lane=0, type='boolean', pos=(self.lane_length - boolean_detector_length - 7.2))
-
         return detectors
 
-    def generate_all_detectors(self, boolean_detector_length):
+    def generate_saturation_detectors(self, detector_length):
+        """
+        Generate a DetectorBuilder with a saturation detector for each lane beeing an exit of an intersection.
+        :param detector_length: The scope size of the detectors (in meters)
+        :type detector_length: int
+        :return: A DetectorBuilder object.
+        :rtype: sumo_experiments.src.components.DetectorBuilder
+        """
+        detectors = DetectorBuilder()
+        for i in range(1, self.nb_intersections + 1):
+            if i != self.nb_intersections:
+                detectors.add_lane_area_detector(id=f"s_c{i + 1}c{i}", edge=f"edge_c{i + 1}c{i}", lane=0, type='saturation', pos=0, end_pos=detector_length)
+                detectors.add_lane_area_detector(id=f"s_c{i}c{i + 1}", edge=f"edge_c{i}c{i + 1}", lane=0, type='saturation', pos=0, end_pos=detector_length)
+        return detectors
+
+    def generate_all_detectors(self, boolean_detector_length, saturation_detector_length):
         """
         Generate a DetectorBuilder with boolean and numerical detectors for each entry lane of an intersection.
         A boolean detector returns if a vehicle is on its scope or not. In SUMO, a boolean
@@ -358,12 +370,15 @@ class LineNetwork:
         A numerical detector counts and returns the number of vehicles on its scope. In SUMO, a numerical
         detector is represented with a lane area detector whose scope is the entire lane,
         from the beginning to the end.
-        :param boolean_detector_length: The scope size of the detectors (in meters)
+        :param boolean_detector_length: The scope size of the boolean detectors (in meters)
         :type boolean_detector_length: int
-        :return: The numerical detectors.
+        :param saturation_detector_length: The scope size of the saturation detectors (in meters)
+        :type saturation_detector_length: int
+        :return: A DetectorBuilder object.
         :rtype: sumo_experiments.src.components.DetectorBuilder
         """
         detectors = DetectorBuilder()
         detectors.laneAreaDetectors.update(self.generate_boolean_detectors(boolean_detector_length).laneAreaDetectors)
         detectors.laneAreaDetectors.update(self.generate_numerical_detectors().laneAreaDetectors)
+        detectors.laneAreaDetectors.update(self.generate_saturation_detectors(saturation_detector_length).laneAreaDetectors)
         return detectors

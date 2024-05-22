@@ -607,7 +607,54 @@ class GridNetwork:
 
         return detectors
 
-    def generate_all_detectors(self, boolean_detector_length):
+    def generate_saturation_detectors(self, detector_length):
+        """
+        Generate a DetectorBuilder with a saturation detector for each lane going to an intersection
+        that is not a generating edge.
+        :param detector_length: The scope size of the detectors (in meters)
+        :type detector_length: int
+        :return: An empty DetectorBuilder object.
+        :rtype: sumo_experiments.src.components.DetectorBuilder
+        """
+        detectors = DetectorBuilder()
+        # We add the detectors
+        for x in range(self.width + 2):
+            for y in range(self.height + 2):
+                # No nodes on corners
+                if not self._is_corner(x, y):
+                    if y not in [0, self.height + 1]:
+                        if x < self.width:
+                            if x != 0:
+                                detectors.add_lane_area_detector(id=f's_detector_x{x}-y{y}_x{x + 1}-y{y}',
+                                                                 edge=f'edge_x{x}-y{y}_x{x + 1}-y{y}', lane=0,
+                                                                 type='saturation',
+                                                                 pos=0,
+                                                                 end_pos=detector_length)
+                        if x > 1:
+                            if x != self.width + 1:
+                                detectors.add_lane_area_detector(id=f's_detector_x{x}-y{y}_x{x - 1}-y{y}',
+                                                                 edge=f'edge_x{x}-y{y}_x{x - 1}-y{y}', lane=0,
+                                                                 type='saturation',
+                                                                 pos=0,
+                                                                 end_pos=detector_length)
+                    if x not in [0, self.width + 1]:
+                        if y < self.height:
+                            if y != 0:
+                                detectors.add_lane_area_detector(id=f's_detector_x{x}-y{y}_x{x}-y{y + 1}',
+                                                                 edge=f'edge_x{x}-y{y}_x{x}-y{y + 1}', lane=0,
+                                                                 type='saturation',
+                                                                 pos=0,
+                                                                 end_pos=detector_length)
+                        if y > 1:
+                            if y != self.height + 1:
+                                detectors.add_lane_area_detector(id=f's_detector_x{x}-y{y}_x{x}-y{y - 1}',
+                                                                 edge=f'edge_x{x}-y{y}_x{x}-y{y - 1}', lane=0,
+                                                                 type='saturation',
+                                                                 pos=0,
+                                                                 end_pos=detector_length)
+        return detectors
+
+    def generate_all_detectors(self, boolean_detector_length, saturation_detector_length):
         """
         Generate a DetectorBuilder with boolean and numerical detectors for each entry lane of an intersection.
         A boolean detector returns if a vehicle is on its scope or not. In SUMO, a boolean
@@ -618,12 +665,15 @@ class GridNetwork:
         from the beginning to the end.
         :param boolean_detector_length: The scope size of the detectors (in meters)
         :type boolean_detector_length: int
+        :param saturation_detector_length: The scope size of the saturation detectors (in meters)
+        :type saturation_detector_length: int
         :return: The numerical detectors.
         :rtype: sumo_experiments.src.components.DetectorBuilder
         """
         detectors = DetectorBuilder()
         detectors.laneAreaDetectors.update(self.generate_boolean_detectors(boolean_detector_length).laneAreaDetectors)
         detectors.laneAreaDetectors.update(self.generate_numerical_detectors().laneAreaDetectors)
+        detectors.laneAreaDetectors.update(self.generate_saturation_detectors(saturation_detector_length).laneAreaDetectors)
         return detectors
 
     def _is_corner(self, x, y):
