@@ -13,7 +13,8 @@ class AcolightStrategy(Strategy):
                  min_phases_durations,
                  max_phases_durations,
                  delta,
-                 yellow_times):
+                 yellow_times,
+                 activate_asymetric_saturation=True):
         """
         Init of class.
         :param infrastructures: The infrastructures of the network
@@ -28,9 +29,11 @@ class AcolightStrategy(Strategy):
         :type delta: dict
         :param yellow_times: Yellow phases duration for all intersections
         :type yellow_times: dict
+        :param activate_asymetric_saturation: True to activate the asymetric saturation behaviour
+        :type: bool
         """
         super().__init__(infrastructures, detectors)
-        self.agents = self._generate_agents(min_phases_durations, max_phases_durations, delta, yellow_times)
+        self.agents = self._generate_agents(min_phases_durations, max_phases_durations, delta, yellow_times, activate_asymetric_saturation)
 
     def run_all_agents(self):
         """
@@ -40,7 +43,7 @@ class AcolightStrategy(Strategy):
         for agent in self.agents:
             agent.choose_action()
 
-    def _generate_agents(self, min_phases_durations, max_phases_durations, delta, yellow_times):
+    def _generate_agents(self, min_phases_durations, max_phases_durations, delta, yellow_times, activate_asymetric_saturation):
         """
         Generate all agents for the strategy.
         :param min_phases_durations: The minimum durations of each traffic light phase (except yellow phases). Can't be None.
@@ -51,6 +54,8 @@ class AcolightStrategy(Strategy):
         :type delta: dict
         :param yellow_times: Yellow phases duration for all intersections
         :type yellow_times: dict
+        :param activate_asymetric_saturation: True to activate the asymetric saturation behaviour
+        :type: bool
         :return: All the agents of the network
         :rtype: list
         """
@@ -62,6 +67,7 @@ class AcolightStrategy(Strategy):
                                   max_phases_durations=max_phases_durations[intersection],
                                   delta=delta[intersection],
                                   yellow_time=yellow_times[intersection],
-                                  intersection_relations=self.relations[intersection])
+                                  intersection_relations=self.relations[intersection],
+                                  activate_asymetric_saturation=activate_asymetric_saturation)
             agents.append(agent)
         return agents
