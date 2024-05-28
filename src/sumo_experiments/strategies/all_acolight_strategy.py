@@ -1,3 +1,5 @@
+import traci
+
 from sumo_experiments.strategies import Strategy
 from sumo_experiments.agents import AcolightAgent
 
@@ -42,6 +44,27 @@ class AcolightStrategy(Strategy):
         """
         for agent in self.agents:
             agent.choose_action()
+
+    def detect_double_saturation(self):
+        """
+
+        :return:
+        """
+        coalition_candidates = {}
+        double_saturation_list = []
+        for agent in self.agents:
+            id_agent = agent.id_intersection
+            saturated_edges = agent.saturated_edges()
+            for edge in saturated_edges:
+                id_from = traci.edge.getFromJunction(edge)
+                if (id_from in coalition_candidates) and (id_agent in coalition_candidates[id_from]):
+                    if not (id_from, id_agent) in double_saturation_list:
+                        double_saturation_list.append((id_agent, id_from))
+                    elif id_agent in coalition_candidates:
+                        coalition_candidates[id_agent].append(id_from)
+                    else:
+                        coalition_candidates[id_agent] = [id_from]
+        return double_saturation_list
 
     def _generate_agents(self, min_phases_durations, max_phases_durations, delta, yellow_times, activate_asymetric_saturation):
         """

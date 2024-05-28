@@ -70,58 +70,78 @@ class AcolightAgent(Agent):
             self._start_agent()
             return True
         if 'y' not in traci.trafficlight.getRedYellowGreenState(self.id_tls_program):
+            # Asymetric detection
             if self.activate_asymetric_saturation:
                 if self.countdown == 0:
                     if self.current_operation == 'ACTUATED':
                         if self._asymetric_saturation():
-                            print(f'{self.id_intersection} PASSAGE EN FIXED')
                             self.current_operation = "FIXED"
                             self.count_operation = 0
                     else:
                         if not self._asymetric_saturation():
                             self.count_operation += 1
                             if self.count_operation >= 3:
-                                print(f'{self.id_intersection} REPASSAGE EN ACTUATED')
                                 self.current_operation = "ACTUATED"
                                 self.count_operation = 0
-            if self.current_operation == 'ACTUATED':
-                current_phase_index = self.phases_index[traci.trafficlight.getPhase(self.id_intersection) % self.nb_phases]
-                # Check if maximum time is exceeded
-                if self.countdown > self.min_phases_durations[current_phase_index]:
-                    if self.countdown < self.current_max[current_phase_index]:
-                        if self._no_vehicles_to_pass():
-                            if self.current_max[current_phase_index] - self.delta >= self.min_phases_durations[current_phase_index]:
-                                self.current_max[current_phase_index] -= self.delta
-                            self.current_phase += 1
-                            traci.trafficlight.setPhase(self.id_tls_program, self.current_phase % self.nb_phases)
-                            self.countdown = 0
-                            return True
-                        elif self._saturated_red_lanes():
-                            self.current_phase += 1
-                            traci.trafficlight.setPhase(self.id_tls_program, self.current_phase % self.nb_phases)
-                            self.countdown = 0
-                            return True
-                        else:
-                            self.countdown += 1
-                            return False
-                    else:
-                        self.current_max[current_phase_index] += self.delta
+            # Agent behaviour
+            current_phase_index = self.phases_index[traci.trafficlight.getPhase(self.id_intersection) % self.nb_phases]
+            # Check if maximum time is exceeded
+            if self.countdown > self.min_phases_durations[current_phase_index]:
+                if self.countdown < self.current_max[current_phase_index]:
+                    if self._no_vehicles_to_pass():
+                        if self.current_max[current_phase_index] - self.delta >= self.min_phases_durations[current_phase_index]:
+                            self.current_max[current_phase_index] -= self.delta
                         self.current_phase += 1
                         traci.trafficlight.setPhase(self.id_tls_program, self.current_phase % self.nb_phases)
                         self.countdown = 0
                         return True
+                    elif not self.current_operation == 'ACTUATED':
+                        if self._saturated_red_lanes():
+                            self.current_phase += 1
+                            traci.trafficlight.setPhase(self.id_tls_program, self.current_phase % self.nb_phases)
+                            self.countdown = 0
+                            return True
+                    elif self._green_lanes_blocked():
+                        self.current_phase += 1
+                        traci.trafficlight.setPhase(self.id_tls_program, self.current_phase % self.nb_phases)
+                        self.countdown = 0
+                        return True
+                    else:
+                        self.countdown += 1
+                        return False
                 else:
-                    self.countdown += 1
-                    return False
-            elif self.current_operation == 'FIXED':
-                if self.countdown > 100:
+                    self.current_max[current_phase_index] += self.delta
                     self.current_phase += 1
                     traci.trafficlight.setPhase(self.id_tls_program, self.current_phase % self.nb_phases)
                     self.countdown = 0
                     return True
-                else:
-                    self.countdown += 1
+            else:
+                self.countdown += 1
+                return False
 
+    def saturated_edges(self):
+        """
+        Return the list of the saturated incoming edges
+        :return: A list of saturated incoming edges
+        :rtype: list
+        """
+        saturated_edges = []
+        related_edges = self.relations['related_edges']
+        for i in range(len(related_edges)):
+            saturation_detectors = self.relations['related_saturation_detectors'][i]
+            if any([traci.lanearea.getJamLengthVehicle(det.id) > 0 for det in saturation_detectors]):
+                saturated_edges.append(related_edges[i])
+        return saturated_edges
+
+    def _green_lanes_blocked(self):
+        """
+        Detect if the traffic of all green lanes is blocked.
+        :return: True if all the green lanes are blocked
+        :rtype: bool
+        """
+        green_detectors = self._boolean_detectors_green_lanes()
+        traffic_blocked = all([traci.lanearea.getLastStepVehicleNumber(det.id) == traci.lanearea.getJamLengthVehicle(det.id) for det in green_detectors])
+        return traffic_blocked
 
     def _no_vehicles_to_pass(self):
         """
@@ -130,8 +150,8 @@ class AcolightAgent(Agent):
         :rtype: bool
         """
         green_detectors = self._boolean_detectors_green_lanes()
-        green_detection = all([traci.lanearea.getLastStepVehicleNumber(det.id) == 0 for det in green_detectors])
-        return green_detection
+        no_vehicle_detection = all([traci.lanearea.getLastStepVehicleNumber(det.id) == 0 for det in green_detectors])
+        return no_vehicle_detection
 
     def _saturated_red_lanes(self):
         """
