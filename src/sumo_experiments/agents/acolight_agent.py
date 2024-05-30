@@ -18,8 +18,7 @@ class AcolightAgent(Agent):
                  id_tls_program,
                  intersection_relations,
                  min_phases_durations,
-                 delta,
-                 max_phases_durations=None,
+                 max_phases_durations,
                  yellow_time=None,
                  activate_asymetric_saturation=True):
         """
@@ -30,10 +29,7 @@ class AcolightAgent(Agent):
         :type id_tls_program: str
         :param min_phases_durations: The minimum durations of each traffic light phase (except yellow phases). Can't be None.
         :type min_phases_durations: dict
-        :param delta: The time added or removed from the maximum phase duration when conditions are met.
-        :type delta: int
-        :param max_phases_durations: The maximum durations of each traffic light phase (except yellow phases). If None,
-        phases durations can be increased indefinitely.
+        :param max_phases_durations: The maximum durations of each traffic light phase (except yellow phases).
         :type max_phases_durations: dict
         :param yellow_time: The duration of yellow phases. If None, yellow phase will remain as declared in the network definition.
         :type yellow_time: dict
@@ -54,7 +50,6 @@ class AcolightAgent(Agent):
         self.countdown = 0
         self.relations = intersection_relations
         self.current_max_time_index = 0
-        self.delta = delta
         self.current_operation = "ACTUATED"
         self.count_operation = 0
         self.activate_asymetric_saturation = activate_asymetric_saturation
@@ -87,10 +82,8 @@ class AcolightAgent(Agent):
             current_phase_index = self.phases_index[traci.trafficlight.getPhase(self.id_intersection) % self.nb_phases]
             # Check if maximum time is exceeded
             if self.countdown > self.min_phases_durations[current_phase_index]:
-                if self.countdown < self.current_max[current_phase_index]:
+                if self.countdown < self.max_phases_durations[current_phase_index]:
                     if self._no_vehicles_to_pass():
-                        if self.current_max[current_phase_index] - self.delta >= self.min_phases_durations[current_phase_index]:
-                            self.current_max[current_phase_index] -= self.delta
                         self.current_phase += 1
                         traci.trafficlight.setPhase(self.id_tls_program, self.current_phase % self.nb_phases)
                         self.countdown = 0
@@ -110,7 +103,6 @@ class AcolightAgent(Agent):
                         self.countdown += 1
                         return False
                 else:
-                    self.current_max[current_phase_index] += self.delta
                     self.current_phase += 1
                     traci.trafficlight.setPhase(self.id_tls_program, self.current_phase % self.nb_phases)
                     self.countdown = 0

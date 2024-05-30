@@ -14,7 +14,6 @@ class AcolightStrategy(Strategy):
                  detectors,
                  min_phases_durations,
                  max_phases_durations,
-                 delta,
                  yellow_times,
                  activate_asymetric_saturation=True):
         """
@@ -27,15 +26,13 @@ class AcolightStrategy(Strategy):
         :type min_phases_durations: dict
         :param max_phases_durations: Maximum duration of each phases for all intersections
         :type max_phases_durations: dict
-        :param delta: The time added or removed from the maximum phase duration when conditions are met.
-        :type delta: dict
         :param yellow_times: Yellow phases duration for all intersections
         :type yellow_times: dict
         :param activate_asymetric_saturation: True to activate the asymetric saturation behaviour
         :type: bool
         """
         super().__init__(infrastructures, detectors)
-        self.agents = self._generate_agents(min_phases_durations, max_phases_durations, delta, yellow_times, activate_asymetric_saturation)
+        self.agents = self._generate_agents(min_phases_durations, max_phases_durations, yellow_times, activate_asymetric_saturation)
 
     def run_all_agents(self):
         """
@@ -66,15 +63,13 @@ class AcolightStrategy(Strategy):
                         coalition_candidates[id_agent] = [id_from]
         return double_saturation_list
 
-    def _generate_agents(self, min_phases_durations, max_phases_durations, delta, yellow_times, activate_asymetric_saturation):
+    def _generate_agents(self, min_phases_durations, max_phases_durations, yellow_times, activate_asymetric_saturation):
         """
         Generate all agents for the strategy.
         :param min_phases_durations: The minimum durations of each traffic light phase (except yellow phases). Can't be None.
         :type min_phases_durations: dict
         :param max_phases_durations: The maximum duration for each green phases for all traffic light nodes
         :type max_phases_durations: dict
-        :param delta: The time added or removed from the maximum phase duration when conditions are met.
-        :type delta: dict
         :param yellow_times: Yellow phases duration for all intersections
         :type yellow_times: dict
         :param activate_asymetric_saturation: True to activate the asymetric saturation behaviour
@@ -88,7 +83,6 @@ class AcolightStrategy(Strategy):
                                   id_tls_program=self.relations[intersection]['node_infos'].tl,
                                   min_phases_durations=min_phases_durations[intersection],
                                   max_phases_durations=max_phases_durations[intersection],
-                                  delta=delta[intersection],
                                   yellow_time=yellow_times[intersection],
                                   intersection_relations=self.relations[intersection],
                                   activate_asymetric_saturation=activate_asymetric_saturation)
