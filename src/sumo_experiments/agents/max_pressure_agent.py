@@ -60,6 +60,7 @@ class MaxPressureAgent(Agent):
         :return: True if the agent switched to another phase, False otherwise
         :rtype: bool
         """
+        self._get_proportions_routes()
         if not self.started:
             self._start_agent()
             return True
@@ -69,12 +70,18 @@ class MaxPressureAgent(Agent):
             if self.countdown >= self.period:
                 next_phase = self.current_phase
                 max_pressure = - np.inf
+                nb_exit_det = []
+                nb_entry_det = []
+                pressures = []
                 for i in range(self.nb_phases):
                     traci.trafficlight.setPhase(self.id_tls_program, i)
                     if 'y' not in traci.trafficlight.getRedYellowGreenState(self.id_tls_program):
                         exit_detectors = self._exit_detectors()
+                        nb_exit_det.append(len(exit_detectors))
                         green_detectors = self._detectors_green_lanes()
+                        nb_entry_det.append(len(green_detectors))
                         phase_pressure = self._compute_pressure(green_detectors, exit_detectors)
+                        pressures.append(phase_pressure)
                         if phase_pressure > max_pressure:
                             next_phase = i
                             max_pressure = phase_pressure
@@ -86,6 +93,14 @@ class MaxPressureAgent(Agent):
                 return True
             self.countdown += 1
         return False
+
+    def _get_proportions_routes(self):
+        """
+        Get the proportion of vehicles that are going on each exit for each phase.
+        :return:
+        :rtype:
+        """
+        pass
 
     def _detectors_red_lanes(self):
         """
@@ -166,10 +181,26 @@ class MaxPressureAgent(Agent):
         :rtype: int
         """
         pressure = 0
+        routes = {}
+        nb_vehicles = 0
         for detector in entry_detectors:
             pressure += self.count_function(detector.id)
+            vehicles = traci.lanearea.getLastStepVehicleIDs(detector.id)
+            for vehicle in vehicles:
+                direction = traci.vehicle.getRoute(vehicle)[0]
+                if direction in routes:
+                    routes[direction] += 1
+                else:
+                    routes[direction] = 1
+                nb_vehicles += 1
+        for key in routes:
+            routes[key] = routes[key] / nb_vehicles
         for detector in exit_detectors:
-            pressure -= self.count_function(detector.id)
+            for edge_detectors in self.relations['related_exit_detectors']:
+                if detector in edge_detectors:
+                    edge = self.relations['related_edges'][self.relations['related_exit_detectors'].index(edge_detectors)]
+            k = routes[edge] if edge in routes else 0
+            pressure -= self.count_function(detector.id) * k
         return pressure
 
     def _start_agent(self):
