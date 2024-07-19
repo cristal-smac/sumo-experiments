@@ -7,3 +7,4 @@ from .all_sotl_strategy import SOTLStrategy
 from .all_lqf_strategy import LQFStrategy
 from .all_RL2_strategy import RL2Strategy
 from .all_RL1_strategy import RL1Strategy
+from .all_acolight_strategy import AcolightStrategy
