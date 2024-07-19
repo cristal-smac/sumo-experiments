@@ -18,7 +18,7 @@ class Experiment:
     configuration files.
     """
 
-    def __init__(self, name, flows, net=None, infrastructures=None, detectors=None):
+    def __init__(self, name, flows=None, net=None, infrastructures=None, detectors=None, full_line_command=None):
         """
         Init of class.
         :param name: The name of the experiment
@@ -31,6 +31,8 @@ class Experiment:
         :type infrastructures: InfrastructureBuilder
         :param detectors: The function that creates network detectors. Must return a DetectorBuilder object.
         :type detectors: DetectorBuilder
+        :param full_line_command: The full line command to run the sim. Don't use if not required. Override all the other params (except name).
+        :type full_line_command: str
         """
         assert net is None or infrastructures is None, "infrastructures and net parameters can not both be set."
         self.infrastructures = infrastructures
@@ -39,6 +41,7 @@ class Experiment:
         self.detectors = detectors
         self.name = name
         self.files = {}
+        self.full_line_command = full_line_command
 
     def run(self, simulation_duration, gui=False, seed=None, no_warnings=True, nb_threads=1):
         """
@@ -55,24 +58,30 @@ class Experiment:
         :param nb_threads: Number of thread to run SUMO
         :type nb_threads: int
         """
-        self.generate_file_names()
-        self.flows.build(self.files)
-        if self.infrastructures is not None:
-            self.infrastructures.build(self.files, no_warnings)
-        if self.detectors is not None:
-            self.detectors.build(self.files)
+        if self.full_line_command is None:
+            self.generate_file_names()
+            if not isinstance(self.flows, str):
+                self.flows.build(self.files)
+            else:
+                self.files['routes'] = self.flows
+            if self.infrastructures is not None:
+                self.infrastructures.build(self.files, no_warnings)
+            if self.detectors is not None:
+                self.detectors.build(self.files)
 
-        if self.net is None:
-            cmd = f'$SUMO_HOME/bin/netconvert -n {self.files["nodes"]} -e {self.files["edges"]} -x {self.files["connections"]} -i {self.files["trafic_light_programs"]} -t {self.files["types"]} -o {self.files["network"]}'
-            if no_warnings:
-                cmd += ' --no-warnings'
-            os.system(cmd)
-        args = self.build_arguments(simulation_duration, seed, no_warnings, nb_threads)
+            if self.net is None:
+                cmd = f'$SUMO_HOME/bin/netconvert -n {self.files["nodes"]} -e {self.files["edges"]} -x {self.files["connections"]} -i {self.files["trafic_light_programs"]} -t {self.files["types"]} -o {self.files["network"]}'
+                if no_warnings:
+                    cmd += ' --no-warnings'
+                os.system(cmd)
+            args = self.build_arguments(simulation_duration, seed, no_warnings, nb_threads)
 
-        if gui:
-            os.system(f'$SUMO_HOME/bin/sumo-gui {args}')
+            if gui:
+                os.system(f'$SUMO_HOME/bin/sumo-gui {args}')
+            else:
+                os.system(f'$SUMO_HOME/bin/sumo {args}')
         else:
-            os.system(f'$SUMO_HOME/bin/sumo {args}')
+            os.system(self.full_line_command + ' --time-to-teleport -1')
 
     def run_traci(self, traci_function, gui=False, seed=None, no_warnings=True, nb_threads=1):
         """
@@ -81,10 +90,6 @@ class Experiment:
         This function uses TraCi, which means that the infrastructures can be controlled
         simulation steps by simpulation steps. So a function using TraCi must be defined
         to run SUMO with TraCi.
-        :param simulation_duration: The simulation duration in simulation steps
-        :type simulation_duration: int
-        :param data_frequency: The data collection frequency
-        :type data_frequency: int
         :param traci_function: The function using TraCi package and that can control infrastructures.
         :type: function
         :param gui: True to run SUMO in graphical mode. False otherwise.
@@ -96,21 +101,24 @@ class Experiment:
         :param nb_threads: Number of thread to run SUMO
         :type nb_threads: int
         """
-        self.generate_file_names()
-        self.flows.build(self.files)
-        self.infrastructures.build(self.files)
-        if self.detectors is not None:
-            self.detectors.build(self.files)
-        cmd = f'$SUMO_HOME/bin/netconvert -n {self.files["nodes"]} -e {self.files["edges"]} -x {self.files["connections"]} -i {self.files["trafic_light_programs"]} -t {self.files["types"]} -o {self.files["network"]}'
-        if no_warnings:
-            cmd += ' --no-warnings'
-        os.system(cmd)
-        args = self.build_arguments(None, seed, no_warnings, nb_threads)
+        if self.full_line_command is None:
+            self.generate_file_names()
+            self.flows.build(self.files)
+            self.infrastructures.build(self.files)
+            if self.detectors is not None:
+                self.detectors.build(self.files)
+            cmd = f'$SUMO_HOME/bin/netconvert -n {self.files["nodes"]} -e {self.files["edges"]} -x {self.files["connections"]} -i {self.files["trafic_light_programs"]} -t {self.files["types"]} -o {self.files["network"]}'
+            if no_warnings:
+                cmd += ' --no-warnings'
+            os.system(cmd)
+            args = self.build_arguments(None, seed, no_warnings, nb_threads)
 
-        if gui:
-            traci.start(["sumo-gui"] + args.split())
+            if gui:
+                traci.start(["sumo-gui"] + args.split())
+            else:
+                traci.start(["sumo"] + args.split())
         else:
-            traci.start(["sumo"] + args.split())
+            traci.start((self.full_line_command + ' --time-to-teleport -1').split())
 
         res = traci_function()
 
@@ -165,7 +173,8 @@ class Experiment:
             'routes': f'{self.name}.rou.xml',
             'network': f'{self.name}.net.xml',
             'detectors': f'{self.name}.det.xml',
-            'detectors_out': 'detectors.out'
+            'detectors_out': 'detectors.out',
+            'additionnals': f'{self.name}.add.xml'
         }
 
 
