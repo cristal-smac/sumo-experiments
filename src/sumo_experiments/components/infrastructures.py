@@ -124,20 +124,24 @@ class InfrastructureBuilder:
         tree = ET.ElementTree(xml_types)
         tree.write(filename)
 
-    def add_connection(self, from_edge, to_edge):
+    def add_connection(self, from_edge, to_edge, from_lane=0, to_lane=0):
         """
         Add a connection between to edge.
         :param from_edge: ID of starting edge of connection
         :type from_edge: str
         :param to_edge: ID of ending edge of connection
         :type to_edge: str
+        :param from_lane: The origin lane of the connection
+        :type from_lane: int
+        :param to_lane: The destination lane of the connection
+        :type to_lane: int
         :raises AttributeError: if from_edge or to_edge refers to a non-existing edge
         """
         if from_edge not in self.edges:
             raise AttributeError("The from_edge attribute refers to a non-existing edge.")
         elif to_edge not in self.edges:
             raise AttributeError("The to_edge attribute refers to a non-existing edge.")
-        self.connections.append(Connection(from_edge, to_edge))
+        self.connections.append(Connection(from_edge, to_edge, from_lane, to_lane))
 
     def build_connections(self, filename):
         """
@@ -275,16 +279,22 @@ class Connection:
     Classe representing a connection between two edges of a SUMO network.
     """
 
-    def __init__(self, from_edge, to_edge):
+    def __init__(self, from_edge, to_edge, from_lane, to_lane):
         """
         Init of class.
         :param from_edge: ID of starting edge of connection
         :type from_edge: str
         :param to_edge: ID of ending edge of connection
         :type to_edge: str
+        :param from_lane: The origin lane of the connection
+        :type from_lane: int
+        :param to_lane: The destination lane of the connection
+        :type to_lane: int
         """
         self.from_edge = from_edge
         self.to_edge = to_edge
+        self.from_lane = from_lane
+        self.to_lane = to_lane
 
     def build(self, xml_connections):
         """
@@ -292,7 +302,7 @@ class Connection:
         :param xml_connections: XML object where to build the connections.
         :type xml_connections: xml.etree.ElementTree.Element
         """
-        ET.SubElement(xml_connections, 'connection', {'from': self.from_edge, 'to': self.to_edge})
+        ET.SubElement(xml_connections, 'connection', {'from': self.from_edge, 'to': self.to_edge, 'fromLane': self.from_lane, 'toLane': self.to_lane})
 
 
 class TrafficLightProgram:
