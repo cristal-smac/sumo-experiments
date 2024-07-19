@@ -38,7 +38,8 @@ class Strategy(ABC):
                                   'related_edges': [],
                                   'related_exit_detectors': [],
                                   'related_boolean_detectors': [],
-                                  'related_numerical_detectors': []}
+                                  'related_numerical_detectors': [],
+                                  'related_saturation_detectors': []}
         for key in infrastructures.edges:
             if infrastructures.edges[key].to_node in relations:
                 relations[infrastructures.edges[key].to_node]['related_edges'].append(key)
@@ -57,19 +58,25 @@ class Strategy(ABC):
             relations[key]['related_exit_detectors'] = exits_detectors
             boolean_detectors = []
             numerical_detectors = []
+            saturation_detectors = []
             for edge in relations[key]['related_edges']:
                 b_det = []
                 n_det = []
+                s_det = []
                 for det_key in detectors.laneAreaDetectors:
                     if detectors.laneAreaDetectors[det_key].edge == edge:
                         if detectors.laneAreaDetectors[det_key].type == 'boolean':
                             b_det.append(detectors.laneAreaDetectors[det_key])
                         elif detectors.laneAreaDetectors[det_key].type == 'numerical':
                             n_det.append(detectors.laneAreaDetectors[det_key])
+                        elif detectors.laneAreaDetectors[det_key].type == 'saturation':
+                            s_det.append(detectors.laneAreaDetectors[det_key])
                 boolean_detectors.append(sorted(b_det, key=lambda det: det.lane.split('_')[-1]))
                 numerical_detectors.append(sorted(n_det, key=lambda det: det.lane.split('_')[-1]))
+                saturation_detectors.append(sorted(s_det, key=lambda det: det.lane.split('_')[-1]))
             relations[key]['related_boolean_detectors'] += boolean_detectors
             relations[key]['related_numerical_detectors'] += numerical_detectors
+            relations[key]['related_saturation_detectors'] += saturation_detectors
         return relations
 
 
