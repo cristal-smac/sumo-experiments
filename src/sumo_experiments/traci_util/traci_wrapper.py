@@ -17,7 +17,7 @@ class TraciWrapper:
     The order of the functions is important : think about it when you use this wrapper.
     """
 
-    def __init__(self, simulation_duration, data_frequency=1):
+    def __init__(self, simulation_duration=None, data_frequency=1):
         """
         Init of class
         """
@@ -61,7 +61,12 @@ class TraciWrapper:
         current_exiting_vehicles = []
         current_co2_travel = []
 
-        while step < self.simulation_duration:
+        if self.simulation_duration is None:
+            resume = traci.simulation.getMinExpectedNumber() > 0
+        else:
+            resume = step < self.simulation_duration
+
+        while resume:
 
             traci.simulationStep()
 
@@ -122,6 +127,11 @@ class TraciWrapper:
                 current_co2_travel = []
                 current_exiting_vehicles = []
             step += 1
+
+            if self.simulation_duration is None:
+                resume = traci.simulation.getMinExpectedNumber() > 0
+            else:
+                resume = step < self.simulation_duration
 
         return pd.DataFrame.from_dict(self.data)
 
