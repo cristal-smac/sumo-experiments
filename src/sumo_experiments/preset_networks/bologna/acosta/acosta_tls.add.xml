@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<add>
+    <tlLogic id="209" type="static" programID="utopia" offset="0">
+        <phase duration="42" state="GrGGGGg"/>
+        <phase duration="3" state="yryGGGg"/>
+        <phase duration="42" state="GGrGGGg"/>
+        <phase duration="3" state="yyrGGGg"/>
+    </tlLogic>
+    <tlLogic id="210" type="static" programID="utopia" offset="0">
+        <phase duration="40" state="rrrGGGGrrrrGGrrrGGGG"/>
+        <phase duration="3"  state="rrryyyyrrrryyrrryyyy"/>
+        <phase duration="20" state="rrrrrrrGrrrrrGGGrrrr"/>
+        <phase duration="3"  state="rrrrrrryrrrrryyyrrrr"/>
+        <phase duration="20" state="GGgrrrrrGGgrrrGGrrrr"/>
+        <phase duration="3"  state="yyyrrrrryyyrrryyrrrr"/>
+    </tlLogic>
+    <tlLogic id="219" type="static" programID="utopia" offset="0">
+        <phase duration="40" state="GGGrrrrGGggrrrrr"/>
+        <phase duration="3"  state="yyyrrrryyyyrrrrr"/>
+        <!--<phase duration="6"  state="rrrrrrrGGGGrrrrr"/>-->
+        <!--<phase duration="3"  state="rrrrrrryyyyrrrrr"/>-->
+        <phase duration="60" state="rrrGGGgrrrrGGGGg"/>
+        <phase duration="3"  state="rrryyygrrrryyyyg"/>
+        <phase duration="15" state="rrrrrrGrrrrrrrrG"/>
+        <phase duration="3"  state="rrrrrryrrrrrrrry"/>
+    </tlLogic>
+    <tlLogic id="220" type="static" programID="utopia" offset="0">
+        <phase duration="20" state="GgGGGrrGrrrrr"/>
+        <phase duration="3"  state="yyyyyrryrrrrr"/>
+        <phase duration="20" state="rrrrrGGrGGGGG"/>
+        <phase duration="3"  state="rrrrryyryyyyy"/>
+    </tlLogic>
+    <tlLogic id="221" type="static" programID="utopia" offset="0">
+        <phase duration="42" state="GGGrrrrGGGGGGGrrrrrGGG"/>
+        <phase duration="5"  state="GGGrrrryyyyyyyrrrrrGGG"/>
+        <phase duration="3"  state="yyyrrrrrrrrrrrrrrrryyy"/>
+        <phase duration="42" state="rrrGGGGrrrrrrrGGGGGrrr"/>
+        <phase duration="5"  state="rrrGGyyrrrrrrrGyyyyrrr"/>
+        <phase duration="3"  state="rrryyrrrrrrrrryrrrrrrr"/>
+    </tlLogic>
+    <tlLogic id="235" type="static" programID="utopia" offset="45">
+        <phase duration="60" state="GGGGGrrrrrGGGGrrrrGGGGrrr"/>
+        <phase duration="3"  state="yyyyyrrrrrGGGGrrrrGGGGrrr"/>
+        <phase duration="5"  state="rrrrrrrrrrGGGGrrrrGGGGrrr"/>
+        <phase duration="3"  state="rrrrrrrrrryyyyrrrrGGyyrrr"/>
+        <phase duration="15" state="rrrrrGGGGGrrrrrrrrGGrrrrr"/>
+        <phase duration="3"  state="rrrrryyyyyrrrrrrrryyrrrrr"/>
+        <phase duration="60" state="rrrrrrrrrrrrrrGGGGrrrrrrr"/>
+        <phase duration="3"  state="rrrrrrrrrrrrrryyyyrrrrrrr"/>
+        <phase duration="15" state="rrrrrrrrrrrrrrrrrrrrrrGGG"/>
+        <phase duration="3"  state="rrrrrrrrrrrrrrrrrrrrrryyy"/>
+    </tlLogic>
+    <tlLogic id="273" type="static" programID="utopia" offset="0">
+        <phase duration="38" state="GGgrrrGGg"/>
+        <phase duration="3"  state="yygrrryyg"/>
+        <phase duration="15"  state="rrGrrrrrG"/>
+        <phase duration="3"  state="rryrrrrry"/>
+        <phase duration="37" state="rrrGGGGrr"/>
+        <phase duration="3"  state="rrryyyyrr"/>
+    </tlLogic>
+</add>
+
