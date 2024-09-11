@@ -4,7 +4,7 @@ requires = ["hatchling"]
 
 [project]
 name = "sumo-experiments"
-version = "3.4.0"
+version = "3.4.1"
 authors = [
     { name="Jules Bompard", email="jules.bompard.etu@univ-lille.fr" },
     { name="Antoine Nongaillard", email="antoine.nongaillard@univ-lille.fr"},
@@ -28,7 +28,7 @@ dependencies = [
     "traci >= 1.18.0, < 2",
     "keras > 3, < 4",
     "tensorflow > 2, < 3",
-    "networkx > 3.3, > 4"
+    "networkx > 3.3, < 4"
 ]
 
 [project.urls]
