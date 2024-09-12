@@ -28,7 +28,7 @@ dependencies = [
     "traci >= 1.18.0, < 2",
     "keras > 3, < 4",
     "tensorflow > 2, < 3",
-    "networkx > 3.3, < 4"
+    "networkx >= 3.3, < 4"
 ]
 
 [project.urls]
