@@ -124,7 +124,7 @@ class InfrastructureBuilder:
         tree = ET.ElementTree(xml_types)
         tree.write(filename)
 
-    def add_connection(self, from_edge, to_edge, from_lane=0, to_lane=0):
+    def add_connection(self, from_edge, to_edge, from_lane='0', to_lane='0'):
         """
         Add a connection between to edge.
         :param from_edge: ID of starting edge of connection
