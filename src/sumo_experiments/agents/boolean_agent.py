@@ -53,11 +53,13 @@ class BooleanAgent(Agent):
             if red_detection:
                 green_detection = any([traci.lanearea.getLastStepVehicleNumber(det.id) > 0 for det in green_detectors])
                 if not green_detection:
+                    self.countdown = 0
                     self.current_phase += 1
                     traci.trafficlight.setPhase(self.id_tls_program, self.current_phase % self.nb_phases)
                     return True
             elif self.max_phases_durations is not None:
                 if self.countdown > self.max_phases_durations[self.current_max_time_index % len(self.max_phases_durations)]:
+                    self.countdown = 0
                     self.current_phase += 1
                     traci.trafficlight.setPhase(self.id_tls_program, self.current_phase % self.nb_phases)
                     return True
