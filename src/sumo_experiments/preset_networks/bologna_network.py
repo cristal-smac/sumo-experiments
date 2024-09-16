@@ -18,6 +18,7 @@ class BolognaNetwork:
         Init of class
         """
         self.FULL_LINE_COMMAND = f"sumo -c {self.THIS_FILE_PATH}/bologna/acosta/run.sumocfg"
+        self.FULL_LINE_COMMAND_GUI = f"sumo-gui -c {self.THIS_FILE_PATH}/bologna/acosta/run.sumocfg"
         self.NET_FILE = os.path.join(self.THIS_FILE_PATH, 'bologna/acosta/acosta_buslanes.net.xml')
         self.FLOW_FILE = os.path.join(self.THIS_FILE_PATH, 'bologna/acosta/acosta.rou.xml')
         self.NEW_FLOW_FILE = os.path.join(self.THIS_FILE_PATH, 'bologna/acosta/acosta_NEW.rou.xml')
