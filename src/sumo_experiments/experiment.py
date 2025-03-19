@@ -81,7 +81,7 @@ class Experiment:
             else:
                 os.system(f'$SUMO_HOME/bin/sumo {args}')
         else:
-            os.system(self.full_line_command + ' --time-to-teleport -1')
+            os.system(self.full_line_command + ' --time-to-teleport 30')
 
     def run_traci(self, traci_function, gui=False, seed=None, no_warnings=True, nb_threads=1):
         """

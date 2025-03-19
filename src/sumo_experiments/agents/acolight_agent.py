@@ -19,8 +19,7 @@ class AcolightAgent(Agent):
                  intersection_relations,
                  min_phases_durations,
                  max_phases_durations,
-                 yellow_time=None,
-                 activate_asymetric_saturation=True):
+                 yellow_time=None):
         """
         Init of class.
         :param id_intersection: The id of the intersection the agent will control
@@ -33,8 +32,6 @@ class AcolightAgent(Agent):
         :type max_phases_durations: dict
         :param yellow_time: The duration of yellow phases. If None, yellow phase will remain as declared in the network definition.
         :type yellow_time: dict
-        :param activate_asymetric_saturation: True to activate the asymetric saturation behaviour
-        :type: bool
         :param intersection_relations: The relations for this intersection.
         :type intersection_relations: dict
         """
@@ -43,73 +40,147 @@ class AcolightAgent(Agent):
         self.id_intersection = id_intersection
         self.id_tls_program = id_tls_program
         self.min_phases_durations = deepcopy(min_phases_durations)
-        self.max_phases_durations = max_phases_durations
-        self.current_max = deepcopy(min_phases_durations)
+        self.max_phases_durations = deepcopy(max_phases_durations)
         self.yellow_time = yellow_time
         self.current_phase = 0
-        self.countdown = 0
         self.relations = intersection_relations
-        self.current_max_time_index = 0
-        self.current_operation = "ACTUATED"
         self.count_operation = 0
-        self.activate_asymetric_saturation = activate_asymetric_saturation
+
+        if self.id_intersection == 'x2-y2':
+            print([det[0].id for det in self.relations['related_boolean_detectors']])
+
+        self.time = 0
+        self.next_phase = 0
+        self.priority_pile = []
+        self.prio = False
+        self.current_cycle = []
+        self.phases_index = dict()
+        self.current_yellow_time = 0
+
 
     def choose_action(self):
         """
-        If the threshold is passed for a defined lane and the minimum time is exceeded, switch to a phase that is green
-        for this lane.
+        Implement an Acolight agent for all intersections of the Bologna network.
         :return: True if the agent switched to another phase, False otherwise
         :rtype: bool
         """
+        # if not self.started:
+        #     self._start_agent()
+        #     return True
+        # current_phase = traci.trafficlight.getPhase(self.id_intersection)
+        # if current_phase in self.phases_index:
+        #     if self.time == 1:
+        #         traci.trafficlight.setPhase(self.id_intersection, self.next_phase)
+        #         if self.next_phase not in self.current_cycle:
+        #             self.current_cycle.append(self.next_phase)
+        #     elif self.time >= self.min_phases_durations[self.phases_index[current_phase]]:
+        #         if self.time >= self.max_phases_durations[self.phases_index[current_phase]]:
+        #             self.switch_next_phase()
+        #         elif self.no_vehicles_to_pass():
+        #             self.switch_next_phase()
+        #         elif self.blocked_vehicles() and self.time > 3:
+        #             self.switch_next_phase()
+        #     if not self.prio:
+        #         self.add_prio_phases()
+        #     self.time += 1
+
         if not self.started:
             self._start_agent()
             return True
-        if 'y' not in traci.trafficlight.getRedYellowGreenState(self.id_tls_program):
-            # Asymetric detection
-            if self.activate_asymetric_saturation:
-                if self.countdown == 0:
-                    if self.current_operation == 'ACTUATED':
-                        if self._asymetric_saturation():
-                            self.current_operation = "FIXED"
-                            self.count_operation = 0
-                    else:
-                        if not self._asymetric_saturation():
-                            self.count_operation += 1
-                            if self.count_operation >= 3:
-                                self.current_operation = "ACTUATED"
-                                self.count_operation = 0
-            # Agent behaviour
-            current_phase_index = self.phases_index[traci.trafficlight.getPhase(self.id_intersection) % self.nb_phases]
-            # Check if maximum time is exceeded
-            if self.countdown > self.min_phases_durations[current_phase_index]:
-                if self.countdown < self.max_phases_durations[current_phase_index]:
-                    if self._no_vehicles_to_pass():
-                        self.current_phase += 1
-                        traci.trafficlight.setPhase(self.id_tls_program, self.current_phase % self.nb_phases)
-                        self.countdown = 0
-                        return True
-                    elif not self.current_operation == 'ACTUATED':
-                        if self._saturated_red_lanes():
-                            self.current_phase += 1
-                            traci.trafficlight.setPhase(self.id_tls_program, self.current_phase % self.nb_phases)
-                            self.countdown = 0
-                            return True
-                    elif self._green_lanes_blocked():
-                        self.current_phase += 1
-                        traci.trafficlight.setPhase(self.id_tls_program, self.current_phase % self.nb_phases)
-                        self.countdown = 0
-                        return True
-                    else:
-                        self.countdown += 1
-                        return False
-                else:
-                    self.current_phase += 1
-                    traci.trafficlight.setPhase(self.id_tls_program, self.current_phase % self.nb_phases)
-                    self.countdown = 0
-                    return True
+        current_phase = traci.trafficlight.getPhase(self.id_intersection)
+        if current_phase not in self.phases_index:
+            if self.current_yellow_time - self.yellow_time == 0:
+                traci.trafficlight.setPhase(self.id_intersection, self.next_phase)
+                #self.current_cycle.append(self.next_phase)
+                self.current_yellow_time = 1
             else:
-                self.countdown += 1
-                return False
+                self.current_yellow_time += 1
+        else:
+            if self.time >= self.min_phases_durations[self.phases_index[current_phase]]:
+                if self.time >= self.max_phases_durations[self.phases_index[current_phase]]:
+                    self.switch_next_phase()
+                elif self.no_vehicles_to_pass():
+                    self.switch_next_phase()
+                elif self.blocked_vehicles() and self.time > 3:
+                    self.switch_next_phase()
+            if not self.prio:
+                self.add_prio_phases()
+            self.time += 1
+
+
+    def get_next_phase(self):
+        """
+        Get the next phase for the controller.
+        :return: The next phase for the controller
+        :rtype: int
+        """
+        next_phase = traci.trafficlight.getPhase(self.id_intersection)
+        # We select the next phase
+        if self.prio:
+            next_phase = self.priority_pile.pop(0)
+        else:
+            current_phase = traci.trafficlight.getPhase(self.id_intersection)
+            for phase in self.phases_index:
+                if self.is_cycle_complete():
+                    self.current_cycle = []
+                traci.trafficlight.setPhase(self.id_intersection, phase)
+                if not self.no_vehicles_to_pass():
+                    if phase not in self.current_cycle:
+                        traci.trafficlight.setPhase(self.id_intersection, current_phase)
+                        next_phase = phase
+                        break
+                self.current_cycle.append(phase)
+            traci.trafficlight.setPhase(self.id_intersection, current_phase)
+        # We update the level of priority
+        if len(self.priority_pile) > 0:
+            self.prio = True
+        else:
+            self.prio = False
+        return next_phase  # Current phase
+
+
+    def switch_next_phase(self):
+        """
+        Switch the traffic light id_tls to the next
+        """
+        current_phase = traci.trafficlight.getPhase(self.id_intersection)
+        next_phase = self.get_next_phase()
+        if next_phase != current_phase:
+            self.next_phase = next_phase
+            traci.trafficlight.setPhase(self.id_intersection, traci.trafficlight.getPhase(self.id_intersection) + 1)
+            self.time = 0
+        else:
+            self.time = self.min_phases_durations[self.phases_index[current_phase]] + 1
+
+    def add_prio_phases(self):
+        """
+        Add the current priority phases (the phases with saturated lanes) to the pile.
+        """
+        current_phase = traci.trafficlight.getPhase(self.id_intersection)
+        for phase in self.phases_index:
+            traci.trafficlight.setPhase(self.id_intersection, phase)
+            detectors = self._saturation_detectors_green_lanes()
+            #if any([traci.lanearea.getIntervalMeanSpeed(det.id) == 0 and traci.lanearea.getLastStepVehicleNumber(det.id) > 0 for det in detectors]) and phase != current_phase:
+            #print([[traci.vehicle.isStopped(veh) == True for veh in traci.lanearea.getLastStepVehicleIDs(det.id)] for det in detectors])
+            if any([any([traci.vehicle.isStopped(veh) == True for veh in traci.lanearea.getLastStepVehicleIDs(det.id)]) for det in detectors]) and phase != current_phase:
+                if phase not in self.priority_pile:
+                    self.priority_pile.append(phase)
+        traci.trafficlight.setPhase(self.id_intersection, current_phase)
+
+    def is_cycle_complete(self):
+        """
+        Return True if the cycle of a controller is complete. A complete cycle is a cycle where all the phases
+        of the controller appear at least one time, and max 1 time for the least represented one.
+        """
+        if len(self.current_cycle) == 0:
+            return False
+        counts = []
+        phases = self.phases_index
+        for phase in phases:
+            counts.append(self.current_cycle.count(phase))
+        if (counts[list(phases).index(self.current_cycle[-1])] > 1) or (0 in counts):
+            return False
+        return True
 
     def saturated_edges(self):
         """
@@ -125,7 +196,7 @@ class AcolightAgent(Agent):
                 saturated_edges.append(related_edges[i])
         return saturated_edges
 
-    def _green_lanes_blocked(self):
+    def blocked_vehicles(self):
         """
         Detect if the traffic of all green lanes is blocked.
         :return: True if all the green lanes are blocked
@@ -135,7 +206,7 @@ class AcolightAgent(Agent):
         traffic_blocked = all([traci.lanearea.getLastStepVehicleNumber(det.id) == traci.lanearea.getJamLengthVehicle(det.id) for det in green_detectors])
         return traffic_blocked
 
-    def _no_vehicles_to_pass(self):
+    def no_vehicles_to_pass(self):
         """
         Return True if boolean detectors don't detect any vehicles on green lanes.
         :return: A boolean indicating if there still are vehicles to pass on green lanes.
@@ -251,6 +322,9 @@ class AcolightAgent(Agent):
         for phase in tl_logic.phases:
             if 'y' in phase.state:
                 if self.yellow_time is not None:
+                    # phase.duration = 10000
+                    # phase.minDur = 10000
+                    # phase.maxDur = 10000
                     phase.duration = self.yellow_time
                     phase.minDur = self.yellow_time
                     phase.maxDur = self.yellow_time
@@ -268,3 +342,4 @@ class AcolightAgent(Agent):
         else:
             traci.trafficlight.setPhaseDuration(self.id_tls_program, 10000)
         self.started = True
+

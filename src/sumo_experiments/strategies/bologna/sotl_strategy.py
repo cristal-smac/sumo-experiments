@@ -8,7 +8,7 @@ class SotlStrategyBologna(BolognaStrategy):
     Implement a SOTL agent for all intersections of the Bologna network.
     """
 
-    def __init__(self, thresholds_switch, thresholds_force, min_phase_durations):
+    def __init__(self, thresholds_switch, thresholds_force, min_phase_durations, yellow_time=3):
         """
         Init of class
         """
@@ -32,9 +32,28 @@ class SotlStrategyBologna(BolognaStrategy):
             '235': 0,
             '273': 0,
         }
+        self.current_yellow_time = {
+            '209': 0,
+            '210': 0,
+            '219': 0,
+            '220': 0,
+            '221': 0,
+            '235': 0,
+            '273': 0,
+        }
+        self.nb_phases = {
+            '209': 4,
+            '210': 6,
+            '219': 6,
+            '220': 4,
+            '221': 6,
+            '235': 10,
+            '273': 6,
+        }
         self.thresholds_switch = thresholds_switch
         self.thresholds_force = thresholds_force
         self.min_phase_durations = min_phase_durations
+        self.yellow_time = yellow_time
 
     def run_all_agents(self):
         """
@@ -46,9 +65,21 @@ class SotlStrategyBologna(BolognaStrategy):
             return True
         else:
             for id_tls in self.TL_IDS:
-                current_phase = traci.trafficlight.getPhase(id_tls)
                 sum_vehicles = self.compute_vehicles_red_lanes(id_tls)
-                if current_phase in self.TLS_DETECTORS[id_tls]:
+                nb_phases = len(traci.trafficlight.getAllProgramLogics(id_tls)[0].getPhases())
+                #print(traci.trafficlight.getAllProgramLogics(id_tls)[0])
+                current_phase = traci.trafficlight.getPhase(id_tls)
+                current_state = traci.trafficlight.getRedYellowGreenState(id_tls)
+                if 'y' in current_state:
+                    if self.current_yellow_time[id_tls] >= self.yellow_time:
+                        if current_phase + 1 != self.nb_phases[id_tls]:
+                            traci.trafficlight.setPhase(id_tls, current_phase + 1)
+                        else:
+                            traci.trafficlight.setPhase(id_tls, 0)
+                        self.current_yellow_time[id_tls] = 0
+                    else:
+                        self.current_yellow_time[id_tls] += 1
+                elif current_phase in self.TLS_DETECTORS[id_tls]:
                     if self.time[id_tls] >= self.min_phase_durations[id_tls]:
                         if self.countdowns[id_tls] >= self.thresholds_switch[id_tls]:
                             if not self.are_vehicles_passing(id_tls) or self.time[id_tls] >= self.thresholds_force[id_tls]:
@@ -102,7 +133,7 @@ class SotlStrategyBologna(BolognaStrategy):
         Start an agent at the beginning of the simulation.
         """
         for tl in self.TL_IDS:
-            tl_logic = traci.trafficlight.getAllProgramLogics(tl)[1]
+            tl_logic = traci.trafficlight.getAllProgramLogics(tl)[0]
             nb_phase = 0
             for phase in tl_logic.phases:
                 if nb_phase in self.TLS_DETECTORS[tl]:
