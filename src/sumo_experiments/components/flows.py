@@ -53,7 +53,7 @@ class FlowBuilder:
             self.routes[route].build(xml_flows)
 
     def add_v_type(self, id, accel=0.8, decel=4.5, length=5.0, min_gap=2.5, max_speed=55.56, sigma=0.5, tau=1.0,
-                   color='yellow'):
+                   color='yellow', depart_speed=10):
         """
         Add a vehicle type to define a flow.
         :param id: ID of vehicle type
@@ -74,8 +74,10 @@ class FlowBuilder:
         :type tau: float
         :param color: Color of vehicle
         :type color: str
+        :param depart_speed: The speed of the vehicle when inserted
+        :type depart_speed: float
         """
-        self.v_types[id] = VType(id, accel, decel, length, min_gap, max_speed, sigma, tau, color)
+        self.v_types[id] = VType(id, accel, decel, length, min_gap, max_speed, sigma, tau, color, depart_speed)
 
     def build_v_types(self, xml_flows):
         """
@@ -160,7 +162,7 @@ class VType:
     """
 
     def __init__(self, id, accel=0.8, decel=4.5, length=5.0, min_gap=2.5, max_speed=55.56, sigma=0.5, tau=1.0,
-                 color='yellow'):
+                 color='yellow', depart_speed=10):
         """
         Init of class.
         :param id: ID of vehicle type
@@ -181,6 +183,8 @@ class VType:
         :type tau: float
         :param color: Color of vehicle
         :type color: str
+        :param depart_speed: The speed of the vehicle when inserted
+        :type depart_speed: float
         """
         self.id = str(id)
         self.accel = str(accel)
@@ -191,6 +195,7 @@ class VType:
         self.sigma = str(sigma)
         self.tau = str(tau)
         self.color = color
+        self.depart_speed = str(depart_speed)
 
     def build(self, xml_flows):
         """
@@ -200,7 +205,7 @@ class VType:
         """
         ET.SubElement(xml_flows, 'vType', {'id': self.id, 'accel': self.accel, 'decel': self.decel, 'length': self.length,
                                         'minGap': self.min_gap, 'maxSpeed': self.max_speed, 'sigma': self.sigma,
-                                        'tau': self.tau, 'color': self.color})
+                                        'tau': self.tau, 'color': self.color, 'departSpeed': self.depart_speed})
 
 
 class Flow:

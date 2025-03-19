@@ -77,6 +77,7 @@ class Strategy(ABC):
             relations[key]['related_boolean_detectors'] += boolean_detectors
             relations[key]['related_numerical_detectors'] += numerical_detectors
             relations[key]['related_saturation_detectors'] += saturation_detectors
+        print(relations)
         return relations
 
 
