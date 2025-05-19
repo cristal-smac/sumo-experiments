@@ -4,7 +4,7 @@ requires = ["hatchling"]
 
 [project]
 name = "sumo-experiments"
-version = "3.4.5"
+version = "4.1.0"
 authors = [
     { name="Jules Bompard", email="jules.bompard.etu@univ-lille.fr" },
     { name="Antoine Nongaillard", email="antoine.nongaillard@univ-lille.fr"},
@@ -12,6 +12,7 @@ authors = [
 ]
 description = "The sumo-experiments library implements a python interface for the Simulation of Urban MObility (SUMO) software."
 readme = "README.md"
+license = {file = "LICENSE"}
 requires-python = ">=3.9"
 classifiers = [
     "Programming Language :: Python :: 3",

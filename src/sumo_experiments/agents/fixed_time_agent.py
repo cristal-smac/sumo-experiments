@@ -1,3 +1,5 @@
+from pygments.styles.dracula import yellow
+
 from sumo_experiments.agents import Agent
 import traci
 
@@ -8,7 +10,7 @@ class FixedTimeAgent(Agent):
     time is over.
     """
 
-    def __init__(self, id_intersection, id_tls_program, phases_durations):
+    def __init__(self, id_intersection, id_tls_program, phases_durations, yellow_time=3):
         """
         Init of class.
         :param id_intersection: The id of the intersection the agent will control
@@ -26,6 +28,8 @@ class FixedTimeAgent(Agent):
         self.countdown = 0
         self.nb_phases = len(phases_durations)
         self.id_tls_program = id_tls_program
+        self.yellow_time = yellow_time
+        self.current_yellow_time = 0
 
     def choose_action(self):
         """
@@ -36,6 +40,26 @@ class FixedTimeAgent(Agent):
         if not self.started:
             self._start_agent()
             return True
+        else:
+            current_phase = traci.trafficlight.getPhase(self.id_intersection)
+            current_state = traci.trafficlight.getRedYellowGreenState(self.id_intersection)
+            if 'y' not in current_state:
+                if self.countdown >= self.phases_durations[self.phases_index[current_phase]]:
+                    traci.trafficlight.setPhase(self.id_intersection, current_phase + 1)
+                    self.countdown = 0
+                else:
+                    self.countdown += 1
+            else:
+                if self.current_yellow_time >= self.yellow_time:
+                    if self.id_intersection == "x1-y1":
+                        print('ICI')
+                    if current_phase + 1 != self.nb_phases:
+                        traci.trafficlight.setPhase(self.id_intersection, current_phase + 1)
+                    else:
+                        traci.trafficlight.setPhase(self.id_intersection, 0)
+                    self.current_yellow_time = 0
+                else:
+                    self.current_yellow_time += 1
 
     def _start_agent(self):
         """
@@ -48,14 +72,14 @@ class FixedTimeAgent(Agent):
         nb_phase = 0
         for phase in tl_logic.phases:
             if 'y' in phase.state:
-                phase.duration = 3
-                phase.minDur = 3
-                phase.maxDur = 3
+                phase.duration = 10000
+                phase.minDur = 10000
+                phase.maxDur = 10000
             else:
                 self.phases_index[nb_phase] = phase_index
-                phase.duration = self.phases_durations[phase_index]
-                phase.maxDur = self.phases_durations[phase_index]
-                phase.minDur = self.phases_durations[phase_index]
+                phase.duration = 10000 # self.phases_durations[phase_index]
+                phase.maxDur = 10000 # self.phases_durations[phase_index]
+                phase.minDur = 10000 # self.phases_durations[phase_index]
                 phase_index += 1
             nb_phase += 1
         traci.trafficlight.setProgramLogic(self.id_tls_program, tl_logic)
