@@ -84,6 +84,25 @@ class AcolightStrategyBologna(BolognaStrategy):
         self.max_phase_durations = max_phase_durations
         self.yellow_time = 3
 
+        self.nb_switch = {
+            '209': 0,
+            '210': 0,
+            '219': 0,
+            '220': 0,
+            '221': 0,
+            '235': 0,
+            '273': 0,
+        }
+        self.phases_occurences = {
+            '209': {},
+            '210': {},
+            '219': {},
+            '220': {},
+            '221': {},
+            '235': {},
+            '273': {},
+        }
+
     def run_all_agents(self):
         """
         Process agents to make one action each.
@@ -106,6 +125,10 @@ class AcolightStrategyBologna(BolognaStrategy):
                         else:
                             self.current_yellow_time[id_tls] += 1
                 else:
+                    if current_phase not in self.phases_occurences[id_tls]:
+                        self.phases_occurences[id_tls][current_phase] = 1
+                    else:
+                        self.phases_occurences[id_tls][current_phase] += 1
                     if self.time[id_tls] >= self.min_phase_durations[id_tls]:
                         if self.time[id_tls] >= self.max_phase_durations[id_tls]:
                             self.switch_next_phase(id_tls)
@@ -122,6 +145,7 @@ class AcolightStrategyBologna(BolognaStrategy):
         """
         Switch the traffic light id_tls to the next
         """
+        self.nb_switch[id_tls] += 1
         current_phase = traci.trafficlight.getPhase(id_tls)
         next_phase = self.get_next_phase(id_tls)
         if next_phase != current_phase:

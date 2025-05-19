@@ -64,26 +64,6 @@ class AcolightAgent(Agent):
         :return: True if the agent switched to another phase, False otherwise
         :rtype: bool
         """
-        # if not self.started:
-        #     self._start_agent()
-        #     return True
-        # current_phase = traci.trafficlight.getPhase(self.id_intersection)
-        # if current_phase in self.phases_index:
-        #     if self.time == 1:
-        #         traci.trafficlight.setPhase(self.id_intersection, self.next_phase)
-        #         if self.next_phase not in self.current_cycle:
-        #             self.current_cycle.append(self.next_phase)
-        #     elif self.time >= self.min_phases_durations[self.phases_index[current_phase]]:
-        #         if self.time >= self.max_phases_durations[self.phases_index[current_phase]]:
-        #             self.switch_next_phase()
-        #         elif self.no_vehicles_to_pass():
-        #             self.switch_next_phase()
-        #         elif self.blocked_vehicles() and self.time > 3:
-        #             self.switch_next_phase()
-        #     if not self.prio:
-        #         self.add_prio_phases()
-        #     self.time += 1
-
         if not self.started:
             self._start_agent()
             return True
@@ -162,7 +142,7 @@ class AcolightAgent(Agent):
             detectors = self._saturation_detectors_green_lanes()
             #if any([traci.lanearea.getIntervalMeanSpeed(det.id) == 0 and traci.lanearea.getLastStepVehicleNumber(det.id) > 0 for det in detectors]) and phase != current_phase:
             #print([[traci.vehicle.isStopped(veh) == True for veh in traci.lanearea.getLastStepVehicleIDs(det.id)] for det in detectors])
-            if any([any([traci.vehicle.isStopped(veh) == True for veh in traci.lanearea.getLastStepVehicleIDs(det.id)]) for det in detectors]) and phase != current_phase:
+            if any([0 < traci.lanearea.getLastStepMeanSpeed(det.id) < 0.5 and traci.lanearea.getLastStepVehicleNumber(det.id) > 0 for det in detectors]) and phase != current_phase:
                 if phase not in self.priority_pile:
                     self.priority_pile.append(phase)
         traci.trafficlight.setPhase(self.id_intersection, current_phase)
@@ -342,4 +322,5 @@ class AcolightAgent(Agent):
         else:
             traci.trafficlight.setPhaseDuration(self.id_tls_program, 10000)
         self.started = True
+
 
