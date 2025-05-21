@@ -43,7 +43,7 @@ class Experiment:
         self.files = {}
         self.full_line_command = full_line_command
 
-    def run(self, simulation_duration, gui=False, seed=None, no_warnings=True, nb_threads=1):
+    def run(self, simulation_duration, gui=False, seed=None, no_warnings=True, nb_threads=1, time_to_teleport=120):
         """
         Launch an SUMO simulation with the network configuration.
         First build the configuration files and then launch SUMO.
@@ -57,6 +57,8 @@ class Experiment:
         :type no_warnings: bool
         :param nb_threads: Number of thread to run SUMO
         :type nb_threads: int
+        :param time_to_teleport: The time for a vehicle to teleport when the network is blocked
+        :type time_to_teleport: int
         """
         if self.full_line_command is None:
             self.generate_file_names()
@@ -74,7 +76,7 @@ class Experiment:
                 if no_warnings:
                     cmd += ' --no-warnings'
                 os.system(cmd)
-            args = self.build_arguments(simulation_duration, seed, no_warnings, nb_threads)
+            args = self.build_arguments(simulation_duration, seed, no_warnings, nb_threads, time_to_teleport)
 
             if gui:
                 os.system(f'$SUMO_HOME/bin/sumo-gui {args}')
@@ -83,7 +85,7 @@ class Experiment:
         else:
             os.system(self.full_line_command + ' --time-to-teleport 30')
 
-    def run_traci(self, traci_function, gui=False, seed=None, no_warnings=True, nb_threads=1):
+    def run_traci(self, traci_function, gui=False, seed=None, no_warnings=True, nb_threads=1, time_to_teleport=120):
         """
         Launch an SUMO simulation with the network configuration.
         First build the configuration files and then launch SUMO.
@@ -100,6 +102,8 @@ class Experiment:
         :type no_warnings: bool
         :param nb_threads: Number of thread to run SUMO
         :type nb_threads: int
+        :param time_to_teleport: The time for a vehicle to teleport when the network is blocked
+        :type time_to_teleport: int
         """
         if self.full_line_command is None:
             self.generate_file_names()
@@ -111,7 +115,7 @@ class Experiment:
             if no_warnings:
                 cmd += ' --no-warnings'
             os.system(cmd)
-            args = self.build_arguments(None, seed, no_warnings, nb_threads)
+            args = self.build_arguments(None, seed, no_warnings, nb_threads, time_to_teleport)
 
             if gui:
                 traci.start(["sumo-gui"] + args.split())
@@ -136,7 +140,7 @@ class Experiment:
             if os.path.exists(file):
                 os.remove(file)
 
-    def build_arguments(self, simulation_duration, seed, no_warnings, nb_threads):
+    def build_arguments(self, simulation_duration, seed, no_warnings, nb_threads, time_to_teleport):
         """
         Build the arguments to launch SUMO with a command line.
         """
@@ -157,7 +161,7 @@ class Experiment:
         if no_warnings:
             args += '--no-warnings '
         args += f'--threads {nb_threads} '
-        args += '--time-to-teleport -1 '
+        args += f'--time-to-teleport {time_to_teleport}'
         return args
 
     def generate_file_names(self):

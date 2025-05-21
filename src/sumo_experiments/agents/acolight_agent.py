@@ -46,9 +46,6 @@ class AcolightAgent(Agent):
         self.relations = intersection_relations
         self.count_operation = 0
 
-        if self.id_intersection == 'x2-y2':
-            print([det[0].id for det in self.relations['related_boolean_detectors']])
-
         self.time = 0
         self.next_phase = 0
         self.priority_pile = []
@@ -140,8 +137,6 @@ class AcolightAgent(Agent):
         for phase in self.phases_index:
             traci.trafficlight.setPhase(self.id_intersection, phase)
             detectors = self._saturation_detectors_green_lanes()
-            #if any([traci.lanearea.getIntervalMeanSpeed(det.id) == 0 and traci.lanearea.getLastStepVehicleNumber(det.id) > 0 for det in detectors]) and phase != current_phase:
-            #print([[traci.vehicle.isStopped(veh) == True for veh in traci.lanearea.getLastStepVehicleIDs(det.id)] for det in detectors])
             if any([0 < traci.lanearea.getLastStepMeanSpeed(det.id) < 0.5 and traci.lanearea.getLastStepVehicleNumber(det.id) > 0 for det in detectors]) and phase != current_phase:
                 if phase not in self.priority_pile:
                     self.priority_pile.append(phase)

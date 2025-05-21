@@ -51,8 +51,6 @@ class FixedTimeAgent(Agent):
                     self.countdown += 1
             else:
                 if self.current_yellow_time >= self.yellow_time:
-                    if self.id_intersection == "x1-y1":
-                        print('ICI')
                     if current_phase + 1 != self.nb_phases:
                         traci.trafficlight.setPhase(self.id_intersection, current_phase + 1)
                     else:

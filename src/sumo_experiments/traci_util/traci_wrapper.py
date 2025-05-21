@@ -78,14 +78,20 @@ class TraciWrapper:
 
             # Updating CO2 emissions
             for id in traci.vehicle.getIDList():
-                running_vehicles[id]['sum_co2'] += traci.vehicle.getCO2Emission(id)
+                try:
+                    running_vehicles[id]['sum_co2'] += traci.vehicle.getCO2Emission(id)
+                except:
+                    pass
 
             # We add travel time and co2 emissions for each leaving vehicle
             travel_times = []
             co2_emissions = []
             for id in traci.simulation.getArrivedIDList():
-                travel_times.append(simulation_time - running_vehicles[id]['simulation_time'])
-                co2_emissions.append(running_vehicles[id]['sum_co2'])
+                try:
+                    travel_times.append(simulation_time - running_vehicles[id]['simulation_time'])
+                    co2_emissions.append(running_vehicles[id]['sum_co2'])
+                except:
+                    pass
 
             # Updating running list
             currently_running = traci.vehicle.getIDList()

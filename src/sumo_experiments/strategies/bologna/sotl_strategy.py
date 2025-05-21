@@ -67,7 +67,6 @@ class SotlStrategyBologna(BolognaStrategy):
             for id_tls in self.TL_IDS:
                 sum_vehicles = self.compute_vehicles_red_lanes(id_tls)
                 nb_phases = len(traci.trafficlight.getAllProgramLogics(id_tls)[0].getPhases())
-                #print(traci.trafficlight.getAllProgramLogics(id_tls)[0])
                 current_phase = traci.trafficlight.getPhase(id_tls)
                 current_state = traci.trafficlight.getRedYellowGreenState(id_tls)
                 if 'y' in current_state:
