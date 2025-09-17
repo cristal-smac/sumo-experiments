@@ -258,17 +258,17 @@ class Flow:
         if self.route != '' and self.from_edge == '' and self.to_edge == '':
             if self.distribution == "uniform":
                 ET.SubElement(xml_flows, 'flow', {'id': self.id, 'begin': self.begin, 'end': self.end, 'route': self.route,
-                                              'vehsPerHour': self.frequency, 'type': self.v_type})
+                                              'vehsPerHour': self.frequency, 'type': self.v_type, 'departLane': "best"})
             elif self.distribution == "binomial":
                 ET.SubElement(xml_flows, 'flow', {'id': self.id, 'begin': self.begin, 'end': self.end, 'route': self.route,
-                                              'probability': probability, 'type': self.v_type})
+                                              'probability': probability, 'type': self.v_type, 'departLane': "best"})
         elif self.route == '' and self.from_edge != '' and self.to_edge != '':
             if self.distribution == "uniform":
                 ET.SubElement(xml_flows, 'flow',
                               {'id': self.id, 'begin': self.begin, 'end': self.end, 'from': self.from_edge,
-                               'to': self.to_edge, 'vehsPerHour': self.frequency, 'type': self.v_type})
+                               'to': self.to_edge, 'vehsPerHour': self.frequency, 'type': self.v_type, 'departLane': "best"})
             elif self.distribution == "binomial":
                 ET.SubElement(xml_flows, 'flow',
                               {'id': self.id, 'begin': self.begin, 'end': self.end, 'from': self.from_edge,
-                               'to': self.to_edge, 'probability': probability, 'type': self.v_type})
+                               'to': self.to_edge, 'probability': probability, 'type': self.v_type, 'departLane': "best"})
 

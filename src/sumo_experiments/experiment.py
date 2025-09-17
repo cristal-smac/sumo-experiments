@@ -83,7 +83,7 @@ class Experiment:
             else:
                 os.system(f'$SUMO_HOME/bin/sumo {args}')
         else:
-            os.system(self.full_line_command + ' --time-to-teleport 30')
+            os.system(self.full_line_command + ' --time-to-teleport 150 --no-warnings')
 
     def run_traci(self, traci_function, gui=False, seed=None, no_warnings=True, nb_threads=1, time_to_teleport=120):
         """
@@ -122,7 +122,7 @@ class Experiment:
             else:
                 traci.start(["sumo"] + args.split())
         else:
-            traci.start((self.full_line_command + ' --time-to-teleport -1').split())
+            traci.start((self.full_line_command + ' --time-to-teleport 150 --no-warnings').split())
 
         res = traci_function()
 
@@ -130,11 +130,9 @@ class Experiment:
 
         return res
 
-    def clean_files(self, except_trip_info=False, except_emission=False):
+    def clean_files(self):
         """
         Delete simulation config files.
-        :param except_trip_info: Doesn't delete trip info csv file if True
-        :type except_trip_info: bool
         """
         for file in self.files.values():
             if os.path.exists(file):
