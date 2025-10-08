@@ -159,7 +159,6 @@ class LilleNetwork:
                                                 distribution='binomial')
                             c += 1
                             cpt += 1
-        print(total_ratio)
         self.flows.build({'routes': self.FLOW_FILE})
         return self.flows
 
