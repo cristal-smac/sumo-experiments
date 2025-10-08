@@ -1,3 +1,5 @@
+from tensorflow.python.distribute.device_util import current
+
 from sumo_experiments.agents import Agent
 import traci
 
@@ -25,7 +27,7 @@ class SOTLAgent(Agent):
                  threshold_switch,
                  threshold_force,
                  min_phase_duration,
-                 yellow_time=None):
+                 yellow_time=3):
         """
         Init of class.
         :param id_intersection: The id of the intersection the agent will control
@@ -39,8 +41,8 @@ class SOTLAgent(Agent):
         :type threshold_force: int
         :param min_phase_duration: The minimum duration for a green phase before switching.
         :type min_phase_duration: int
-        :param yellow_time: The duration of yellow phases. If None, yellow phase will remain as declared in the network definition.
-        :type yellow_time: dict
+        :param yellow_time: The duration of yellow phases.
+        :type yellow_time: int
         :param intersection_relations: The relations for this intersection.
         :type intersection_relations: dict
         """
@@ -49,6 +51,7 @@ class SOTLAgent(Agent):
         self.id_intersection = id_intersection
         self.id_tls_program = id_tls_program
         self.yellow_time = yellow_time
+        self.current_yellow_time = 0
         self.current_phase = 0
         self.countdown = 0
         self.time_countdown = 0
@@ -58,6 +61,7 @@ class SOTLAgent(Agent):
         self.threshold_force = threshold_force
         self.min_phase_duration = min_phase_duration
         self.count_function = traci.lanearea.getLastStepVehicleNumber
+        self.next_phase = 0
 
     def choose_action(self):
         """
@@ -104,6 +108,59 @@ class SOTLAgent(Agent):
                 self.countdown += add
                 self.time_countdown += 1
                 return False
+
+    def choose_action(self):
+        """
+        Choose an action for the next step, following the three rules of SOTL system.
+        For intersections with more than 2 phases (except yellows), if all conditions are met, the agent will select
+        the phase with the highest count of incoming vehicles.
+        :return: True if the agent switched to another phase, False otherwise
+        :rtype: bool
+        """
+        if not self.started:
+            self._start_agent()
+            return True
+        current_phase = traci.trafficlight.getPhase(self.id_intersection)
+
+        if current_phase not in self.phases_index:
+            if self.current_yellow_time - self.yellow_time == 0:
+                traci.trafficlight.setPhase(self.id_intersection, self.next_phase)
+                # self.current_cycle.append(self.next_phase)
+                self.current_yellow_time = 1
+            else:
+                self.current_yellow_time += 1
+        else:
+            if self.time_countdown >= self.min_phase_duration[self.phases_index[current_phase]]:
+                green_detectors = self.boolean_detectors_green_lanes()
+                red_detectors = self.numerical_detectors_red_lanes()
+                detectors_trigerred = any([self.count_function(det.id) > 0 for det in green_detectors])
+                nb_vehicles_on_red_lanes = sum([traci.lanearea.getLastStepVehicleNumber(det.id) for det in red_detectors])
+                self.countdown += nb_vehicles_on_red_lanes
+                if nb_vehicles_on_red_lanes > self.threshold_switch and not detectors_trigerred:
+                    self.next_phase = self.get_next_phase()
+                    traci.trafficlight.setPhase(self.id_intersection, (self.current_phase + 1) % self.nb_phases)
+                    self.time_countdown = 0
+                elif self.countdown > self.threshold_force:
+                    self.next_phase = self.get_next_phase()
+                    traci.trafficlight.setPhase(self.id_intersection, (self.current_phase + 1) % self.nb_phases)
+                    self.countdown = 0
+                    self.time_countdown = 0
+            self.time_countdown += 1
+
+    def get_next_phase(self):
+        """
+        Select the next phase for the intersection
+        """
+        current_phase = traci.trafficlight.getPhase(self.id_intersection)
+        for i in range(current_phase + 1, self.nb_phases + current_phase):
+            traci.trafficlight.setPhase(self.id_intersection, i % self.nb_phases)
+            state = traci.trafficlight.getRedYellowGreenState(self.id_intersection)
+            if 'y' not in state and ('g' in state or 'G' in state):
+                traci.trafficlight.setPhase(self.id_intersection, current_phase)
+                return i % self.nb_phases
+
+
+
 
     def numerical_detectors_red_lanes(self):
         """

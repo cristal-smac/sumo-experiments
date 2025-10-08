@@ -54,12 +54,15 @@ class TraciWrapper:
         The final function combine all functions added to the wrapper to make only one.
         :return: dict
         """
-        self.data = {'simulation_step': [], 'mean_travel_time': [], 'exiting_vehicles': [], 'mean_CO2_per_travel': []}
+        self.data = {'simulation_step': [], 'mean_travel_time': [], 'exiting_vehicles': [], 'mean_CO2_per_travel': [], 'mean_phase_time': []}
         step = 0
         running_vehicles = {}
         current_travel_times = []
         current_exiting_vehicles = []
         current_co2_travel = []
+        current_phase = {tls: traci.trafficlight.getPhase(tls) for tls in traci.trafficlight.getIDList()}
+        current_phase_durations = {tls: 0 for tls in traci.trafficlight.getIDList()}
+        phase_durations = []
 
         if self.simulation_duration is None:
             resume = traci.simulation.getMinExpectedNumber() > 0
@@ -78,14 +81,20 @@ class TraciWrapper:
 
             # Updating CO2 emissions
             for id in traci.vehicle.getIDList():
-                running_vehicles[id]['sum_co2'] += traci.vehicle.getCO2Emission(id)
+                try:
+                    running_vehicles[id]['sum_co2'] += traci.vehicle.getCO2Emission(id)
+                except:
+                    pass
 
             # We add travel time and co2 emissions for each leaving vehicle
             travel_times = []
             co2_emissions = []
             for id in traci.simulation.getArrivedIDList():
-                travel_times.append(simulation_time - running_vehicles[id]['simulation_time'])
-                co2_emissions.append(running_vehicles[id]['sum_co2'])
+                try:
+                    travel_times.append(simulation_time - running_vehicles[id]['simulation_time'])
+                    co2_emissions.append(running_vehicles[id]['sum_co2'])
+                except:
+                    pass
 
             # Updating running list
             currently_running = traci.vehicle.getIDList()
@@ -99,6 +108,15 @@ class TraciWrapper:
             current_travel_times.append(np.nanmean(travel_times) if len(travel_times) > 0 else np.nan)
             current_co2_travel.append(np.nanmean(co2_emissions) if len(co2_emissions) > 0 else np.nan)
             current_exiting_vehicles.append(len(travel_times))
+
+            # We store the phase time if the phase switches
+            for tls in traci.trafficlight.getIDList():
+                if 'y' in traci.trafficlight.getRedYellowGreenState(tls) and current_phase_durations[tls] != 0:
+                    current_phase[tls] = traci.trafficlight.getPhase(tls)
+                    phase_durations.append(current_phase_durations[tls])
+                    current_phase_durations[tls] = 0
+                elif 'y' not in traci.trafficlight.getRedYellowGreenState(tls):
+                    current_phase_durations[tls] += 1
 
             if step % self.data_frequency == 0:
 
@@ -123,9 +141,11 @@ class TraciWrapper:
                 self.data['mean_travel_time'].append(np.average(current_travel_times[filter], weights=current_exiting_vehicles[filter]) if np.any(filter) else np.nan)
                 self.data['mean_CO2_per_travel'].append(np.average(current_co2_travel[filter], weights=current_exiting_vehicles[filter]) if np.any(filter) else np.nan)
                 self.data['exiting_vehicles'].append(np.nansum(current_exiting_vehicles))
+                self.data['mean_phase_time'].append(np.average(phase_durations))
                 current_travel_times = []
                 current_co2_travel = []
                 current_exiting_vehicles = []
+                phase_durations = []
             step += 1
 
             if self.simulation_duration is None:

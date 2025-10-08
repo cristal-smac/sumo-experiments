@@ -133,3 +133,19 @@ def get_fuel_consumption_data():
         'std_dev_fuel_consumption': np.std(fuel_consumption) if len(fuel_consumption) > 0 else np.nan
     }
     return res
+
+def get_traffic_light_data():
+    """
+    Return aggregated traffic light data on the network.
+    :return: A dictionary with traffic light values
+    :rtype: dict
+    """
+    count_switch = 0
+    traffic_lights = traci.trafficlight.getIDList()
+    for traffic_light in traffic_lights:
+        if traci.trafficlight.getSpentDuration(traffic_light) == 0:
+            count_switch += 1
+    res = {
+        'nb_tl_switch': count_switch,
+    }
+    return res
