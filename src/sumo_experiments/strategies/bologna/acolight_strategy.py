@@ -1,4 +1,3 @@
-import traci
 from tensorflow.python.distribute.device_util import current
 
 from sumo_experiments.strategies.bologna import BolognaStrategy
@@ -103,23 +102,24 @@ class AcolightStrategyBologna(BolognaStrategy):
             '273': {},
         }
 
-    def run_all_agents(self):
+    def run_all_agents(self, traci):
         """
         Process agents to make one action each.
         :return: Nothing
         """
         if not self.started:
+            self.traci = traci
             self._start_agents()
             return True
         else:
             for id_tls in self.TL_IDS:
-                current_phase = traci.trafficlight.getPhase(id_tls)
-                current_state = traci.trafficlight.getRedYellowGreenState(id_tls)
+                current_phase = self.traci.trafficlight.getPhase(id_tls)
+                current_state = self.traci.trafficlight.getRedYellowGreenState(id_tls)
                 if current_phase not in self.TLS_DETECTORS[id_tls]:
                     if 'y' in current_state:
                         if self.yellow_time - self.current_yellow_time[id_tls] <= 0:
                             #if current_phase == self.next_phase[id_tls] - 1 or self.next_phase[id_tls] == 0:
-                            traci.trafficlight.setPhase(id_tls, self.next_phase[id_tls])
+                            self.traci.trafficlight.setPhase(id_tls, self.next_phase[id_tls])
                             self.current_cycle[id_tls].append(self.next_phase[id_tls])
                             self.current_yellow_time[id_tls] = 1
                         else:
@@ -146,14 +146,14 @@ class AcolightStrategyBologna(BolognaStrategy):
         Switch the traffic light id_tls to the next
         """
         self.nb_switch[id_tls] += 1
-        current_phase = traci.trafficlight.getPhase(id_tls)
+        current_phase = self.traci.trafficlight.getPhase(id_tls)
         next_phase = self.get_next_phase(id_tls)
         if next_phase != current_phase:
             self.next_phase[id_tls] = next_phase
-            if traci.trafficlight.getPhase(id_tls) == traci.trafficlight.getPhase(id_tls) - 1:
-                traci.trafficlight.setPhase(id_tls, 0)
+            if self.traci.trafficlight.getPhase(id_tls) == self.traci.trafficlight.getPhase(id_tls) - 1:
+                self.traci.trafficlight.setPhase(id_tls, 0)
             else:
-                traci.trafficlight.setPhase(id_tls, traci.trafficlight.getPhase(id_tls) + 1)
+                self.traci.trafficlight.setPhase(id_tls, self.traci.trafficlight.getPhase(id_tls) + 1)
             self.time[id_tls] = 0
         else:
             self.time[id_tls] = self.min_phase_durations[id_tls] + 1
@@ -162,11 +162,11 @@ class AcolightStrategyBologna(BolognaStrategy):
         """
         Add the current priority phases (the phases with saturated lanes) to the pile.
         """
-        current_phase = traci.trafficlight.getPhase(id_tls)
+        current_phase = self.traci.trafficlight.getPhase(id_tls)
         for phase in self.TLS_DETECTORS[id_tls]:
             detectors = self.TLS_DETECTORS[id_tls][phase]['saturation']
-            #if any([any([traci.vehicle.isStopped(veh) == True for veh in traci.lanearea.getLastStepVehicleIDs(det)]) for det in detectors]) and phase != current_phase:
-            if any([0 < traci.lanearea.getLastStepMeanSpeed(det) < 0.5 and traci.lanearea.getLastStepVehicleNumber(det) > 0 for det in detectors]) and phase != current_phase:
+            #if any([any([self.traci.vehicle.isStopped(veh) == True for veh in self.traci.lanearea.getLastStepVehicleIDs(det)]) for det in detectors]) and phase != current_phase:
+            if any([0 < self.traci.lanearea.getLastStepMeanSpeed(det) < 0.5 and self.traci.lanearea.getLastStepVehicleNumber(det) > 0 for det in detectors]) and phase != current_phase:
                 if phase not in self.priority_pile[id_tls]:
                     self.priority_pile[id_tls].append(phase)
 
@@ -196,9 +196,9 @@ class AcolightStrategyBologna(BolognaStrategy):
         :return: True if there are blocked vehicles on green lanes, false otherwise
         :rtype: int
         """
-        current_phase = traci.trafficlight.getPhase(id_tls)
+        current_phase = self.traci.trafficlight.getPhase(id_tls)
         for det in self.TLS_DETECTORS[id_tls][current_phase]['boolean']:
-            if traci.lanearea.getLastStepMeanSpeed(det) > 0.5:
+            if self.traci.lanearea.getLastStepMeanSpeed(det) > 0.5:
                 return False
         return True
 
@@ -210,13 +210,13 @@ class AcolightStrategyBologna(BolognaStrategy):
         :return: The next phase saturated if there are saturated red lanes, None otherwise
         :rtype: bool
         """
-        current_phase = traci.trafficlight.getPhase(id_tls)
+        current_phase = self.traci.trafficlight.getPhase(id_tls)
         detectors = set()
         for phase in self.TLS_DETECTORS[id_tls]:
             if phase != current_phase:
                 detectors.update(self.TLS_DETECTORS[id_tls][phase]['saturation'])
         for det in detectors:
-            if traci.lanearea.getJamLengthVehicle(det) > 0:
+            if self.traci.lanearea.getJamLengthVehicle(det) > 0:
                 return True
         return False
 
@@ -229,9 +229,9 @@ class AcolightStrategyBologna(BolognaStrategy):
         :return: True if vehicles are still passing the intersection, False otherwise
         :rtype: bool
         """
-        current_phase = traci.trafficlight.getPhase(id_tls)
+        current_phase = self.traci.trafficlight.getPhase(id_tls)
         for det in self.TLS_DETECTORS[id_tls][current_phase]['boolean']:
-            if traci.lanearea.getLastStepVehicleNumber(det) > 0:
+            if self.traci.lanearea.getLastStepVehicleNumber(det) > 0:
                 return True
         return False
 
@@ -257,16 +257,16 @@ class AcolightStrategyBologna(BolognaStrategy):
                 for phase in self.TLS_DETECTORS[id_tls]:
                     if phase not in self.current_cycle[id_tls]:
                         for det in self.TLS_DETECTORS[id_tls][phase]['boolean']:
-                            if traci.lanearea.getLastStepVehicleNumber(det) > 0:
+                            if self.traci.lanearea.getLastStepVehicleNumber(det) > 0:
                                 self.prio[id_tls] = True
                                 return phase
                 for phase in self.TLS_DETECTORS[id_tls]:
                     for det in self.TLS_DETECTORS[id_tls][phase]['boolean']:
-                        if traci.lanearea.getLastStepVehicleNumber(det) > 0:
+                        if self.traci.lanearea.getLastStepVehicleNumber(det) > 0:
                             self.prio[id_tls] = True
                             return phase
         self.prio[id_tls] = True
-        return traci.trafficlight.getPhase(id_tls) # Current phase
+        return self.traci.trafficlight.getPhase(id_tls) # Current phase
 
 
     def _start_agents(self):
@@ -274,7 +274,7 @@ class AcolightStrategyBologna(BolognaStrategy):
         Start an agent at the beginning of the simulation.
         """
         for tl in self.TL_IDS:
-            tl_logic = traci.trafficlight.getAllProgramLogics(tl)[0]
+            tl_logic = self.traci.trafficlight.getAllProgramLogics(tl)[0]
             nb_phase = 0
             for phase in tl_logic.phases:
                 phase.duration = 10000
@@ -282,7 +282,7 @@ class AcolightStrategyBologna(BolognaStrategy):
                 phase.minDur = 10000
                 nb_phase += 1
             self.nb_phases = nb_phase
-            traci.trafficlight.setProgramLogic(tl, tl_logic)
-            traci.trafficlight.setPhase(tl, 0)
-            traci.trafficlight.setPhaseDuration(tl, 10000)
+            self.traci.trafficlight.setProgramLogic(tl, tl_logic)
+            self.traci.trafficlight.setPhase(tl, 0)
+            self.traci.trafficlight.setPhaseDuration(tl, 10000)
         self.started = True

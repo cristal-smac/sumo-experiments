@@ -8,3 +8,4 @@ from .lqf_agent import LQFAgent
 from .rl_2_agent import RLAgent2
 from .rl_1_agent import RLAgent1
 from .acolight_agent import AcolightAgent
+from .analyticplus_agent import AnalyticPlusAgent

@@ -1,7 +1,7 @@
 from tensorflow.python.distribute.device_util import current
 
 from sumo_experiments.agents import Agent
-import traci
+import libsumo as traci
 
 
 class SOTLAgent(Agent):

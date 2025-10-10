@@ -1,5 +1,5 @@
 from sumo_experiments.agents import Agent
-import traci
+import libsumo as traci
 import numpy as np
 import random
 

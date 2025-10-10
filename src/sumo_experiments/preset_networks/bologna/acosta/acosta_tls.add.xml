@@ -41,8 +41,8 @@
     <tlLogic id="235" type="static" programID="utopia" offset="45">
         <phase duration="1000" state="GGGGGrrrrrGGGGrrrrGGGGrrr"/>
         <phase duration="1000"  state="yyyyyrrrrrGGGGrrrrGGGGrrr"/>
-        <phase duration="1"  state="rrrrrrrrrrGGGGrrrrGGGGrrr"/>
-        <phase duration="1000"  state="rrrrrrrrrryyyyrrrrGGyyrrr"/>
+        <!-- <phase duration="1"  state="rrrrrrrrrrGGGGrrrrGGGGrrr"/>
+        <phase duration="1000"  state="rrrrrrrrrryyyyrrrrGGyyrrr"/> -->
         <phase duration="1000" state="rrrrrGGGGGrrrrrrrrGGrrrrr"/>
         <phase duration="1000"  state="rrrrryyyyyrrrrrrrryyrrrrr"/>
         <phase duration="1000" state="rrrrrrrrrrrrrrGGGGrrrrrrr"/>

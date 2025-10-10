@@ -1,4 +1,4 @@
-import traci
+import libsumo as traci
 
 from sumo_experiments.strategies import Strategy
 from sumo_experiments.agents import AcolightAgent
