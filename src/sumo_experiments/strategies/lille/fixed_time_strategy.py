@@ -1,6 +1,4 @@
 from sumo_experiments.strategies.bologna import BolognaStrategy
-import traci
-
 from sumo_experiments.strategies.lille.lille_strategy import LilleStrategy
 
 
@@ -28,7 +26,7 @@ class FixedTimeStrategyLille(LilleStrategy):
         """
         for tl in self.TL_IDS:
             assert tl in self.phase_times, "The list of intersections given in the phase_times parameter is not exhaustive."
-            tl_logic = traci.trafficlight.getAllProgramLogics(tl)[0]
+            tl_logic = self.traci.trafficlight.getAllProgramLogics(tl)[0]
             nb_phase = 0
             i = 0
             for phase in tl_logic.phases:
@@ -43,34 +41,35 @@ class FixedTimeStrategyLille(LilleStrategy):
                         phase.minDur = self.phase_times[tl][phase]
                         i += 1
                 nb_phase += 1
-            traci.trafficlight.setProgramLogic(tl, tl_logic)
-            traci.trafficlight.setPhase(tl, 0)
+            self.traci.trafficlight.setProgramLogic(tl, tl_logic)
+            self.traci.trafficlight.setPhase(tl, 0)
         self.started = True
 
-    def run_all_agents(self):
+    def run_all_agents(self, traci):
         """
         Process agents to make one action each.
         :return: Nothing
         """
         if not self.started:
+            self.traci = traci
             if self.phase_times is not None:
                 self._start_agents()
         else:
             for id_tls in self.TL_IDS:
-                current_phase = traci.trafficlight.getPhase(id_tls)
-                current_state = traci.trafficlight.getRedYellowGreenState(id_tls)
+                current_phase = self.traci.trafficlight.getPhase(id_tls)
+                current_state = self.traci.trafficlight.getRedYellowGreenState(id_tls)
                 if current_phase in self.phase_times[id_tls]:
                     if self.time[id_tls] >= self.phase_times[id_tls][current_phase]:
-                        traci.trafficlight.setPhase(id_tls, current_phase + 1)
+                        self.traci.trafficlight.setPhase(id_tls, current_phase + 1)
                         self.time[id_tls] = 0
                     else:
                         self.time[id_tls] += 1
                 elif 'y' in current_state:
                     if self.current_yellow_time[id_tls] >= self.yellow_time:
-                        if current_phase + 1 != len(traci.trafficlight.getAllProgramLogics(id_tls)[0].phases):
-                            traci.trafficlight.setPhase(id_tls, current_phase + 1)
+                        if current_phase + 1 != len(self.traci.trafficlight.getAllProgramLogics(id_tls)[0].phases):
+                            self.traci.trafficlight.setPhase(id_tls, current_phase + 1)
                         else:
-                            traci.trafficlight.setPhase(id_tls, 0)
+                            self.traci.trafficlight.setPhase(id_tls, 0)
                         self.current_yellow_time[id_tls] = 0
                     else:
                         self.current_yellow_time[id_tls] += 1

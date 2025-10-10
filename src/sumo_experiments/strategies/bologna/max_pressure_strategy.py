@@ -1,4 +1,4 @@
-import traci
+# import libsumo as traci
 from sumo_experiments.strategies.bologna import BolognaStrategy
 import operator
 
@@ -53,30 +53,31 @@ class MaxPressureStrategyBologna(BolognaStrategy):
             '273': 6,
         }
 
-    def run_all_agents(self):
+    def run_all_agents(self, traci):
         """
         Process agents to make one action each.
         :return: Nothing
         """
         if not self.started:
+            self.traci = traci
             self._start_agents()
             return True
         else:
             for id_tls in self.TL_IDS:
-                current_phase = traci.trafficlight.getPhase(id_tls)
-                current_state = traci.trafficlight.getRedYellowGreenState(id_tls)
+                current_phase = self.traci.trafficlight.getPhase(id_tls)
+                current_state = self.traci.trafficlight.getRedYellowGreenState(id_tls)
                 if 'y' in current_state:
                     if self.current_yellow_time[id_tls] >= self.yellow_time:
                         if current_phase + 1 != self.nb_phases[id_tls]:
-                            traci.trafficlight.setPhase(id_tls, current_phase + 1)
+                            self.traci.trafficlight.setPhase(id_tls, current_phase + 1)
                         else:
-                            traci.trafficlight.setPhase(id_tls, 0)
+                            self.traci.trafficlight.setPhase(id_tls, 0)
                         self.current_yellow_time[id_tls] = 0
                     else:
                         self.current_yellow_time[id_tls] += 1
                 else:
                     if current_phase in self.TLS_DETECTORS[id_tls] and self.to_switch[id_tls] is not None:
-                        traci.trafficlight.setPhase(id_tls, self.to_switch[id_tls])
+                        self.traci.trafficlight.setPhase(id_tls, self.to_switch[id_tls])
                         self.to_switch[id_tls] = None
                         self.countdowns[id_tls] = 0
                     if self.countdowns[id_tls] >= self.period_times[id_tls]:
@@ -85,7 +86,7 @@ class MaxPressureStrategyBologna(BolognaStrategy):
                             phase_max_pressure = max(pressures.items(), key=operator.itemgetter(1))[0]
                             if phase_max_pressure != current_phase:
                                 self.to_switch[id_tls] = phase_max_pressure
-                                traci.trafficlight.setPhase(id_tls, current_phase + 1)
+                                self.traci.trafficlight.setPhase(id_tls, current_phase + 1)
                                 self.countdowns[id_tls] = 0
                         else:
                             self.countdowns[id_tls] += 1
@@ -107,10 +108,10 @@ class MaxPressureStrategyBologna(BolognaStrategy):
             routes = {}
             nb_vehicles = 0
             for detector in detectors[phase]['numerical']:
-                pressure += traci.lanearea.getLastStepOccupancy(detector) * traci.lanearea.getLastStepVehicleNumber(detector)
-                vehicles = traci.lanearea.getLastStepVehicleIDs(detector)
+                pressure += self.traci.lanearea.getLastStepOccupancy(detector) * self.traci.lanearea.getLastStepVehicleNumber(detector)
+                vehicles = self.traci.lanearea.getLastStepVehicleIDs(detector)
                 for vehicle in vehicles:
-                    direction = traci.vehicle.getRoute(vehicle)[0]
+                    direction = self.traci.vehicle.getRoute(vehicle)[0]
                     if direction in routes:
                         routes[direction] += 1
                     else:
@@ -119,9 +120,9 @@ class MaxPressureStrategyBologna(BolognaStrategy):
             for key in routes:
                 routes[key] = routes[key] / nb_vehicles
             for detector in detectors[phase]['exit']:
-                edge = traci.lanearea.getLaneID(detector).split('_')[0]
+                edge = self.traci.lanearea.getLaneID(detector).split('_')[0]
                 k = routes[edge] if edge in routes else 0
-                pressure -= traci.lanearea.getLastStepOccupancy(detector) * traci.lanearea.getLastStepVehicleNumber(detector) * k
+                pressure -= self.traci.lanearea.getLastStepOccupancy(detector) * self.traci.lanearea.getLastStepVehicleNumber(detector) * k
             pressures[phase] = pressure
         return pressures
 
@@ -130,7 +131,7 @@ class MaxPressureStrategyBologna(BolognaStrategy):
         Start an agent at the beginning of the simulation.
         """
         for tl in self.TL_IDS:
-            tl_logic = traci.trafficlight.getAllProgramLogics(tl)[0]
+            tl_logic = self.traci.trafficlight.getAllProgramLogics(tl)[-1]
             nb_phase = 0
             for phase in tl_logic.phases:
                 #if nb_phase in self.TLS_DETECTORS[tl]:
@@ -138,7 +139,7 @@ class MaxPressureStrategyBologna(BolognaStrategy):
                 phase.maxDur = 10000
                 phase.minDur = 10000
                 nb_phase += 1
-            traci.trafficlight.setProgramLogic(tl, tl_logic)
-            traci.trafficlight.setPhase(tl, 0)
-            traci.trafficlight.setPhaseDuration(tl, 10000)
+            self.traci.trafficlight.setProgramLogic(tl, tl_logic)
+            self.traci.trafficlight.setPhase(tl, 0)
+            self.traci.trafficlight.setPhaseDuration(tl, 10000)
         self.started = True

@@ -1,8 +1,7 @@
-import traci
 import numpy as np
 
 
-def get_nb_vehicles():
+def get_nb_vehicles(traci):
     """
     Return the number of running vehicles on the network.
     :return: A dictionary with number of vehicle value
@@ -15,7 +14,7 @@ def get_nb_vehicles():
     return res
 
 
-def get_acceleration_data():
+def get_acceleration_data(traci):
     """
     Return acceleration data for all running vehicles on the network.
     :return: A dictionary with acceleration values
@@ -35,7 +34,7 @@ def get_acceleration_data():
     return res
 
 
-def get_speed_data():
+def get_speed_data(traci):
     """
     Return speed data for all running vehicles on the network.
     :return: A dictionary with speed values
@@ -55,7 +54,7 @@ def get_speed_data():
     return res
 
 
-def get_co2_emissions_data():
+def get_co2_emissions_data(traci):
     """
     Return CO2 emissions data for all running vehicles on the network.
     :return: A dictionary with CO2 values
@@ -75,7 +74,7 @@ def get_co2_emissions_data():
     return res
 
 
-def get_co_emissions_data():
+def get_co_emissions_data(traci):
     """
     Return CO emissions data for all running vehicles on the network.
     :return: A dictionary with CO values
@@ -95,7 +94,7 @@ def get_co_emissions_data():
     return res
 
 
-def get_nox_emissions_data():
+def get_nox_emissions_data(traci):
     """
     Return NOx emissions data for all running vehicles on the network.
     :return: A dictionary with NOx values
@@ -115,7 +114,7 @@ def get_nox_emissions_data():
     return res
 
 
-def get_fuel_consumption_data():
+def get_fuel_consumption_data(traci):
     """
     Return fuel consumption data for all running vehicles on the network.
     :return: A dictionary with speed values
@@ -134,7 +133,7 @@ def get_fuel_consumption_data():
     }
     return res
 
-def get_traffic_light_data():
+def get_traffic_light_data(traci):
     """
     Return aggregated traffic light data on the network.
     :return: A dictionary with traffic light values

@@ -1,5 +1,4 @@
 import pandas as pd
-import traci
 import numpy as np
 
 
@@ -49,7 +48,7 @@ class TraciWrapper:
         """
         self.behavioural_functions.append(function)
 
-    def final_function(self):
+    def final_function(self, traci):
         """
         The final function combine all functions added to the wrapper to make only one.
         :return: dict
@@ -67,14 +66,15 @@ class TraciWrapper:
         if self.simulation_duration is None:
             resume = traci.simulation.getMinExpectedNumber() > 0
         else:
-            resume = step < self.simulation_duration
+            resume = step < self.simulation_duration and (traci.simulation.getMinExpectedNumber()>0)
 
         while resume:
-
+            
             traci.simulationStep()
 
             simulation_time = traci.simulation.getTime()
-
+            if simulation_time%500 == 0:
+                print(f"Simulation time : {simulation_time} s")
             # We catch each inserted vehicle ID
             for id in traci.simulation.getDepartedIDList():
                 running_vehicles[id] = {'simulation_time': simulation_time, 'sum_co2': 0}
@@ -122,7 +122,7 @@ class TraciWrapper:
 
                 # Statistical functions
                 for stats_function in self.stats_functions:
-                    res = stats_function()
+                    res = stats_function(traci)
                     for key in res:
                         if key in self.data:
                             self.data[key].append(res[key])
@@ -131,7 +131,7 @@ class TraciWrapper:
 
                 # Behavioural functions
                 for behavioural_function in self.behavioural_functions:
-                    behavioural_function()
+                    behavioural_function(traci)
 
                 self.data['simulation_step'].append(step + 1)
                 filter = [False if i == 0 else True for i in current_exiting_vehicles]

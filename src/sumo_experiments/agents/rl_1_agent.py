@@ -1,7 +1,7 @@
 import random
 
 from sumo_experiments.agents import Agent
-import traci
+import libsumo as traci
 import numpy as np
 from keras.layers import Dense
 from keras.models import Sequential

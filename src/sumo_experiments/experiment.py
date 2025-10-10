@@ -1,6 +1,6 @@
 import os
 
-import traci
+import libsumo as traci
 
 class Experiment:
     """
@@ -122,9 +122,9 @@ class Experiment:
             else:
                 traci.start(["sumo"] + args.split())
         else:
-            traci.start((self.full_line_command + ' --time-to-teleport 150 --no-warnings').split())
+            traci.start((self.full_line_command + ' --time-to-teleport -1 --no-warnings').split())
 
-        res = traci_function()
+        res = traci_function(traci)
 
         traci.close()
 

@@ -1,7 +1,7 @@
 import numpy as np
 
 from sumo_experiments.components import InfrastructureBuilder, FlowBuilder, DetectorBuilder
-import traci
+import libsumo as traci
 
 
 class LineNetwork:

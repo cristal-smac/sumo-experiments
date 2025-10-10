@@ -1,0 +1,22 @@
+Loading net-file from '/home/ddailisan/sumo-experiments/src/sumo_experiments/preset_networks/bologna/acosta/acosta_buslanes.net.xml' ... done (9ms).
+Loading additional-files from '/home/ddailisan/sumo-experiments/src/sumo_experiments/preset_networks/bologna/acosta/acosta_tls.add.xml' ... done (0ms).
+Loading additional-files from '/home/ddailisan/sumo-experiments/src/sumo_experiments/preset_networks/bologna/acosta/acosta_vtypes.add.xml' ...
+ done (1ms).
+Loading additional-files from '/home/ddailisan/sumo-experiments/src/sumo_experiments/preset_networks/bologna/acosta/acosta_detectors.add.xml' ... done (1ms).
+Loading additional-files from '/home/ddailisan/sumo-experiments/src/sumo_experiments/preset_networks/bologna/acosta/acosta_bus_stops.add.xml' ... done (0ms).
+Loading route-files incrementally from '/home/ddailisan/sumo-experiments/src/sumo_experiments/preset_networks/bologna/acosta/acosta_6015.rou.xml'
+Loading route-files incrementally from '/home/ddailisan/sumo-experiments/src/sumo_experiments/preset_networks/bologna/acosta/acosta_busses.rou.xml'
+Loading done.
+Simulation version 1.24.0 started via libsumo with time: 0.00.
+Simulation ended at time: 100000.00.
+Reason: Libsumo requested termination.
+Performance:
+ Duration: 21.45s
+ Real time factor: 4661.14
+ UPS: 132907.103570
+Vehicles:
+ Inserted: 8779
+ Running: 0
+ Waiting: 0
+ Emergency Stops: 3
+ Emergency Braking: 4
