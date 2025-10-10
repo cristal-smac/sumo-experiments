@@ -47,7 +47,7 @@ class SotlStrategyBologna(BolognaStrategy):
             '219': 6,
             '220': 4,
             '221': 6,
-            '235': 10,
+            '235': 8,
             '273': 6,
         }
         self.thresholds_switch = thresholds_switch

@@ -49,7 +49,7 @@ class MaxPressureStrategyBologna(BolognaStrategy):
             '219': 6,
             '220': 4,
             '221': 6,
-            '235': 10,
+            '235': 8,
             '273': 6,
         }
 
@@ -142,4 +142,5 @@ class MaxPressureStrategyBologna(BolognaStrategy):
             self.traci.trafficlight.setProgramLogic(tl, tl_logic)
             self.traci.trafficlight.setPhase(tl, 0)
             self.traci.trafficlight.setPhaseDuration(tl, 10000)
+            print(f"Traffic light {tl} initialized with max pressure strategy has {nb_phase} phases.")
         self.started = True
