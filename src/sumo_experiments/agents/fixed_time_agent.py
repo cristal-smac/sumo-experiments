@@ -1,7 +1,7 @@
 from pygments.styles.dracula import yellow
 
 from sumo_experiments.agents import Agent
-import traci
+import libsumo as traci
 
 
 class FixedTimeAgent(Agent):

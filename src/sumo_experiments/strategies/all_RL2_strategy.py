@@ -1,5 +1,3 @@
-import traci
-
 from sumo_experiments.strategies import Strategy
 from sumo_experiments.agents import RLAgent2
 
@@ -74,12 +72,12 @@ class RL2Strategy(Strategy):
         self.current_episode = 0
         self.trained = False
 
-    def run_all_agents(self):
+    def run_all_agents(self, traci):
         """
         Process agents to make one action each.
         :return: Nothing
         """
-        if traci.simulation.getTime() % self.episode_length == 0 and self.current_episode < self.nb_not_correlated_episodes:
+        if self.traci.simulation.getTime() % self.episode_length == 0 and self.current_episode < self.nb_not_correlated_episodes:
             self.current_episode += 1
             self._remove_vehicles()
         for agent in self.agents:
@@ -149,5 +147,5 @@ class RL2Strategy(Strategy):
         Remove all vehicles from simulation.
         :return: None
         """
-        for vehicle_id in traci.vehicle.getIDList():
-            traci.vehicle.remove(vehicle_id)
+        for vehicle_id in self.traci.vehicle.getIDList():
+            self.traci.vehicle.remove(vehicle_id)

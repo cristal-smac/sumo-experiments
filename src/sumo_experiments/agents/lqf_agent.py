@@ -1,7 +1,7 @@
 import numpy as np
 
 from sumo_experiments.agents import Agent
-import traci
+import libsumo as traci
 
 
 class LQFAgent(Agent):

@@ -1,5 +1,5 @@
 from sumo_experiments.agents import Agent
-import traci
+import libsumo as traci
 from copy import deepcopy
 
 class AcolightAgent(Agent):
@@ -54,6 +54,12 @@ class AcolightAgent(Agent):
         self.phases_index = dict()
         self.current_yellow_time = 0
 
+
+    def _start_agent(self):
+        """
+        Start the agent at the beginning of the simulation.
+        """
+        pass
 
     def choose_action(self):
         """

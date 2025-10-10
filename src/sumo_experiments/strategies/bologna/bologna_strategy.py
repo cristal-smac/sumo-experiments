@@ -64,19 +64,19 @@ class BolognaStrategy(ABC):
             'numerical': ['78_17', '78_18', '78_19'],
             'exit': []
         },
-        4: {
+        2: {
             'boolean': ['78_7', '78_8', '78_9'],
             'saturation': [],
             'numerical': [],
             'exit': []
         },
-        6: {
+        4: {
             'boolean': ['78_1', '78_2', '78_3'],
             'saturation': [],
             'numerical': ['78_14', '78_15', '78_16'],
             'exit': ['1_24', '1_25', '1_26']
         },
-        8: {
+        6: {
             'boolean': ['78_10'],
             'saturation': [],
             'numerical': [],
