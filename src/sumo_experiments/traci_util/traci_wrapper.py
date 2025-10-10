@@ -66,7 +66,7 @@ class TraciWrapper:
         if self.simulation_duration is None:
             resume = traci.simulation.getMinExpectedNumber() > 0
         else:
-            resume = step < self.simulation_duration and (traci.simulation.getMinExpectedNumber()>0)
+            resume = (step < self.simulation_duration) and (traci.simulation.getMinExpectedNumber()>0)
 
         while resume:
             
@@ -151,7 +151,7 @@ class TraciWrapper:
             if self.simulation_duration is None:
                 resume = traci.simulation.getMinExpectedNumber() > 0
             else:
-                resume = step < self.simulation_duration
+                resume = (step < self.simulation_duration) and (traci.simulation.getMinExpectedNumber()>0)
 
         return pd.DataFrame.from_dict(self.data)
 
