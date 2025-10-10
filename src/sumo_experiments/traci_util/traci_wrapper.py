@@ -1,5 +1,8 @@
 import pandas as pd
 import numpy as np
+import networkx as nx
+import xml.etree.ElementTree as ET
+import matplotlib.pyplot as plt
 
 
 class TraciWrapper:
@@ -14,9 +17,11 @@ class TraciWrapper:
     in the next iterations.
     All of this function must accept a config as argument.
     The order of the functions is important : think about it when you use this wrapper.
+    The graph representation is only available for the preset artificial networks (line, grid). In the other cases, it works, but don't give great results
+    in terms of simulation time and visualization.
     """
 
-    def __init__(self, simulation_duration=None, data_frequency=1):
+    def __init__(self, simulation_duration=None, data_frequency=1, graph_representation=False):
         """
         Init of class
         """
@@ -25,6 +30,7 @@ class TraciWrapper:
         self.data = {'simulation_step': []}
         self.simulation_duration = simulation_duration
         self.data_frequency = data_frequency
+        self.graph_representation = graph_representation
 
     def add_stats_function(self, function):
         """
@@ -48,6 +54,61 @@ class TraciWrapper:
         """
         self.behavioural_functions.append(function)
 
+    def net_to_graph(self):
+        """
+        Convert the network to a graph.
+        :return: The graph representation of the network
+        :rtype: networkx.Graph
+        """
+        G = nx.DiGraph()
+        pos = {}
+        intersections = traci.junction.getIDList()
+        for intersection in intersections:
+            G.add_node(intersection)
+            pos[intersection] = traci.junction.getPosition(intersection)
+        edges = traci.edge.getIDList()
+        for edge in edges:
+            if traci.edge.getFromJunction(edge) != traci.edge.getToJunction(edge):
+                G.add_edge(traci.edge.getFromJunction(edge), traci.edge.getToJunction(edge))
+        return G, pos
+
+    def update_colors(self, G):
+        """
+        Update graph representation with current phases.
+        :param G: The initial graph representation of the network
+        :type G: networkx.Graph
+        :return: The updated graph representation of the network
+        :rtype: networkx.Graph
+        """
+        junctions = traci.junction.getIDList()
+        colors = {}
+        colors_list = []
+        for junction in junctions:
+            # If junction is traffic light
+            if junction in traci.trafficlight.getIDList():
+                lanes = traci.trafficlight.getControlledLanes(junction)
+                state = traci.trafficlight.getRedYellowGreenState(junction)
+                for i in range(len(lanes)):
+                    edge = traci.lane.getEdgeID(lanes[i])
+                    k = (traci.edge.getFromJunction(edge), traci.edge.getToJunction(edge))
+                    if state[i] == 'r':
+                        colors[k] = 'red'
+                    elif state[i] == 'y':
+                        colors[k] = 'yellow'
+                    else:
+                        colors[k] = 'green'
+            # If junction is not managed
+            else:
+                edges = traci.junction.getIncomingEdges(junction)
+                for edge in edges:
+                    k = (traci.edge.getFromJunction(edge), traci.edge.getToJunction(edge))
+                    colors[k] = 'black'
+        for edge in G.edges():
+            colors_list.append(colors[edge])
+        return colors_list
+
+
+    def final_function(self):
     def final_function(self, traci):
         """
         The final function combine all functions added to the wrapper to make only one.
@@ -63,12 +124,31 @@ class TraciWrapper:
         current_phase_durations = {tls: 0 for tls in traci.trafficlight.getIDList()}
         phase_durations = []
 
+        if self.graph_representation:
+            G, pos = self.net_to_graph()
+
         if self.simulation_duration is None:
             resume = traci.simulation.getMinExpectedNumber() > 0
         else:
             resume = (step < self.simulation_duration) and (traci.simulation.getMinExpectedNumber()>0)
 
         while resume:
+
+            # Store the current state network as a graph
+            if self.graph_representation:
+                plt.clf()
+                arc_rad = 0.25
+                colors = self.update_colors(G)
+                sizes = []
+                for color in colors:
+                    if color == "green":
+                        sizes.append(3)
+                    else:
+                        sizes.append(1)
+                nx.draw(G, pos, connectionstyle=f'arc3, rad = {arc_rad}', node_size=100, edge_color=colors, width=sizes)
+                plt.savefig(f'./Graphs/{step}.png')
+
+
             
             traci.simulationStep()
 
@@ -154,6 +234,5 @@ class TraciWrapper:
                 resume = (step < self.simulation_duration) and (traci.simulation.getMinExpectedNumber()>0)
 
         return pd.DataFrame.from_dict(self.data)
-
 
 
