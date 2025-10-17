@@ -43,7 +43,7 @@ class Experiment:
         self.files = {}
         self.full_line_command = full_line_command
 
-    def run(self, simulation_duration, gui=False, seed=None, no_warnings=True, nb_threads=1, time_to_teleport=120):
+    def run(self, simulation_duration, gui=False, seed=None, no_warnings=True, nb_threads=1, time_to_teleport=150):
         """
         Launch an SUMO simulation with the network configuration.
         First build the configuration files and then launch SUMO.
@@ -83,9 +83,9 @@ class Experiment:
             else:
                 os.system(f'$SUMO_HOME/bin/sumo {args}')
         else:
-            os.system(self.full_line_command + ' --time-to-teleport 150 --no-warnings')
+            os.system(self.full_line_command + f' --time-to-teleport {time_to_teleport} --no-warnings')
 
-    def run_traci(self, traci_function, gui=False, seed=None, no_warnings=True, nb_threads=1, time_to_teleport=120):
+    def run_traci(self, traci_function, gui=False, seed=None, no_warnings=True, nb_threads=1, time_to_teleport=150):
         """
         Launch an SUMO simulation with the network configuration.
         First build the configuration files and then launch SUMO.
@@ -122,7 +122,7 @@ class Experiment:
             else:
                 traci.start(["sumo"] + args.split())
         else:
-            traci.start((self.full_line_command + ' --time-to-teleport 150 --no-warnings').split())
+            traci.start((self.full_line_command + f' --time-to-teleport {time_to_teleport} --no-warnings').split())
 
         res = traci_function(traci)
 
