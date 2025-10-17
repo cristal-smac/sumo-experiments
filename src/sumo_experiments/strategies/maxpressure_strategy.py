@@ -1,14 +1,13 @@
-# import libsumo as traci
-from sumo_experiments.strategies.bologna import BolognaStrategy
+from sumo_experiments.strategies import Strategy
 import operator
 
 
-class MaxPressureStrategyBologna(BolognaStrategy):
+class MaxPressureStrategy(Strategy):
     """
     Implement a max pressure agent for all intersections of the Bologna network.
     """
 
-    def __init__(self, period_times, yellow_time=3):
+    def __init__(self, network, period_times, yellow_time=3):
         """
         Init of class
         """
@@ -16,42 +15,10 @@ class MaxPressureStrategyBologna(BolognaStrategy):
         self.started = False
         self.period_times = period_times
         self.yellow_time = yellow_time
-        self.countdowns = {
-            '209': 0,
-            '210': 0,
-            '219': 0,
-            '220': 0,
-            '221': 0,
-            '235': 0,
-            '273': 0,
-        }
-        self.to_switch = {
-            '209': None,
-            '210': None,
-            '219': None,
-            '220': None,
-            '221': None,
-            '235': None,
-            '273': None,
-        }
-        self.current_yellow_time = {
-            '209': 0,
-            '210': 0,
-            '219': 0,
-            '220': 0,
-            '221': 0,
-            '235': 0,
-            '273': 0,
-        }
-        self.nb_phases = {
-            '209': 4,
-            '210': 6,
-            '219': 6,
-            '220': 4,
-            '221': 6,
-            '235': 8,
-            '273': 6,
-        }
+        self.network = network
+        self.countdowns = {identifiant: 0 for identifiant in self.network.TLS_DETECTORS}
+        self.to_switch = {identifiant: None for identifiant in self.network.TLS_DETECTORS}
+        self.current_yellow_time = {identifiant: 0 for identifiant in self.network.TLS_DETECTORS}
 
     def run_all_agents(self, traci):
         """
@@ -63,12 +30,12 @@ class MaxPressureStrategyBologna(BolognaStrategy):
             self._start_agents()
             return True
         else:
-            for id_tls in self.TL_IDS:
+            for id_tls in self.network.TL_IDS:
                 current_phase = self.traci.trafficlight.getPhase(id_tls)
                 current_state = self.traci.trafficlight.getRedYellowGreenState(id_tls)
                 if 'y' in current_state:
                     if self.current_yellow_time[id_tls] >= self.yellow_time:
-                        if current_phase + 1 != self.nb_phases[id_tls]:
+                        if current_phase + 1 != len(self.traci.trafficlight.getAllProgramLogics(id_tls)[0].phases):
                             self.traci.trafficlight.setPhase(id_tls, current_phase + 1)
                         else:
                             self.traci.trafficlight.setPhase(id_tls, 0)
@@ -76,13 +43,13 @@ class MaxPressureStrategyBologna(BolognaStrategy):
                     else:
                         self.current_yellow_time[id_tls] += 1
                 else:
-                    if current_phase in self.TLS_DETECTORS[id_tls] and self.to_switch[id_tls] is not None:
+                    if current_phase in self.network.TLS_DETECTORS[id_tls] and self.to_switch[id_tls] is not None:
                         self.traci.trafficlight.setPhase(id_tls, self.to_switch[id_tls])
                         self.to_switch[id_tls] = None
                         self.countdowns[id_tls] = 0
                     if self.countdowns[id_tls] >= self.period_times[id_tls]:
-                        if current_phase in self.TLS_DETECTORS[id_tls]:
-                            pressures = self._compute_pressure(self.TLS_DETECTORS[id_tls])
+                        if current_phase in self.network.TLS_DETECTORS[id_tls]:
+                            pressures = self._compute_pressure(self.network.TLS_DETECTORS[id_tls])
                             phase_max_pressure = max(pressures.items(), key=operator.itemgetter(1))[0]
                             if phase_max_pressure != current_phase:
                                 self.to_switch[id_tls] = phase_max_pressure
@@ -130,17 +97,16 @@ class MaxPressureStrategyBologna(BolognaStrategy):
         """
         Start an agent at the beginning of the simulation.
         """
-        for tl in self.TL_IDS:
-            tl_logic = self.traci.trafficlight.getAllProgramLogics(tl)[-1]
+        for tl in self.network.TL_IDS:
+            tl_logic = self.traci.trafficlight.getAllProgramLogics(tl)[0]
             nb_phase = 0
             for phase in tl_logic.phases:
                 #if nb_phase in self.TLS_DETECTORS[tl]:
-                phase.duration = 10000
-                phase.maxDur = 10000
-                phase.minDur = 10000
+                phase.duration = 1000
+                phase.maxDur = 1000
+                phase.minDur = 1000
                 nb_phase += 1
             self.traci.trafficlight.setProgramLogic(tl, tl_logic)
             self.traci.trafficlight.setPhase(tl, 0)
             self.traci.trafficlight.setPhaseDuration(tl, 10000)
-            print(f"Traffic light {tl} initialized with max pressure strategy has {nb_phase} phases.")
         self.started = True

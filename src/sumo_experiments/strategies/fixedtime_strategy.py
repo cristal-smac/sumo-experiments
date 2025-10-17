@@ -1,13 +1,12 @@
-from sumo_experiments.strategies.bologna import BolognaStrategy
-from sumo_experiments.strategies.lille.lille_strategy import LilleStrategy
+from sumo_experiments.strategies import Strategy
 
 
-class FixedTimeStrategyLille(LilleStrategy):
+class FixedTimeStrategy(Strategy):
     """
     Implement a fixed time agent for all intersections of the Bologna network.
     """
 
-    def __init__(self, phase_times=None, yellow_time=3):
+    def __init__(self, network, phase_times=None, yellow_time=3):
         """
         Init of class
         :param phase_times: The time for each phase of each intersection
@@ -17,14 +16,15 @@ class FixedTimeStrategyLille(LilleStrategy):
         self.phase_times = phase_times
         self.started = False
         self.yellow_time = yellow_time
-        self.time = {identifiant: 0 for identifiant in self.TLS_DETECTORS}
-        self.current_yellow_time = {identifiant: 0 for identifiant in self.TLS_DETECTORS}
+        self.network = network
+        self.time = {identifiant: 0 for identifiant in self.network.TLS_DETECTORS}
+        self.current_yellow_time = {identifiant: 0 for identifiant in self.network.TLS_DETECTORS}
 
     def _start_agents(self):
         """
         Start an agent at the beginning of the simulation.
         """
-        for tl in self.TL_IDS:
+        for tl in self.network.TL_IDS:
             assert tl in self.phase_times, "The list of intersections given in the phase_times parameter is not exhaustive."
             tl_logic = self.traci.trafficlight.getAllProgramLogics(tl)[0]
             nb_phase = 0
@@ -34,7 +34,7 @@ class FixedTimeStrategyLille(LilleStrategy):
                     phase.duration = self.yellow_time
                     phase.maxDur = self.yellow_time
                     phase.minDur = self.yellow_time
-                if nb_phase in self.TLS_DETECTORS[tl]:
+                if nb_phase in self.network.TLS_DETECTORS[tl]:
                     if nb_phase in self.phase_times:
                         phase.duration = self.phase_times[tl][phase]
                         phase.maxDur = self.phase_times[tl][phase]
@@ -55,7 +55,7 @@ class FixedTimeStrategyLille(LilleStrategy):
             if self.phase_times is not None:
                 self._start_agents()
         else:
-            for id_tls in self.TL_IDS:
+            for id_tls in self.network.TL_IDS:
                 current_phase = self.traci.trafficlight.getPhase(id_tls)
                 current_state = self.traci.trafficlight.getRedYellowGreenState(id_tls)
                 if current_phase in self.phase_times[id_tls]:

@@ -38,7 +38,9 @@ class LineNetwork:
                                  lane_length,
                                  green_time,
                                  yellow_time,
-                                 max_speed):
+                                 max_speed,
+                                 boolean_detectors_length=20,
+                                 saturation_detectors_length=20):
         """
         Generate the sumo infrastructures for a network with n consecutive crossroads.
 
@@ -50,6 +52,10 @@ class LineNetwork:
         :type yellow_time: int
         :param max_speed: The max speed on each lane (in km/h)
         :type max_speed: int
+        :param boolean_detectors_length: The length of the boolean detectors. Has to be lower than lane_length. Default is 20 meters.
+        :type boolean_detectors_length: int
+        :param saturation_detectors_length: The length of the saturation detectors. Has to be lower than lane_length. Default is 20 meters.
+        :type saturation_detectors_length: int
         :return: All infrastructures in a NetworkBuilder object.
         :rtype: sumo_experiments.src.components.NetworkBuilder
         :raise: ValueError if nb_intersections is under 2
@@ -138,6 +144,10 @@ class LineNetwork:
                                                   {'duration': yellow_time, 'state': 'rrryyyrrryyy'},
                                                   {'duration': green_time, 'state': 'GGGrrrGGGrrr'},
                                                   {'duration': yellow_time, 'state': 'yyyrrryyyrrr'}])
+
+        # Creates detectors
+        self.generate_all_detectors(boolean_detectors_length, saturation_detectors_length)
+        self.create_TLS_DETECTORS()
 
         return net
 
@@ -355,10 +365,14 @@ class LineNetwork:
         :rtype: sumo_experiments.src.components.DetectorBuilder
         """
         detectors = DetectorBuilder()
+        detectors.add_lane_area_detector(id="s_wc1", edge="edge_wc1", lane=0, type='saturation', pos=0, end_pos=detector_length)
         for i in range(1, self.nb_intersections + 1):
+            detectors.add_lane_area_detector(id=f"s_s{i}c{i}", edge=f"edge_s{i}c{i}", lane=0, type='saturation', pos=0, end_pos=detector_length)
+            detectors.add_lane_area_detector(id=f"s_n{i}c{i}", edge=f"edge_n{i}c{i}", lane=0, type='saturation', pos=0, end_pos=detector_length)
             if i != self.nb_intersections:
                 detectors.add_lane_area_detector(id=f"s_c{i + 1}c{i}", edge=f"edge_c{i + 1}c{i}", lane=0, type='saturation', pos=0, end_pos=detector_length)
                 detectors.add_lane_area_detector(id=f"s_c{i}c{i + 1}", edge=f"edge_c{i}c{i + 1}", lane=0, type='saturation', pos=0, end_pos=detector_length)
+        detectors.add_lane_area_detector(id=f"s_ec{self.nb_intersections}", edge=f"edge_ec{self.nb_intersections}", lane=0, type='saturation', pos=0, end_pos=detector_length)
         return detectors
 
     def generate_all_detectors(self, boolean_detector_length, saturation_detector_length):
@@ -382,3 +396,63 @@ class LineNetwork:
         detectors.laneAreaDetectors.update(self.generate_numerical_detectors().laneAreaDetectors)
         detectors.laneAreaDetectors.update(self.generate_saturation_detectors(saturation_detector_length).laneAreaDetectors)
         return detectors
+
+
+    def create_TLS_DETECTORS(self):
+        """
+        Creates the self.TLS_DETECTORS variable.
+        :return: Nothing
+        :rtype: None
+        """
+        self.TL_IDS = []
+        self.TLS_DETECTORS = {}
+        detectors = {
+            0: {
+                'boolean': ['b_wc1', 'b_c2c1'],
+                'saturation': ['s_wc1', 's_c2c1'],
+                'numerical': ['n_wc1', 'n_c2c1'],
+                'exit': []
+            },
+            2: {
+                'boolean': ['b_nc1', 'b_sc1'],
+                'saturation': ['s_n1', 's_sc1'],
+                'numerical': ['n_n1', 'n_sc1'],
+                'exit': []
+            },
+        }
+        self.TLS_DETECTORS['c1'] = detectors
+        self.TL_IDS.append(f'c1')
+        for i in range(2, self.nb_intersections):
+            detectors = {
+                0: {
+                    'boolean': [f'b_c{i-1}c{i}', f'b_c{i+1}c{i}'],
+                    'saturation': [f'b_c{i-1}c{i}', f'b_c{i+1}c{i}'],
+                    'numerical': [f'b_c{i-1}c{i}', f'b_c{i+1}c{i}'],
+                    'exit': []
+                },
+                2: {
+                    'boolean': [f'b_n{i}c{i}', f'b_s{i}c{i}'],
+                    'saturation': [f's_n{i}c{i}', f's_s{i}c{i}'],
+                    'numerical': [f'n_n{i}c{i}', f'n_s{i}c{i}'],
+                    'exit': []
+                },
+            }
+            self.TLS_DETECTORS[f'c{i}'] = detectors
+            self.TL_IDS.append(f'c{i}')
+        detectors = {
+            0: {
+                'boolean': [f'b_c{self.nb_intersections - 1}c{self.nb_intersections}', f'b_ec{self.nb_intersections}'],
+                'saturation': [f's_c{self.nb_intersections - 1}c{self.nb_intersections}', f's_ec{self.nb_intersections}'],
+                'numerical': [f'n_c{self.nb_intersections - 1}c{self.nb_intersections}', f'n_ec{self.nb_intersections}'],
+                'exit': []
+            },
+            2: {
+                'boolean': [f'b_n{self.nb_intersections}c{self.nb_intersections}', f'b_s{self.nb_intersections}c{self.nb_intersections}'],
+                'saturation': [f's_n{self.nb_intersections}c{self.nb_intersections}', f's_s{self.nb_intersections}c{self.nb_intersections}'],
+                'numerical': [f'n_n{self.nb_intersections}c{self.nb_intersections}', f'n_s{self.nb_intersections}c{self.nb_intersections}'],
+                'exit': []
+            },
+        }
+        self.TLS_DETECTORS[f'c{self.nb_intersections}'] = detectors
+        self.TL_IDS.append(f'c{self.nb_intersections}')
+

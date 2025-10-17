@@ -41,7 +41,9 @@ class GridNetwork:
                                         yellow_time,
                                         max_speed,
                                         minimum_edge_length=100,
-                                        maximum_edge_length=500):
+                                        maximum_edge_length=500,
+                                        boolean_detectors_length=20,
+                                        saturation_detectors_length=20):
         """
         Generate the sumo infrastructures for a square network.
         The distance between two nodes of the network is set randomly, between 'minimum_edge_length' and 'maximum_edge_length' in config.
@@ -57,6 +59,10 @@ class GridNetwork:
         :type minimum_edge_length: int
         :param maximum_edge_length: The maximum length for an edge in the network (in meters)
         :type maximum_edge_length: int
+        :param boolean_detectors_length: The length of the boolean detectors. Has to be lower than lane_length. Default is 20 meters.
+        :type boolean_detectors_length: int
+        :param saturation_detectors_length: The length of the saturation detectors. Has to be lower than lane_length. Default is 20 meters.
+        :type saturation_detectors_length: int
         :return: All infrastructures in a NetworkBuilder object.
         :rtype: sumo_experiments.src.components.NetworkBuilder
         """
@@ -172,6 +178,10 @@ class GridNetwork:
                     {'duration': green_time, 'state': 'GGGrrrGGGrrr'},
                     {'duration': yellow_time, 'state': 'yyyrrryyyrrr'}])
 
+        # Creates detectors
+        self.generate_all_detectors(boolean_detectors_length, saturation_detectors_length)
+        self.create_TLS_DETECTORS_2_phases()
+
         return net
 
 
@@ -179,7 +189,9 @@ class GridNetwork:
                                  lane_length,
                                  green_time,
                                  yellow_time,
-                                 max_speed):
+                                 max_speed,
+                                 boolean_detectors_length=20,
+                                 saturation_detectors_length=20):
         """
         Generate the sumo infrastructures for a square network.
         The length of each edge is set by the parameter 'lane_length'.
@@ -193,6 +205,10 @@ class GridNetwork:
         :type yellow_time: int
         :param max_speed: The max speed on each lane (in km/h)
         :type max_speed: int
+        :param boolean_detectors_length: The length of the boolean detectors. Has to be lower than lane_length. Default is 20 meters.
+        :type boolean_detectors_length: int
+        :param saturation_detectors_length: The length of the saturation detectors. Has to be lower than lane_length. Default is 20 meters.
+        :type saturation_detectors_length: int
         :return: All infrastructures in a NetworkBuilder object.
         :rtype: sumo_experiments.src.components.NetworkBuilder
         """
@@ -297,6 +313,11 @@ class GridNetwork:
                     {'duration': green_time, 'state': 'GGGrrrGGGrrr'},
                     {'duration': yellow_time, 'state': 'yyyrrryyyrrr'}])
 
+
+        # Creates detectors
+        self.generate_all_detectors(boolean_detectors_length, saturation_detectors_length)
+        self.create_TLS_DETECTORS_2_phases()
+
         return net
 
 
@@ -304,7 +325,9 @@ class GridNetwork:
                                                  lane_length,
                                                  green_time,
                                                  yellow_time,
-                                                 max_speed):
+                                                 max_speed,
+                                                 boolean_detectors_length=20,
+                                                 saturation_detectors_length=20):
         """
         Generate the sumo infrastructures for a square network.
         The length of each edge is set by the parameter 'lane_length'.
@@ -319,6 +342,10 @@ class GridNetwork:
         :type yellow_time: int
         :param max_speed: The max speed on each lane (in km/h)
         :type max_speed: int
+        :param boolean_detectors_length: The length of the boolean detectors. Has to be lower than lane_length. Default is 20 meters.
+        :type boolean_detectors_length: int
+        :param saturation_detectors_length: The length of the saturation detectors. Has to be lower than lane_length. Default is 20 meters.
+        :type saturation_detectors_length: int
         :return: All infrastructures in a NetworkBuilder object.
         :rtype: sumo_experiments.src.components.NetworkBuilder
         """
@@ -427,6 +454,10 @@ class GridNetwork:
                     {'duration': green_time, 'state': 'rrrrrrrrrGGG'},
                     {'duration': yellow_time, 'state': 'rrrrrrrrryyy'},
                 ])
+
+        # Creates detectors
+        self.generate_all_detectors(boolean_detectors_length, saturation_detectors_length)
+        self.create_TLS_DETECTORS_4_phases()
 
         return net
 
@@ -877,4 +908,73 @@ class GridNetwork:
                 or (x == self.width + 1 and y == 0) \
                 or (x == 0 and y == 0)
         return answer
+
+
+    def create_TLS_DETECTORS_2_phases(self):
+        """
+        Creates the self.TLS_DETECTORS variable. The function is static for there's only one intersection.
+        :return: Nothing
+        :rtype: None
+        """
+        self.TL_IDS = []
+        self.TLS_DETECTORS = {}
+        for x in range(1, self.width + 1):
+            for y in range(1, self.height + 1):
+                detectors = {
+                    0: {
+                        'boolean': [f'b_detector_x{x-1}-y{y}_x{x}-y{y}', f'b_detector_x{x+1}-y{y}_x{x}-y{y}'],
+                        'saturation': [f's_detector_x{x-1}-y{y}_x{x}-y{y}', f's_detector_x{x+1}-y{y}_x{x}-y{y}'],
+                        'numerical': [f'n_detector_x{x-1}-y{y}_x{x}-y{y}', f'n_detector_x{x+1}-y{y}_x{x}-y{y}'],
+                        'exit': []
+                    },
+                    2: {
+                        'boolean': [f'b_detector_x{x}-y{y-1}_x{x}-y{y}', f'b_detector_x{x}-y{y+1}_x{x}-y{y}'],
+                        'saturation': [f's_detector_x{x}-y{y-1}_x{x}-y{y}', f's_detector_x{x}-y{y+1}_x{x}-y{y}'],
+                        'numerical': [f'n_detector_x{x}-y{y-1}_x{x}-y{y}', f'n_detector_x{x}-y{y+1}_x{x}-y{y}'],
+                        'exit': []
+                    },
+                }
+                self.TLS_DETECTORS[f'x{x}-y{y}'] = detectors
+                self.TL_IDS.append(f'x{x}-y{y}')
+
+
+    def create_TLS_DETECTORS_4_phases(self):
+        """
+        Creates the self.TLS_DETECTORS variable.
+        :return: Nothing
+        :rtype: None
+        """
+        self.TL_IDS = []
+        self.TLS_DETECTORS = {}
+        for x in range(1, self.width + 1):
+            for y in range(1, self.height + 1):
+                detectors = {
+                    0: {
+                        'boolean': [f'b_detector_x{x}-y{y + 1}_x{x}-y{y}'],
+                        'saturation': [f's_detector_x{x}-y{y + 1}_x{x}-y{y}'],
+                        'numerical': [f'n_detector_x{x}-y{y + 1}_x{x}-y{y}'],
+                        'exit': []
+                    },
+                    2: {
+                        'boolean': [f'b_detector_x{x+1}-y{y}_x{x}-y{y}'],
+                        'saturation': [f's_detector_x{x+1}-y{y}_x{x}-y{y}'],
+                        'numerical': [f'n_detector_x{x+1}-y{y}_x{x}-y{y}'],
+                        'exit': []
+                    },
+                    4: {
+                        'boolean': [f'b_detector_x{x}-y{y - 1}_x{x}-y{y}'],
+                        'saturation': [f's_detector_x{x}-y{y - 1}_x{x}-y{y}'],
+                        'numerical': [f'n_detector_x{x}-y{y - 1}_x{x}-y{y}'],
+                        'exit': []
+                    },
+                    6: {
+                        'boolean': [f'b_detector_x{x - 1}-y{y}_x{x}-y{y}'],
+                        'saturation': [f's_detector_x{x - 1}-y{y}_x{x}-y{y}'],
+                        'numerical': [f'n_detector_x{x - 1}-y{y}_x{x}-y{y}'],
+                        'exit': []
+                    },
+                }
+                self.TLS_DETECTORS[f'x{x}-y{y}'] = detectors
+                self.TL_IDS.append(f'x{x}-y{y}')
+
 

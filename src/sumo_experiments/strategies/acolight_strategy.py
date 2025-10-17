@@ -1,36 +1,31 @@
-from tensorflow.python.distribute.device_util import current
-
-from sumo_experiments.strategies.bologna import BolognaStrategy
-from queue import SimpleQueue
-import operator
-
-from sumo_experiments.strategies.lille.lille_strategy import LilleStrategy
+from sumo_experiments.strategies import Strategy
 
 
-class AcolightStrategyLille(LilleStrategy):
+class AcolightStrategy(Strategy):
     """
     Implement an Acolight agent for all intersections of the Bologna network.
     """
 
-    def __init__(self, min_phase_durations, max_phase_durations):
+    def __init__(self, network, min_phase_durations, max_phase_durations):
         """
         Init of class
         """
         super().__init__()
+        self.network = network
         self.started = False
-        self.time = {identifiant: 0 for identifiant in self.TLS_DETECTORS}
-        self.next_phase = {identifiant: 0 for identifiant in self.TLS_DETECTORS}
-        self.priority_pile = {identifiant: [] for identifiant in self.TLS_DETECTORS}
-        self.prio = {identifiant: False for identifiant in self.TLS_DETECTORS}
-        self.current_cycle = {identifiant: [] for identifiant in self.TLS_DETECTORS}
-        self.current_yellow_time = {identifiant: 0 for identifiant in self.TLS_DETECTORS}
-        self.is_phase = {identifiant: True for identifiant in self.TLS_DETECTORS}
+        self.time = {identifiant: 0 for identifiant in network.TLS_DETECTORS}
+        self.next_phase = {identifiant: 0 for identifiant in network.TLS_DETECTORS}
+        self.priority_pile = {identifiant: [] for identifiant in network.TLS_DETECTORS}
+        self.prio = {identifiant: False for identifiant in network.TLS_DETECTORS}
+        self.current_cycle = {identifiant: [] for identifiant in network.TLS_DETECTORS}
+        self.current_yellow_time = {identifiant: 0 for identifiant in network.TLS_DETECTORS}
+        self.is_phase = {identifiant: True for identifiant in network.TLS_DETECTORS}
         self.min_phase_durations = min_phase_durations
         self.max_phase_durations = max_phase_durations
         self.yellow_time = 3
 
-        self.nb_switch = {identifiant: 0 for identifiant in self.TLS_DETECTORS}
-        self.phases_occurences = {identifiant: {} for identifiant in self.TLS_DETECTORS}
+        self.nb_switch = {identifiant: 0 for identifiant in network.TLS_DETECTORS}
+        self.phases_occurences = {identifiant: {} for identifiant in network.TLS_DETECTORS}
 
     def run_all_agents(self, traci):
         """
@@ -42,11 +37,11 @@ class AcolightStrategyLille(LilleStrategy):
             self._start_agents()
             return True
         else:
-            for id_tls in self.TL_IDS:
+            for id_tls in self.network.TL_IDS:
                 current_phase = self.traci.trafficlight.getPhase(id_tls)
                 current_state = self.traci.trafficlight.getRedYellowGreenState(id_tls)
                 # If yellow phase
-                if current_phase not in self.TLS_DETECTORS[id_tls]:
+                if current_phase not in self.network.TLS_DETECTORS[id_tls]:
                     if 'y' in current_state:
                         if self.yellow_time - self.current_yellow_time[id_tls] <= 0:
                             #if current_phase == self.next_phase[id_tls] - 1 or self.next_phase[id_tls] == 0:
@@ -90,7 +85,7 @@ class AcolightStrategyLille(LilleStrategy):
             self.time[id_tls] = 0
         else:
             #self.time[id_tls] = self.min_phase_durations[id_tls] + 1
-            phases_available = list(self.TLS_DETECTORS[id_tls].keys())
+            phases_available = list(self.network.TLS_DETECTORS[id_tls].keys())
             index = phases_available.index(next_phase)
             if index == len(phases_available) - 1:
                 next_phase = 0
@@ -109,8 +104,8 @@ class AcolightStrategyLille(LilleStrategy):
         Add the current priority phases (the phases with saturated lanes) to the pile.
         """
         current_phase = self.traci.trafficlight.getPhase(id_tls)
-        for phase in self.TLS_DETECTORS[id_tls]:
-            detectors = self.TLS_DETECTORS[id_tls][phase]['saturation']
+        for phase in self.network.TLS_DETECTORS[id_tls]:
+            detectors = self.network.TLS_DETECTORS[id_tls][phase]['saturation']
             #if any([any([self.traci.vehicle.isStopped(veh) == True for veh in self.traci.lanearea.getLastStepVehicleIDs(det)]) for det in detectors]) and phase != current_phase:
             if any([0 < self.traci.lanearea.getLastStepMeanSpeed(det) < 0.5 and self.traci.lanearea.getLastStepVehicleNumber(det) > 0 for det in detectors]) and phase != current_phase:
                 if phase not in self.priority_pile[id_tls]:
@@ -122,7 +117,7 @@ class AcolightStrategyLille(LilleStrategy):
         of the controller appear at least one time, and max 1 time for the least represented one.
         """
         counts = []
-        phases = self.TLS_DETECTORS[id_tls]
+        phases = self.network.TLS_DETECTORS[id_tls]
         for phase in phases:
             counts.append(self.current_cycle[id_tls].count(phase))
         if len(self.current_cycle[id_tls]) > 0:
@@ -143,7 +138,7 @@ class AcolightStrategyLille(LilleStrategy):
         :rtype: int
         """
         current_phase = self.traci.trafficlight.getPhase(id_tls)
-        for det in self.TLS_DETECTORS[id_tls][current_phase]['boolean']:
+        for det in self.network.TLS_DETECTORS[id_tls][current_phase]['boolean']:
             if self.traci.lanearea.getLastStepMeanSpeed(det) > 0.5:
                 return False
         return True
@@ -158,9 +153,9 @@ class AcolightStrategyLille(LilleStrategy):
         """
         current_phase = self.traci.trafficlight.getPhase(id_tls)
         detectors = set()
-        for phase in self.TLS_DETECTORS[id_tls]:
+        for phase in self.network.TLS_DETECTORS[id_tls]:
             if phase != current_phase:
-                detectors.update(self.TLS_DETECTORS[id_tls][phase]['saturation'])
+                detectors.update(self.network.TLS_DETECTORS[id_tls][phase]['saturation'])
         for det in detectors:
             if self.traci.lanearea.getJamLengthVehicle(det) > 0:
                 return True
@@ -176,7 +171,7 @@ class AcolightStrategyLille(LilleStrategy):
         :rtype: bool
         """
         current_phase = self.traci.trafficlight.getPhase(id_tls)
-        for det in self.TLS_DETECTORS[id_tls][current_phase]['boolean']:
+        for det in self.network.TLS_DETECTORS[id_tls][current_phase]['boolean']:
             if self.traci.lanearea.getLastStepVehicleNumber(det) > 0:
                 return True
         return False
@@ -200,14 +195,14 @@ class AcolightStrategyLille(LilleStrategy):
                 self.prio[id_tls] = True
                 return 0
             else:
-                for phase in self.TLS_DETECTORS[id_tls]:
+                for phase in self.network.TLS_DETECTORS[id_tls]:
                     if phase not in self.current_cycle[id_tls]:
-                        for det in self.TLS_DETECTORS[id_tls][phase]['boolean']:
+                        for det in self.network.TLS_DETECTORS[id_tls][phase]['boolean']:
                             if self.traci.lanearea.getLastStepVehicleNumber(det) > 0:
                                 self.prio[id_tls] = True
                                 return phase
-                for phase in self.TLS_DETECTORS[id_tls]:
-                    for det in self.TLS_DETECTORS[id_tls][phase]['boolean']:
+                for phase in self.network.TLS_DETECTORS[id_tls]:
+                    for det in self.network.TLS_DETECTORS[id_tls][phase]['boolean']:
                         if self.traci.lanearea.getLastStepVehicleNumber(det) > 0:
                             self.prio[id_tls] = True
                             return phase
@@ -219,7 +214,7 @@ class AcolightStrategyLille(LilleStrategy):
         """
         Start an agent at the beginning of the simulation.
         """
-        for tl in self.TL_IDS:
+        for tl in self.network.TL_IDS:
             tl_logic = self.traci.trafficlight.getAllProgramLogics(tl)[0]
             nb_phase = 0
             for phase in tl_logic.phases:

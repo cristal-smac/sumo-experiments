@@ -41,6 +41,7 @@ class OneCrossroadNetwork:
                                  green_time_west_east=None,
                                  yellow_time_north_south=None,
                                  yellow_time_west_east=None,
+                                 boolean_detectors_length=20
                                  ):
         """
         Generate the sumo infrastructures for a network with a single crossroad, joining 4 roads.
@@ -71,6 +72,8 @@ class OneCrossroadNetwork:
         :type yellow_time_north_south: int
         :param yellow_time_west_east: The west-east phase yellow time (in seconds), override default
         :type yellow_time_west_east: int
+        :param boolean_detectors_length: The length of the boolean detectors. Has to be lower than lane_length. Default is 20 meters.
+        :type boolean_detectors_length: int
         :return: All infrastructures in a NetworkBuilder object.
         :rtype: sumo_experiments.src.components.NetworkBuilder
         """
@@ -138,6 +141,10 @@ class OneCrossroadNetwork:
                                               {'duration': yt_west_east, 'state': 'rrryyyrrryyy'},
                                               {'duration': gt_north_south, 'state': 'GGGrrrGGGrrr'},
                                               {'duration': yt_north_south, 'state': 'yyyrrryyyrrr'}])
+
+        # Creates detectors
+        self.generate_all_detectors(boolean_detectors_length)
+        self.create_TLS_DETECTORS()
 
         return infrastructures
 
@@ -388,25 +395,47 @@ class OneCrossroadNetwork:
 
         return detectors
 
-    def generate_boolean_detectors(self, boolean_detector_length):
+    def generate_boolean_detectors(self, detector_length):
         """
         Generate a DetectorBuilder with a boolean detector for each entry lane of the network.
         A boolean detector returns if a vehicle is on its scope or not. In SUMO, a boolean
         detector is represented with a lane area detector whose scope is the entire lane,
         from the beginning to the end.
 
-        :param boolean_detector_length: The scope size of the detectors (in meters)
-        :type boolean_detector_length: int
+        :param detector_length: The scope size of the detectors (in meters)
+        :type detector_length: int
         :return: The numerical detectors.
         :rtype: sumo_experiments.src.components.DetectorBuilder
         """
 
         detectors = DetectorBuilder()
 
-        detectors.add_lane_area_detector(id="b_wc", edge='edge_wc', lane=0, type='boolean', pos=(self.west_length - boolean_detector_length - 7.2))
-        detectors.add_lane_area_detector(id="b_sc", edge='edge_sc', lane=0, type='boolean', pos=(self.south_length - boolean_detector_length - 7.2))
-        detectors.add_lane_area_detector(id="b_nc", edge='edge_nc', lane=0, type='boolean', pos=(self.north_length - boolean_detector_length - 7.2))
-        detectors.add_lane_area_detector(id="b_ec", edge='edge_ec', lane=0, type='boolean', pos=(self.east_length - boolean_detector_length - 7.2))
+        detectors.add_lane_area_detector(id="b_wc", edge='edge_wc', lane=0, type='boolean', pos=(self.west_length - detector_length - 7.2))
+        detectors.add_lane_area_detector(id="b_sc", edge='edge_sc', lane=0, type='boolean', pos=(self.south_length - detector_length - 7.2))
+        detectors.add_lane_area_detector(id="b_nc", edge='edge_nc', lane=0, type='boolean', pos=(self.north_length - detector_length - 7.2))
+        detectors.add_lane_area_detector(id="b_ec", edge='edge_ec', lane=0, type='boolean', pos=(self.east_length - detector_length - 7.2))
+
+        return detectors
+
+    def generate_saturation_detectors(self, detector_length):
+        """
+        Generate a DetectorBuilder with a boolean detector for each entry lane of the network.
+        A boolean detector returns if a vehicle is on its scope or not. In SUMO, a boolean
+        detector is represented with a lane area detector whose scope is the entire lane,
+        from the beginning to the end.
+
+        :param detector_length: The scope size of the detectors (in meters)
+        :type detector_length: int
+        :return: The numerical detectors.
+        :rtype: sumo_experiments.src.components.DetectorBuilder
+        """
+
+        detectors = DetectorBuilder()
+
+        detectors.add_lane_area_detector(id="s_wc", edge='edge_wc', lane=0, type='saturation', pos=0, end_pos=detector_length)
+        detectors.add_lane_area_detector(id="s_sc", edge='edge_sc', lane=0, type='saturation', pos=0, end_pos=detector_length)
+        detectors.add_lane_area_detector(id="s_nc", edge='edge_nc', lane=0, type='saturation', pos=0, end_pos=detector_length)
+        detectors.add_lane_area_detector(id="s_ec", edge='edge_ec', lane=0, type='saturation', pos=0, end_pos=detector_length)
 
         return detectors
 
@@ -428,4 +457,32 @@ class OneCrossroadNetwork:
         detectors = DetectorBuilder()
         detectors.laneAreaDetectors.update(self.generate_boolean_detectors(boolean_detector_length).laneAreaDetectors)
         detectors.laneAreaDetectors.update(self.generate_numerical_detectors().laneAreaDetectors)
+        detectors.laneAreaDetectors.update(self.generate_numerical_detectors().laneAreaDetectors)
         return detectors
+
+
+    def create_TLS_DETECTORS(self):
+        """
+        Creates the self.TLS_DETECTORS variable. The function is static for there's only one intersection.
+        :return: Nothing
+        :rtype: None
+        """
+
+        self.DETECTORS_c = {
+            0: {
+                'boolean': ['b_wc', 'b_ec'],
+                'saturation': ['s_wc', 's_ec'],
+                'numerical': ['n_wc', 'n_ec'],
+                'exit': []
+            },
+            2: {
+                'boolean': ['b_nc', 'b_sc'],
+                'saturation': ['s_nc', 's_sc'],
+                'numerical': ['n_nc', 'n_sc'],
+                'exit': []
+            },
+        }
+
+        self.TLS_DETECTORS = {'c': self.DETECTORS_c}
+        self.TL_IDS = ['c']
+

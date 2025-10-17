@@ -1,23 +1,21 @@
-from sumo_experiments.strategies.bologna import BolognaStrategy
-import operator
-
-from sumo_experiments.strategies.lille.lille_strategy import LilleStrategy
+from sumo_experiments.strategies import Strategy
 
 
-class SotlStrategyLille(LilleStrategy):
+class SotlStrategy(Strategy):
     """
     Implement a SOTL agent for all intersections of the Bologna network.
     """
 
-    def __init__(self, thresholds_switch, thresholds_force, min_phase_durations, yellow_time=3):
+    def __init__(self, network, thresholds_switch, thresholds_force, min_phase_durations, yellow_time=3):
         """
         Init of class
         """
         super().__init__()
         self.started = False
-        self.countdowns = {identifiant: 0 for identifiant in self.TLS_DETECTORS}
-        self.time = {identifiant: 0 for identifiant in self.TLS_DETECTORS}
-        self.current_yellow_time = {identifiant: 0 for identifiant in self.TLS_DETECTORS}
+        self.network = network
+        self.countdowns = {identifiant: 0 for identifiant in self.network.TLS_DETECTORS}
+        self.time = {identifiant: 0 for identifiant in self.network.TLS_DETECTORS}
+        self.current_yellow_time = {identifiant: 0 for identifiant in self.network.TLS_DETECTORS}
         self.thresholds_switch = thresholds_switch
         self.thresholds_force = thresholds_force
         self.min_phase_durations = min_phase_durations
@@ -33,7 +31,7 @@ class SotlStrategyLille(LilleStrategy):
             self._start_agents()
             return True
         else:
-            for id_tls in self.TL_IDS:
+            for id_tls in self.network.TL_IDS:
                 sum_vehicles = self.compute_vehicles_red_lanes(id_tls)
                 current_phase = self.traci.trafficlight.getPhase(id_tls)
                 current_state = self.traci.trafficlight.getRedYellowGreenState(id_tls)
@@ -46,7 +44,7 @@ class SotlStrategyLille(LilleStrategy):
                         self.current_yellow_time[id_tls] = 0
                     else:
                         self.current_yellow_time[id_tls] += 1
-                elif current_phase in self.TLS_DETECTORS[id_tls]:
+                elif current_phase in self.network.TLS_DETECTORS[id_tls]:
                     if self.time[id_tls] >= self.min_phase_durations[id_tls]:
                         if self.countdowns[id_tls] >= self.thresholds_switch[id_tls]:
                             if not self.are_vehicles_passing(id_tls) or self.time[id_tls] >= self.thresholds_force[id_tls]:
@@ -73,9 +71,9 @@ class SotlStrategyLille(LilleStrategy):
         """
         current_phase = self.traci.trafficlight.getPhase(id_tls)
         detectors = set()
-        for phase in self.TLS_DETECTORS[id_tls]:
+        for phase in self.network.TLS_DETECTORS[id_tls]:
             if phase != current_phase:
-                detectors.update(self.TLS_DETECTORS[id_tls][phase]['numerical'])
+                detectors.update(self.network.TLS_DETECTORS[id_tls][phase]['numerical'])
         sum = 0
         for detector in detectors:
             sum += self.traci.lanearea.getLastStepVehicleNumber(detector)
@@ -90,7 +88,7 @@ class SotlStrategyLille(LilleStrategy):
         :rtype: bool
         """
         current_phase = self.traci.trafficlight.getPhase(id_tls)
-        for det in self.TLS_DETECTORS[id_tls][current_phase]['boolean']:
+        for det in self.network.TLS_DETECTORS[id_tls][current_phase]['boolean']:
             if self.traci.lanearea.getLastStepVehicleNumber(det) > 0:
                 return True
         return False
@@ -99,11 +97,11 @@ class SotlStrategyLille(LilleStrategy):
         """
         Start an agent at the beginning of the simulation.
         """
-        for tl in self.TL_IDS:
+        for tl in self.network.TL_IDS:
             tl_logic = self.traci.trafficlight.getAllProgramLogics(tl)[0]
             nb_phase = 0
             for phase in tl_logic.phases:
-                if nb_phase in self.TLS_DETECTORS[tl]:
+                if nb_phase in self.network.TLS_DETECTORS[tl]:
                     phase.duration = 10000
                     phase.maxDur = 10000
                     phase.minDur = 10000

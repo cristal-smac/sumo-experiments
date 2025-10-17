@@ -21,7 +21,7 @@ class TraciWrapper:
     in terms of simulation time and visualization.
     """
 
-    def __init__(self, simulation_duration=None, data_frequency=1, graph_representation=False):
+    def __init__(self, simulation_duration=None, data_frequency=1, graph_representation=False, print_timestep=500):
         """
         Init of class
         """
@@ -31,6 +31,7 @@ class TraciWrapper:
         self.simulation_duration = simulation_duration
         self.data_frequency = data_frequency
         self.graph_representation = graph_representation
+        self.print_timestep = print_timestep
 
     def add_stats_function(self, function):
         """
@@ -54,7 +55,7 @@ class TraciWrapper:
         """
         self.behavioural_functions.append(function)
 
-    def net_to_graph(self):
+    def net_to_graph(self, traci):
         """
         Convert the network to a graph.
         :return: The graph representation of the network
@@ -72,7 +73,7 @@ class TraciWrapper:
                 G.add_edge(traci.edge.getFromJunction(edge), traci.edge.getToJunction(edge))
         return G, pos
 
-    def update_colors(self, G):
+    def update_colors(self, G, traci):
         """
         Update graph representation with current phases.
         :param G: The initial graph representation of the network
@@ -108,7 +109,6 @@ class TraciWrapper:
         return colors_list
 
 
-    def final_function(self):
     def final_function(self, traci):
         """
         The final function combine all functions added to the wrapper to make only one.
@@ -125,7 +125,7 @@ class TraciWrapper:
         phase_durations = []
 
         if self.graph_representation:
-            G, pos = self.net_to_graph()
+            G, pos = self.net_to_graph(traci)
 
         if self.simulation_duration is None:
             resume = traci.simulation.getMinExpectedNumber() > 0
@@ -138,7 +138,7 @@ class TraciWrapper:
             if self.graph_representation:
                 plt.clf()
                 arc_rad = 0.25
-                colors = self.update_colors(G)
+                colors = self.update_colors(G, traci)
                 sizes = []
                 for color in colors:
                     if color == "green":
@@ -153,7 +153,7 @@ class TraciWrapper:
             traci.simulationStep()
 
             simulation_time = traci.simulation.getTime()
-            if simulation_time%500 == 0:
+            if simulation_time % self.print_timestep == 0:
                 print(f"Simulation time : {simulation_time} s")
             # We catch each inserted vehicle ID
             for id in traci.simulation.getDepartedIDList():
