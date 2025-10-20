@@ -21,7 +21,7 @@ class TraciWrapper:
     in terms of simulation time and visualization.
     """
 
-    def __init__(self, simulation_duration=None, data_frequency=1, graph_representation=False, print_timestep=500):
+    def __init__(self, simulation_duration=None, data_frequency=1, graph_representation=False, print_timestep=500, vehicles_deletion_timesteps=[]):
         """
         Init of class
         """
@@ -32,6 +32,7 @@ class TraciWrapper:
         self.data_frequency = data_frequency
         self.graph_representation = graph_representation
         self.print_timestep = print_timestep
+        self.vehicles_deletion_timesteps = vehicles_deletion_timesteps
 
     def add_stats_function(self, function):
         """
@@ -133,6 +134,10 @@ class TraciWrapper:
             resume = (step < self.simulation_duration) and (traci.simulation.getMinExpectedNumber()>0)
 
         while resume:
+
+            if step in self.vehicles_deletion_timesteps:
+                for vehicle_id in traci.vehicle.getIDList():
+                    traci.vehicle.remove(vehicle_id)
 
             # Store the current state network as a graph
             if self.graph_representation:
