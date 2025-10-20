@@ -5,6 +5,8 @@ import operator
 class MaxPressureStrategy(Strategy):
     """
     Implement a max pressure agent for all intersections of the Bologna network.
+
+    Varaiya, P. (2013). Max pressure control of a network of signalized intersections. Transportation Research Part C: Emerging Technologies, 36, 177-195.
     """
 
     def __init__(self, network, period_times, yellow_time=3):

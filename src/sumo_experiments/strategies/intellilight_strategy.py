@@ -15,6 +15,8 @@ class IntellilightStrategy(Strategy):
     """
     Implements an Intellilight system for each intersection.
     Use a Double DQN algorithm to train the agent.
+
+    Wei, H., Zheng, G., Yao, H., & Li, Z. (2018, July). Intellilight: A reinforcement learning approach for intelligent traffic light control. In Proceedings of the 24th ACM SIGKDD international conference on knowledge discovery & data mining (pp. 2496-2505).
     """
 
     def __init__(self, network, periods, gamma=0.99, buffer_size=32, update_target_frequency=10, learning_rate=1*10**-2, exploration_prob=1, cooling_rate=10**-3, hidden_layer_size=64, yellow_time=3):

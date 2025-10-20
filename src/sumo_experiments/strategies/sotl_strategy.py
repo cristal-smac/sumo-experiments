@@ -4,6 +4,8 @@ from sumo_experiments.strategies import Strategy
 class SotlStrategy(Strategy):
     """
     Implement a SOTL agent for all intersections of the Bologna network.
+
+    Gershenson, C. (2004). Self-organizing traffic lights. arXiv preprint nlin/0411066.
     """
 
     def __init__(self, network, thresholds_switch, thresholds_force, min_phase_durations, yellow_time=3):

@@ -17,6 +17,8 @@ DEBUG = False
 class AnalyticPlusStrategy(Strategy):
     """
     Implement an Analytic+ agent for all intersections of the Bologna network.
+
+    Lämmer, S., & Helbing, D. (2008). Self-control of traffic lights and vehicle flows in urban road networks. Journal of Statistical Mechanics: Theory and Experiment, 2008(04), P04019.
     """
 
     def __init__(self, network, min_phase_durations, max_phase_durations):

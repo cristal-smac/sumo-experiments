@@ -7,6 +7,8 @@ class LongestQueueFirstStrategy(Strategy):
     Implements a longest queue first agent. An intersection managed by this agent must be equipped with numerical detectors
     on the entry lanes, that count how many vehicles are currently present on the watched lane.
     At each period t, the agent selects the phase with the longest waiting queue for the next period.
+
+    Wunderlich, R., Liu, C., Elhanany, I., & Urbanik, T. (2008). A novel signal-scheduling algorithm with quality-of-service provisioning for an isolated intersection. IEEE Transactions on intelligent transportation systems, 9(3), 536-547.
     """
 
     def __init__(self, network, periods, yellow_time=3):

@@ -4,6 +4,8 @@ from sumo_experiments.strategies import Strategy
 class AcolightStrategy(Strategy):
     """
     Implement an Acolight agent for all intersections of the Bologna network.
+
+    Bompard, J., Mathieu, P., & Nongaillard, A. (2025). Optimizing road intersections using phase scheduling. 23rd International Conference of Practical applications on Agents and Multi-agent Systems.
     """
 
     def __init__(self, network, min_phase_durations, max_phase_durations):
