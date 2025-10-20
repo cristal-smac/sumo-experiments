@@ -21,15 +21,23 @@ class AnalyticPlusStrategy(Strategy):
     Lämmer, S., & Helbing, D. (2008). Self-control of traffic lights and vehicle flows in urban road networks. Journal of Statistical Mechanics: Theory and Experiment, 2008(04), P04019.
     """
 
-    def __init__(self, network, min_phase_durations, max_phase_durations):
+    def __init__(self, network, min_phase_durations, max_phase_durations, yellow_time=3):
         """
         Init of class
+        :param network: The network to deploy the strategy
+        :type network: src.sumo_experiments.Network
+        :param min_phase_durations: The minimum phase durations
+        :type min_phase_durations: int
+        :param max_phase_durations: The maximum phase durations
+        :type max_phase_durations: int
+        :param yellow_time: Yellow phases duration for all intersections
+        :type yellow_time: int
         """
         super().__init__()
         self.started = False
         self.min_phase_durations = min_phase_durations
         self.max_phase_durations = max_phase_durations
-        self.yellow_time = 3
+        self.yellow_time = yellow_time
         self.step_length = 1
         self.network = network
 

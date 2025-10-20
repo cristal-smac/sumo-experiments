@@ -14,6 +14,8 @@ class LongestQueueFirstStrategy(Strategy):
     def __init__(self, network, periods, yellow_time=3):
         """
         Init of class.
+        :param network: The network to deploy the strategy
+        :type network: src.sumo_experiments.Network
         :param periods: The duration of a period (in seconds).
         :type periods: int
         :param yellow_time: Yellow phases duration for all intersections

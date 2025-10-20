@@ -9,8 +9,12 @@ class FixedTimeStrategy(Strategy):
     def __init__(self, network, phase_times=None, yellow_time=3):
         """
         Init of class
+        :param network: The network to deploy the strategy
+        :type network: src.sumo_experiments.Network
         :param phase_times: The time for each phase of each intersection
         :type phase_times: dict
+        :param yellow_time: Yellow phases duration for all intersections
+        :type yellow_time: int
         """
         super().__init__()
         self.phase_times = phase_times

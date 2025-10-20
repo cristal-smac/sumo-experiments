@@ -8,9 +8,17 @@ class AcolightStrategy(Strategy):
     Bompard, J., Mathieu, P., & Nongaillard, A. (2025). Optimizing road intersections using phase scheduling. 23rd International Conference of Practical applications on Agents and Multi-agent Systems.
     """
 
-    def __init__(self, network, min_phase_durations, max_phase_durations):
+    def __init__(self, network, min_phase_durations, max_phase_durations, yellow_time=3):
         """
         Init of class
+        :param network: The network to deploy the strategy
+        :type network: src.sumo_experiments.Network
+        :param min_phase_durations: The minimum phase durations
+        :type min_phase_durations: int
+        :param max_phase_durations: The maximum phase durations
+        :type max_phase_durations: int
+        :param yellow_time: Yellow phases duration for all intersections
+        :type yellow_time: int
         """
         super().__init__()
         self.network = network
@@ -24,7 +32,7 @@ class AcolightStrategy(Strategy):
         self.is_phase = {identifiant: True for identifiant in network.TLS_DETECTORS}
         self.min_phase_durations = min_phase_durations
         self.max_phase_durations = max_phase_durations
-        self.yellow_time = 3
+        self.yellow_time = yellow_time
 
         self.nb_switch = {identifiant: 0 for identifiant in network.TLS_DETECTORS}
         self.phases_occurences = {identifiant: {} for identifiant in network.TLS_DETECTORS}

@@ -11,6 +11,16 @@ class SotlStrategy(Strategy):
     def __init__(self, network, thresholds_switch, thresholds_force, min_phase_durations, yellow_time=3):
         """
         Init of class
+        :param network: The network to deploy the strategy
+        :type network: src.sumo_experiments.Network
+        :param thresholds_switch: The thresholds of vehicles to reach to switch phase. The number of vehicles is computed by summing the number of waiting vehicles at each time step for red lanes.
+        :type thresholds_switch: dict
+        :param thresholds_force: The maximum number of vehicles allowed to wait on red lanes. When this number is reached, the intersection switches its phase.
+        :type thresholds_switch: dict
+        :param min_phase_durations: The minimum phase time for all intersections
+        :type min_phase_durations: dict
+        :param yellow_time: Yellow phases duration for all intersections
+        :type yellow_time: int
         """
         super().__init__()
         self.started = False

@@ -13,6 +13,8 @@ class ArtificialNetwork(Network):
     def __init__(self, name):
         """
         Generates file names for all SUMO config files.
+        :param name: name of the simulation, used to name the different simulation files
+        :type name: str
         """
         super().__init__()
         self.file_names = {
@@ -28,9 +30,24 @@ class ArtificialNetwork(Network):
             'additionnals': f'{name}.add.xml'
         }
 
-    def run(self, traci_function, simulation_duration=None, gui=False, seed=None, no_warnings=True, nb_threads=1, time_to_teleport=150):
+    def run(self, traci_function, gui=False, seed=None, no_warnings=True, nb_threads=1, time_to_teleport=150):
+        """
+        Run the simulation.
+        :param traci_function: The function using TraCi package and that can control infrastructures.
+        :type: function
+        :param gui: True to run SUMO in graphical mode. False otherwise.
+        :type gui: bool
+        :param seed: The seed of the simulation. Same seeds = same simulations.
+        :type seed: int
+        :param no_warnings: If set to True, no warnings when executing SUMO.
+        :type no_warnings: bool
+        :param nb_threads: Number of thread to run SUMO
+        :type nb_threads: int
+        :param time_to_teleport: The time for a vehicle to teleport when the network is blocked
+        :type time_to_teleport: int
+        """
         try:
-            args = self.build_arguments(simulation_duration, seed, no_warnings, nb_threads, time_to_teleport)
+            args = self.build_arguments(seed, no_warnings, nb_threads, time_to_teleport)
             if gui:
                 traci.start(["sumo-gui"] + args.split())
             else:
@@ -44,7 +61,7 @@ class ArtificialNetwork(Network):
         self.clean_files()
         return res
 
-    def build_arguments(self, simulation_duration, seed, no_warnings, nb_threads, time_to_teleport):
+    def build_arguments(self, seed, no_warnings, nb_threads, time_to_teleport):
         """
         Build the arguments to launch SUMO with a command line.
         """
@@ -52,8 +69,6 @@ class ArtificialNetwork(Network):
         args += f'-n {self.file_names["network"]} '
         args += f'-r {self.file_names["routes"]} '
         args += f'-a {self.file_names["detectors"]} '
-        # if simulation_duration is not None:
-        #     args += f'-e {simulation_duration + 1} '
         if seed is not None:
             args += f'--seed {seed} '
         else:

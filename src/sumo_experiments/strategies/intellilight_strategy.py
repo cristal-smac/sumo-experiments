@@ -22,6 +22,8 @@ class IntellilightStrategy(Strategy):
     def __init__(self, network, periods, gamma=0.99, buffer_size=32, update_target_frequency=10, learning_rate=1*10**-2, exploration_prob=1, cooling_rate=10**-3, hidden_layer_size=64, yellow_time=3):
         """
         Init of class.
+        :param network: The network to deploy the strategy
+        :type network: src.sumo_experiments.Network
         :param periods: The duration of a period (in seconds).
         :type periods: dict
         :param gamma: Gamma parameter for the Bellman equation, to compute Q-Values

@@ -2,22 +2,22 @@ Loading net-file from '/home/julesbompard/Documents/Projets/sumo-experiments/src
 Loading additional-files from '/home/julesbompard/Documents/Projets/sumo-experiments/src/sumo_experiments/preset_networks/bologna/acosta/acosta_tls.add.xml' ... done (0ms).
 Loading additional-files from '/home/julesbompard/Documents/Projets/sumo-experiments/src/sumo_experiments/preset_networks/bologna/acosta/acosta_vtypes.add.xml' ...
  done (1ms).
-Loading additional-files from '/home/julesbompard/Documents/Projets/sumo-experiments/src/sumo_experiments/preset_networks/bologna/acosta/acosta_detectors.add.xml' ... done (3ms).
-Loading additional-files from '/home/julesbompard/Documents/Projets/sumo-experiments/src/sumo_experiments/preset_networks/bologna/acosta/acosta_bus_stops.add.xml' ... done (0ms).
-Loading route-files incrementally from '/home/julesbompard/Documents/Projets/sumo-experiments/src/sumo_experiments/preset_networks/bologna/acosta/acosta_96100.rou.xml'
+Loading additional-files from '/home/julesbompard/Documents/Projets/sumo-experiments/src/sumo_experiments/preset_networks/bologna/acosta/acosta_detectors.add.xml' ... done (2ms).
+Loading additional-files from '/home/julesbompard/Documents/Projets/sumo-experiments/src/sumo_experiments/preset_networks/bologna/acosta/acosta_bus_stops.add.xml' ... done (1ms).
+Loading route-files incrementally from '/home/julesbompard/Documents/Projets/sumo-experiments/src/sumo_experiments/preset_networks/bologna/acosta/acosta_27490.rou.xml'
 Loading route-files incrementally from '/home/julesbompard/Documents/Projets/sumo-experiments/src/sumo_experiments/preset_networks/bologna/acosta/acosta_busses.rou.xml'
 Loading done.
 Simulation version 1.24.0 started via libsumo with time: 0.00.
-Simulation ended at time: 10257.00.
+Simulation ended at time: 8480.00.
 Reason: Libsumo requested termination.
 Performance:
- Duration: 54.22s
- Real time factor: 189.16
- UPS: 72833.136618
+ Duration: 47.96s
+ Real time factor: 176.814
+ UPS: 71025.688073
 Vehicles:
- Inserted: 6186
+ Inserted: 6252
  Running: 0
  Waiting: 0
- Teleports: 78 (Jam: 16, Yield: 60, Wrong Lane: 2)
- Emergency Stops: 19
- Emergency Braking: 26
+ Teleports: 52 (Jam: 10, Yield: 40, Wrong Lane: 2)
+ Emergency Stops: 14
+ Emergency Braking: 19

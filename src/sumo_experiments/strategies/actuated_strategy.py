@@ -14,6 +14,8 @@ class ActuatedStrategy(Strategy):
     def __init__(self, network, max_phases_durations, yellow_time=3):
         """
         Init of class.
+        :param network: The network to deploy the strategy
+        :type network: src.sumo_experiments.Network
         :param max_phases_durations: Maximum duration of each phases for all intersections
         :type max_phases_durations: dict
         :param yellow_time: Yellow phases duration for all intersections

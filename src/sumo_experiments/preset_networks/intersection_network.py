@@ -35,12 +35,32 @@ class IntersectionNetwork(ArtificialNetwork):
                  saturation_detectors_length=20):
         """
         Init of class.
-        :param lane_length: The default length for each lane (in meters)
+        :param lane_length: The length of all edges (in meters)
         :type lane_length: int
         :param max_speed: The max speed on each lane (in km/h)
         :type max_speed: int
-        :param boolean_detectors_length: The length of the boolean detectors. Has to be lower than lane_length. Default is 20 meters.
+        :param flow_type: The type of traffic flows to be generated. Can be 'all_directions', 'only_ahead' or 'matrix'.
+        If 'all_directions', generates flows from every entry to every exit.
+        If 'only_ahead', generates flows that do not turn at intersections.
+        If 'matrix', generates flows from every entry to every exit with flows varying according to 'load_vector' and 'coeff_matrix'.
+        :type flow_type: str
+        :param stop_generation_time: The default simulation step when flows will end
+        :type stop_generation_time: int
+        :param flow_frequency: The default flows frequency (in vehicles/hour/entry)
+        :type flow_frequency: int
+        :param distribution: The distribution law for all flows. "uniform" inserts vehicles each n simulation steps
+        'binomial' inserts vehicle at each simulation step with a given probability. Each of the law respect the flow frequency.
+        :type distribution: str
+        :param period_time: The period duration (in simulation steps). Only used if flow_type is 'matrix'.
+        :type period_time: int
+        :param load_vector: The vehicle frequency on the network for each period (in vehs/h). Only used if flow_type is 'matrix'.
+        :type load_vector: numpy.ndarray
+        :param coeff_matrix: The proportion of load charge for each route. Only used if flow_type is 'matrix'.
+        :type coeff_matrix: numpy.ndarray
+        :param boolean_detectors_length: The scope size of the detectors (in meters)
         :type boolean_detectors_length: int
+        :param saturation_detectors_length: The scope size of the saturation detectors (in meters)
+        :type saturation_detectors_length: int
         """
         super().__init__(f'intersection_network_{random.randint(1, 1000000)}')
         # Create infrastructures
