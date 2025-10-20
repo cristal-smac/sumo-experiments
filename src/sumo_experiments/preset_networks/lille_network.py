@@ -1,11 +1,15 @@
 import os
 import random
+import sys
 import xml.etree.ElementTree as ET
 from sumo_experiments.components import FlowBuilder, DetectorBuilder
 import networkx as nx
+import libsumo as traci
+
+from sumo_experiments.preset_networks import Network
 
 
-class LilleNetwork:
+class LilleNetwork(Network):
     """
     Create the SUMO network and flows for the city of Lille.
     """
@@ -13,6 +17,7 @@ class LilleNetwork:
     THIS_FILE_PATH = os.path.abspath(os.path.dirname(__file__))
 
     NB_ROUTES_EACH_FLOW = 100
+    AD_HOC_COEFFICIENT_FOR_FLOWS = 0.03
 
     FLOWS_ENTRIES = { # * 3/5 car tout le territoire lillois n'est pas représenté par le réseau
         'TOURQUENNOIS_LILLE': 12600 * 3/5,
@@ -81,9 +86,15 @@ class LilleNetwork:
 
 
 
-    def __init__(self):
+    def __init__(self, intensity=1, starting_time=0, ending_time=24):
         """
         Init of class
+        :param intensity: The intensity of the normal flow. A coefficient to multiply the number of vehicle for each flow.
+        :type intensity: float
+        :param starting_time: The hour of the day at which the flow starts. 0 is midnight, 12 is midday and 23 is 11PM. Must be between 0 and 23.
+        :type starting_time: int
+        :param ending_time: The hour of the day at which the flow ends. Must be between 1 and 24, and greater than starting time.
+        :type ending_time: int
         """
         self.exp_name = random.randint(0, 100000)
         self.CONFIG_FILE = os.path.join(self.THIS_FILE_PATH, f"lille/run.sumocfg")
@@ -102,6 +113,7 @@ class LilleNetwork:
         self.GRAPH = self.net_to_graph()
         self.flows = FlowBuilder()
         self.flows.add_v_type(id='car0')
+        self.generate_flows(intensity * self.AD_HOC_COEFFICIENT_FOR_FLOWS, starting_time, ending_time)
         self.generate_detectors()
         self.generate_config_file()
         self.TLS_DETECTORS = {
@@ -153,6 +165,21 @@ class LilleNetwork:
             'joinedS_5': self.DETECTORS_joinedS_5,
             '491543745': self.DETECTORS_491543745,
         }
+
+    def run(self, traci_function, simulation_duration=None, gui=False, seed=None, no_warnings=True, nb_threads=1, time_to_teleport=150):
+        """
+        Run the network.
+        """
+        try:
+            traci.start((self.FULL_LINE_COMMAND_GUI + f' --time-to-teleport {time_to_teleport} --no-warnings').split())
+            res = traci_function(traci)
+            traci.close()
+        except Exception as err:
+            print("Error during simulation :", sys.exc_info()[0])
+            print("OS error: {0}".format(err))
+            res = None
+        self.clean_files()
+        return res
 
     def generate_flows(self, intensity=1, starting_time=0, ending_time=24):
         """

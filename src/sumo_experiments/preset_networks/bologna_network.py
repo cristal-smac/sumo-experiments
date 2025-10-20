@@ -1,23 +1,27 @@
 import os
 import random
+import sys
 import xml.etree.ElementTree as ET
 from sumo_experiments.components import InfrastructureBuilder, FlowBuilder, DetectorBuilder
 from copy import deepcopy
 import random
+import libsumo as traci
+
+from sumo_experiments.preset_networks import Network
 
 
-class BolognaNetwork:
+class BolognaNetwork(Network):
     """
     Create the SUMO network and flows for the city of Lille.
     """
 
     THIS_FILE_PATH = os.path.abspath(os.path.dirname(__file__))
 
-    def __init__(self):
+    def __init__(self, intensity):
         """
         Init of class
-        :param exp_name: The name of the experiment, will be used to create new config files.
-        :type exp_name: str
+        :param intensity: The multiplier of the number of generated vehicles.
+        :type intensity: float
         """
         self.exp_name = random.randint(0, 100000)
         self.FULL_LINE_COMMAND = f"sumo -c {self.THIS_FILE_PATH}/bologna/acosta/run_{self.exp_name}.sumocfg"
@@ -28,6 +32,7 @@ class BolognaNetwork:
         self.CONFIG_FILE = os.path.join(self.THIS_FILE_PATH, f"bologna/acosta/run.sumocfg")
         self.NEW_CONFIG_FILE = os.path.join(self.THIS_FILE_PATH, f"bologna/acosta/run_{self.exp_name}.sumocfg")
         self.generate_config_file()
+        self.generate_flows(intensity)
         self.TLS_DETECTORS = {
             '209': self.DETECTORS_209,
             '210': self.DETECTORS_210,
@@ -38,6 +43,20 @@ class BolognaNetwork:
             '273': self.DETECTORS_273
         }
         self.TL_IDS = ['209', '210', '219', '220', '221', '235', '273']
+
+
+    def run(self, traci_function, gui=False, seed=None, no_warnings=True, nb_threads=1, time_to_teleport=150):
+        try:
+            traci.start((self.FULL_LINE_COMMAND_GUI + f' --time-to-teleport {time_to_teleport} --no-warnings').split())
+            res = traci_function(traci)
+            traci.close()
+        except Exception as err:
+            print("Error during simulation :", sys.exc_info()[0])
+            print("OS error: {0}".format(err))
+            res = None
+        self.clean_files()
+        return res
+
 
     def clean_files(self):
         """

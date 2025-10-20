@@ -1,3 +1,5 @@
+#from sumo.tools.emissions.findMinDiffModel import model
+
 from sumo_experiments.strategies import Strategy
 import numpy as np
 import torch
@@ -56,8 +58,8 @@ class IntellilightStrategy(Strategy):
         self.replay_buffer = {identifiant: deque() for identifiant in self.network.TLS_DETECTORS}
         self.buffer_size = {identifiant: buffer_size for identifiant in self.network.TLS_DETECTORS}
         self.hidden_layer_size = {identifiant: hidden_layer_size for identifiant in self.network.TLS_DETECTORS}
-        self.model = {identifiant: QNetwork(input_dim=4, hidden_dim=self.hidden_layer_size[identifiant], output_dim=len(self.action_space[identifiant])).to(self.device) for identifiant in self.network.TLS_DETECTORS}
-        self.target_model = {identifiant: QNetwork(input_dim=4, hidden_dim=self.hidden_layer_size[identifiant], output_dim=len(self.action_space[identifiant])).to(self.device) for identifiant in self.network.TLS_DETECTORS}
+        self.model = {identifiant: QNetwork(action_space=self.action_space[identifiant], input_dim=4, hidden_dim=self.hidden_layer_size[identifiant], output_dim=len(self.action_space[identifiant])).to(self.device) for identifiant in self.network.TLS_DETECTORS}
+        self.target_model = {identifiant: QNetwork(action_space=self.action_space[identifiant], input_dim=4, hidden_dim=self.hidden_layer_size[identifiant], output_dim=len(self.action_space[identifiant])).to(self.device) for identifiant in self.network.TLS_DETECTORS}
         self.update_target_frequency = {identifiant: update_target_frequency for identifiant in self.network.TLS_DETECTORS}
         self.optimizer = {identifiant: optim.Adam(self.model[identifiant].parameters(), lr=learning_rate) for identifiant in self.network.TLS_DETECTORS}
         self.loss_history = {identifiant: [] for identifiant in self.network.TLS_DETECTORS}
@@ -134,10 +136,11 @@ class IntellilightStrategy(Strategy):
                 action = self.action_space[tl_id][torch.argmax(q_values).item()]
 
         reward = self.get_reward(tl_id)
-        if tl_id == "x1-y2":
-            self.rewards.append(reward)
-            self.times.append(self.traci.simulation.getTime())
+        # if tl_id == "x1-y2":
+        #     self.rewards.append(reward)
+        #     self.times.append(self.traci.simulation.getTime())
         next_state = self.get_state(tl_id)
+        next_state[3] = self.action_space[tl_id].index(next_state[3])
 
         # self.replay_buffer[tl_id].append((state, abstract_action, reward, next_state, abstract_phase))
         self.replay_buffer[tl_id].append((state, action, reward, next_state, phase))
@@ -290,19 +293,25 @@ class IntellilightStrategy(Strategy):
 
 
 class QNetwork(nn.Module):
-    def __init__(self, input_dim, hidden_dim, output_dim):
+    def __init__(self, action_space, input_dim, hidden_dim, output_dim):
         super().__init__()
+        self.action_space = action_space
+        self.convert_phase = {
+            k: self.action_space.index(k) for k in self.action_space
+        }
         self.shared = nn.Sequential(
             nn.Linear(input_dim, hidden_dim),
             nn.ReLU()
         )
         self.heads = nn.ModuleList([
-            nn.Sequential(nn.Linear(hidden_dim, output_dim)) for _ in range(3)
+            nn.Sequential(nn.Linear(hidden_dim, output_dim)) for _ in range(len(action_space))
         ])
 
-    def forward(self, x, abstract_phase):
-        if 0 <= abstract_phase < len(self.heads):
+    def forward(self, x, phase):
+        #if 0 <= abstract_phase < len(self.heads):
+        try:
             h = self.shared(x)
-            return self.heads[abstract_phase](h)
-        else:
-            raise ValueError(f"Invalid phase index: {abstract_phase}")
+            return self.heads[self.convert_phase[phase]](h)
+        except:
+            raise ValueError(f"Invalid phase index: {self.convert_phase[phase]}")
+

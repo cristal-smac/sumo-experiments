@@ -1,8 +1,13 @@
+import os
+import random
 import numpy as np
 from sumo_experiments.components import InfrastructureBuilder, FlowBuilder, DetectorBuilder
 import libsumo as traci
 
-class GridNetwork:
+from sumo_experiments.preset_networks import ArtificialNetwork
+
+
+class GridNetwork(ArtificialNetwork):
     """
         The GridNetwork class contains a set of functions for creating a SUMO network containing
         joined intersections that join to form a square.
@@ -17,7 +22,24 @@ class GridNetwork:
         Check the documentation of functions for more information.
     """
 
-    def __init__(self, width, height):
+    def __init__(self,
+                 width,
+                 height,
+                 number_of_phases=2,
+                 lane_length=100,
+                 max_speed=50,
+                 flow_type='all_directions',
+                 stop_generation_time=3600,
+                 flow_frequency=100,
+                 distribution='binomial',
+                 period_time=None,
+                 load_vector=None,
+                 coeff_matrix=None,
+                 boolean_detectors_length=20,
+                 saturation_detectors_length=20,
+                 random_saturation_position=False,
+                 default_saturation_position=0,
+                 ):
         """
         Init of class
         :param width: The number of intersections of the width of the grid
@@ -25,173 +47,49 @@ class GridNetwork:
         :param height: The number of intersections of the height of the grid
         :type height: int
         """
+        super().__init__(f'grid_network_{random.randint(1, 1000000)}')
         self.edges_length = {}
         self.random = False
         if width < 2 or height < 2:
-            raise ValueError('Height and width must be superior to 2.')
+            raise ValueError('Height and width must be equal or superior to 2.')
+        if number_of_phases not in [2, 4]:
+            raise ValueError('The number of phases must be 2 or 4.')
         self.width = width
         self.height = height
-        self.lane_length = None
+        # Create infrastructures
+        infrastructures = self.generate_infrastructures(lane_length, max_speed, number_of_phases=number_of_phases)
+        # Create flows
+        if flow_type == 'only_ahead':
+            self.generate_flows_only_ahead(stop_generation_time, flow_frequency, distribution)
+        elif flow_type == 'all_directions':
+            flows = self.generate_flows_all_directions(stop_generation_time, flow_frequency, distribution)
+        elif flow_type == 'matrix':
+            if load_vector != None and period_time != None and coeff_matrix != None:
+                flows = self.generate_flows_with_matrix(period_time, load_vector, coeff_matrix)
+            else:
+                raise ValueError("load_vector and coeff_matrix ad period_time must be provided when flow_type is 'matrix'.")
+        else:
+            raise ValueError("flow_type must be 'only_ahead' or 'all_directions' or 'matrix'.")
+        # Creates detectors
+        detectors = self.generate_all_detectors(lane_length, boolean_detectors_length, saturation_detectors_length, saturation_detector_pos=default_saturation_position, random_saturation_detectors=random_saturation_position)
+        if number_of_phases == 2:
+            self.create_TLS_DETECTORS_2_phases()
+        elif number_of_phases == 4:
+            self.create_TLS_DETECTORS_4_phases()
+        # Building files
+        infrastructures.build(self.file_names)
+        flows.build(self.file_names)
+        detectors.build(self.file_names)
+        # Using netconvert to create the network
+        cmd = f'$SUMO_HOME/bin/netconvert -n {self.file_names["nodes"]} -e {self.file_names["edges"]} -x {self.file_names["connections"]} -i {self.file_names["trafic_light_programs"]} -t {self.file_names["types"]} -o {self.file_names["network"]} --no-warnings'
+        os.system(cmd)
 
 
     ### Network ###
-
-    def generate_random_infrastructures(self,
-                                        green_time,
-                                        yellow_time,
-                                        max_speed,
-                                        minimum_edge_length=100,
-                                        maximum_edge_length=500,
-                                        boolean_detectors_length=20,
-                                        saturation_detectors_length=20):
-        """
-        Generate the sumo infrastructures for a square network.
-        The distance between two nodes of the network is set randomly, between 'minimum_edge_length' and 'maximum_edge_length' in config.
-        The crossroad is managed by traffic lights on each road.
-
-        :param green_time: The default green time for each phase (in seconds)
-        :type green_time: int
-        :param yellow_time: The default yellow time for each phase (in seconds)
-        :type yellow_time: int
-        :param max_speed: The max speed on each lane (in km/h)
-        :type max_speed: int
-        :param minimum_edge_length: The minimum length for an edge in the network (in meters)
-        :type minimum_edge_length: int
-        :param maximum_edge_length: The maximum length for an edge in the network (in meters)
-        :type maximum_edge_length: int
-        :param boolean_detectors_length: The length of the boolean detectors. Has to be lower than lane_length. Default is 20 meters.
-        :type boolean_detectors_length: int
-        :param saturation_detectors_length: The length of the saturation detectors. Has to be lower than lane_length. Default is 20 meters.
-        :type saturation_detectors_length: int
-        :return: All infrastructures in a NetworkBuilder object.
-        :rtype: sumo_experiments.src.components.NetworkBuilder
-        """
-
-        self.random = True
-
-        net = InfrastructureBuilder()
-
-        # Generate and save edges length
-        offset_values_x = [np.random.uniform(minimum_edge_length, maximum_edge_length) for _ in range(self.width + 1)]
-        offset_values_y = [np.random.uniform(minimum_edge_length, maximum_edge_length) for _ in range(self.height + 1)]
-        x_positions = [0] + offset_values_x
-        y_positions = [0] + offset_values_y
-
-        # We add the nodes
-        for x in range(self.width + 2):
-            for y in range(self.height + 2):
-
-                # No nodes on the corners
-                if not self._is_corner(x, y):
-                    # If node is on boarder, we configure it as a network entry
-                    if (x in [0, self.width + 1]) or (y in [0, self.height + 1]):
-                        net.add_node(id=f'x{x}-y{y}', x=sum(offset_values_x[:x]),
-                                     y=sum(offset_values_y[:y]))
-                    # Else, it's a traffic light
-                    else:
-                        net.add_node(id=f'x{x}-y{y}', x=sum(offset_values_x[:x]),
-                                     y=sum(offset_values_y[:y]), type='traffic_light', tl_program=f'x{x}-y{y}')
-
-        # We add an edge type
-        net.add_edge_type(id='default', params={'numLanes': 1, 'speed': max_speed})
-
-        # We add the edges
-        for x in range(self.width + 2):
-            for y in range(self.height + 2):
-
-                # No nodes on corner
-                if not self._is_corner(x, y):
-                    # We join current node with node left and right (if they exist, and if current is not on boarder)
-                    if y not in [0, self.height + 1]:
-                        if x < self.width + 1:
-                            net.add_edge(id=f'edge_x{x}-y{y}_x{x + 1}-y{y}', from_node=f'x{x}-y{y}',
-                                         to_node=f'x{x + 1}-y{y}', edge_type='default')
-                            self.edges_length[f'edge_x{x}-y{y}_x{x + 1}-y{y}'] = x_positions[x+1]
-                        if x > 0:
-                            net.add_edge(id=f'edge_x{x}-y{y}_x{x - 1}-y{y}', from_node=f'x{x}-y{y}',
-                                         to_node=f'x{x - 1}-y{y}', edge_type='default')
-                            self.edges_length[f'edge_x{x}-y{y}_x{x - 1}-y{y}'] = x_positions[x]
-                    # We join current node with node above and below (if they exist, and if current is not on boarder)
-                    if x not in [0, self.width + 1]:
-                        if y < self.height + 1:
-                            net.add_edge(id=f'edge_x{x}-y{y}_x{x}-y{y + 1}', from_node=f'x{x}-y{y}',
-                                         to_node=f'x{x}-y{y + 1}', edge_type='default')
-                            self.edges_length[f'edge_x{x}-y{y}_x{x}-y{y + 1}'] = y_positions[y + 1]
-                        if y > 0:
-                            net.add_edge(id=f'edge_x{x}-y{y}_x{x}-y{y - 1}', from_node=f'x{x}-y{y}',
-                                         to_node=f'x{x}-y{y - 1}', edge_type='default')
-                            self.edges_length[f'edge_x{x}-y{y}_x{x}-y{y - 1}'] = y_positions[y]
-
-        # We add the connections
-        for x in range(self.width + 2):
-            for y in range(self.height + 2):
-
-                # No nodes on corners
-                if not self._is_corner(x, y):
-
-                    # We join edges with every neighbours on right and left
-                    # If node is on boarder above or below, no connections
-                    if y not in [0, self.height + 1]:
-                        # Connections on the right
-                        if x < self.width:
-                            net.add_connection(from_edge=f'edge_x{x}-y{y}_x{x + 1}-y{y}',
-                                               to_edge=f'edge_x{x + 1}-y{y}_x{x + 2}-y{y}')
-                            net.add_connection(from_edge=f'edge_x{x}-y{y}_x{x + 1}-y{y}',
-                                               to_edge=f'edge_x{x + 1}-y{y}_x{x + 1}-y{y + 1}')
-                            net.add_connection(from_edge=f'edge_x{x}-y{y}_x{x + 1}-y{y}',
-                                               to_edge=f'edge_x{x + 1}-y{y}_x{x + 1}-y{y - 1}')
-                        # Connections on the left
-                        if x > 1:
-                            net.add_connection(from_edge=f'edge_x{x}-y{y}_x{x - 1}-y{y}',
-                                               to_edge=f'edge_x{x - 1}-y{y}_x{x - 2}-y{y}')
-                            net.add_connection(from_edge=f'edge_x{x}-y{y}_x{x - 1}-y{y}',
-                                               to_edge=f'edge_x{x - 1}-y{y}_x{x - 1}-y{y + 1}')
-                            net.add_connection(from_edge=f'edge_x{x}-y{y}_x{x - 1}-y{y}',
-                                               to_edge=f'edge_x{x - 1}-y{y}_x{x - 1}-y{y - 1}')
-
-                    # We join edges with every neighbours above and below
-                    # If node is on boarder right or left, no connections
-                    if x not in [0, self.width + 1]:
-                        # Above
-                        if y < self.height:
-                            net.add_connection(from_edge=f'edge_x{x}-y{y}_x{x}-y{y + 1}',
-                                               to_edge=f'edge_x{x}-y{y + 1}_x{x}-y{y + 2}')
-                            net.add_connection(from_edge=f'edge_x{x}-y{y}_x{x}-y{y + 1}',
-                                               to_edge=f'edge_x{x}-y{y + 1}_x{x + 1}-y{y + 1}')
-                            net.add_connection(from_edge=f'edge_x{x}-y{y}_x{x}-y{y + 1}',
-                                               to_edge=f'edge_x{x}-y{y + 1}_x{x - 1}-y{y + 1}')
-                        # Below
-                        if y > 1:
-                            net.add_connection(from_edge=f'edge_x{x}-y{y}_x{x}-y{y - 1}',
-                                               to_edge=f'edge_x{x}-y{y - 1}_x{x}-y{y - 2}')
-                            net.add_connection(from_edge=f'edge_x{x}-y{y}_x{x}-y{y - 1}',
-                                               to_edge=f'edge_x{x}-y{y - 1}_x{x + 1}-y{y - 1}')
-                            net.add_connection(from_edge=f'edge_x{x}-y{y}_x{x}-y{y - 1}',
-                                               to_edge=f'edge_x{x}-y{y - 1}_x{x - 1}-y{y - 1}')
-
-        # We add traffic light programs
-        for x in range(1, self.width + 1):
-            for y in range(1, self.height + 1):
-                net.add_traffic_light_program(id=f'x{x}-y{y}', phases=[
-                    {'duration': green_time, 'state': 'rrrGGGrrrGGG'},
-                    {'duration': yellow_time, 'state': 'rrryyyrrryyy'},
-                    {'duration': green_time, 'state': 'GGGrrrGGGrrr'},
-                    {'duration': yellow_time, 'state': 'yyyrrryyyrrr'}])
-
-        # Creates detectors
-        self.generate_all_detectors(boolean_detectors_length, saturation_detectors_length)
-        self.create_TLS_DETECTORS_2_phases()
-
-        return net
-
-
     def generate_infrastructures(self,
                                  lane_length,
-                                 green_time,
-                                 yellow_time,
                                  max_speed,
-                                 boolean_detectors_length=20,
-                                 saturation_detectors_length=20):
+                                 number_of_phases):
         """
         Generate the sumo infrastructures for a square network.
         The length of each edge is set by the parameter 'lane_length'.
@@ -199,22 +97,15 @@ class GridNetwork:
 
         :param lane_length: The length of all edges (in meters)
         :type lane_length: int
-        :param green_time: The default green time for each phase (in seconds)
-        :type green_time: int
-        :param yellow_time: The default yellow time for each phase (in seconds)
-        :type yellow_time: int
         :param max_speed: The max speed on each lane (in km/h)
         :type max_speed: int
-        :param boolean_detectors_length: The length of the boolean detectors. Has to be lower than lane_length. Default is 20 meters.
-        :type boolean_detectors_length: int
-        :param saturation_detectors_length: The length of the saturation detectors. Has to be lower than lane_length. Default is 20 meters.
-        :type saturation_detectors_length: int
+        :param number_of_phases: The number of phases of the traffic lights. Must be 2 or 4.
+        :type number_of_phases: int
         :return: All infrastructures in a NetworkBuilder object.
         :rtype: sumo_experiments.src.components.NetworkBuilder
         """
 
         self.random = False
-        self.lane_length = lane_length
 
         net = InfrastructureBuilder()
 
@@ -307,157 +198,23 @@ class GridNetwork:
         # We add traffic light programs
         for x in range(1, self.width + 1):
             for y in range(1, self.height + 1):
-                net.add_traffic_light_program(id=f'x{x}-y{y}', phases=[
-                    {'duration': green_time, 'state': 'rrrGGGrrrGGG'},
-                    {'duration': yellow_time, 'state': 'rrryyyrrryyy'},
-                    {'duration': green_time, 'state': 'GGGrrrGGGrrr'},
-                    {'duration': yellow_time, 'state': 'yyyrrryyyrrr'}])
-
-
-        # Creates detectors
-        self.generate_all_detectors(boolean_detectors_length, saturation_detectors_length)
-        self.create_TLS_DETECTORS_2_phases()
-
-        return net
-
-
-    def generate_infrastructures_one_entry_phases(self,
-                                                 lane_length,
-                                                 green_time,
-                                                 yellow_time,
-                                                 max_speed,
-                                                 boolean_detectors_length=20,
-                                                 saturation_detectors_length=20):
-        """
-        Generate the sumo infrastructures for a square network.
-        The length of each edge is set by the parameter 'lane_length'.
-        The crossroad is managed by traffic lights on each road.
-        Each phase only let one flow pass the intersection.
-
-        :param lane_length: The length of all edges (in meters)
-        :type lane_length: int
-        :param green_time: The default green time for each phase (in seconds)
-        :type green_time: int
-        :param yellow_time: The default yellow time for each phase (in seconds)
-        :type yellow_time: int
-        :param max_speed: The max speed on each lane (in km/h)
-        :type max_speed: int
-        :param boolean_detectors_length: The length of the boolean detectors. Has to be lower than lane_length. Default is 20 meters.
-        :type boolean_detectors_length: int
-        :param saturation_detectors_length: The length of the saturation detectors. Has to be lower than lane_length. Default is 20 meters.
-        :type saturation_detectors_length: int
-        :return: All infrastructures in a NetworkBuilder object.
-        :rtype: sumo_experiments.src.components.NetworkBuilder
-        """
-
-        self.random = False
-        self.lane_length = lane_length
-
-        net = InfrastructureBuilder()
-
-        # We add the nodes
-        for x in range(self.width + 2):
-            for y in range(self.height + 2):
-
-                # No nodes on corners
-                if not self._is_corner(x, y):
-                    # If node is on boarder, we configure it as a network entry
-                    if (x in [0, self.width + 1]) or (y in [0, self.height + 1]):
-                        net.add_node(id=f'x{x}-y{y}', x=x * lane_length, y=y * lane_length)
-                    # Else, it's a traffic light
-                    else:
-                        net.add_node(id=f'x{x}-y{y}', x=x * lane_length, y=y * lane_length,
-                                     type='traffic_light', tl_program=f'x{x}-y{y}')
-
-        # We add the edge type
-        net.add_edge_type(id='default', params={'numLanes': 1, 'speed': max_speed})
-
-        # We add the edges
-        for x in range(self.width + 2):
-            for y in range(self.height + 2):
-
-                # No nodes on corners
-                if not self._is_corner(x, y):
-                    # We join current node with node left and right (if they exist, and if current is not on boarder)
-                    if y not in [0, self.height + 1]:
-                        if x < self.width + 1:
-                            net.add_edge(id=f'edge_x{x}-y{y}_x{x + 1}-y{y}', from_node=f'x{x}-y{y}',
-                                         to_node=f'x{x + 1}-y{y}', edge_type='default')
-                        if x > 0:
-                            net.add_edge(id=f'edge_x{x}-y{y}_x{x - 1}-y{y}', from_node=f'x{x}-y{y}',
-                                         to_node=f'x{x - 1}-y{y}', edge_type='default')
-                    # We join current node with node above and below (if they exist, and if current is not on boarder)
-                    if x not in [0, self.width + 1]:
-                        if y < self.height + 1:
-                            net.add_edge(id=f'edge_x{x}-y{y}_x{x}-y{y + 1}', from_node=f'x{x}-y{y}',
-                                         to_node=f'x{x}-y{y + 1}', edge_type='default')
-                        if y > 0:
-                            net.add_edge(id=f'edge_x{x}-y{y}_x{x}-y{y - 1}', from_node=f'x{x}-y{y}',
-                                         to_node=f'x{x}-y{y - 1}', edge_type='default')
-
-        # We add the connections
-        for x in range(self.width + 2):
-            for y in range(self.height + 2):
-
-                # No nodes on corners
-                if not self._is_corner(x, y):
-                    # We join edges with every neighbours on right and left
-                    # If node is on boarder above or below, no connections
-                    if y not in [0, self.height + 1]:
-                        # To the right
-                        if x < self.width:
-                            net.add_connection(from_edge=f'edge_x{x}-y{y}_x{x + 1}-y{y}',
-                                               to_edge=f'edge_x{x + 1}-y{y}_x{x + 2}-y{y}')
-                            net.add_connection(from_edge=f'edge_x{x}-y{y}_x{x + 1}-y{y}',
-                                               to_edge=f'edge_x{x + 1}-y{y}_x{x + 1}-y{y + 1}')
-                            net.add_connection(from_edge=f'edge_x{x}-y{y}_x{x + 1}-y{y}',
-                                               to_edge=f'edge_x{x + 1}-y{y}_x{x + 1}-y{y - 1}')
-                        # To the left
-                        if x > 1:
-                            net.add_connection(from_edge=f'edge_x{x}-y{y}_x{x - 1}-y{y}',
-                                               to_edge=f'edge_x{x - 1}-y{y}_x{x - 2}-y{y}')
-                            net.add_connection(from_edge=f'edge_x{x}-y{y}_x{x - 1}-y{y}',
-                                               to_edge=f'edge_x{x - 1}-y{y}_x{x - 1}-y{y + 1}')
-                            net.add_connection(from_edge=f'edge_x{x}-y{y}_x{x - 1}-y{y}',
-                                               to_edge=f'edge_x{x - 1}-y{y}_x{x - 1}-y{y - 1}')
-
-                    # We join edges with every neighbours above and below
-                    # If node is on boarder right or left, no connections
-                    if x not in [0, self.width + 1]:
-                        # Above
-                        if y < self.height:
-                            net.add_connection(from_edge=f'edge_x{x}-y{y}_x{x}-y{y + 1}',
-                                               to_edge=f'edge_x{x}-y{y + 1}_x{x}-y{y + 2}')
-                            net.add_connection(from_edge=f'edge_x{x}-y{y}_x{x}-y{y + 1}',
-                                               to_edge=f'edge_x{x}-y{y + 1}_x{x + 1}-y{y + 1}')
-                            net.add_connection(from_edge=f'edge_x{x}-y{y}_x{x}-y{y + 1}',
-                                               to_edge=f'edge_x{x}-y{y + 1}_x{x - 1}-y{y + 1}')
-                        # Below
-                        if y > 1:
-                            net.add_connection(from_edge=f'edge_x{x}-y{y}_x{x}-y{y - 1}',
-                                               to_edge=f'edge_x{x}-y{y - 1}_x{x}-y{y - 2}')
-                            net.add_connection(from_edge=f'edge_x{x}-y{y}_x{x}-y{y - 1}',
-                                               to_edge=f'edge_x{x}-y{y - 1}_x{x + 1}-y{y - 1}')
-                            net.add_connection(from_edge=f'edge_x{x}-y{y}_x{x}-y{y - 1}',
-                                               to_edge=f'edge_x{x}-y{y - 1}_x{x - 1}-y{y - 1}')
-
-        # We add traffic light programs
-        for x in range(1, self.width + 1):
-            for y in range(1, self.height + 1):
-                net.add_traffic_light_program(id=f'x{x}-y{y}', phases=[
-                    {'duration': green_time, 'state': 'GGGrrrrrrrrr'},
-                    {'duration': yellow_time, 'state': 'yyyrrrrrrrrr'},
-                    {'duration': green_time, 'state': 'rrrGGGrrrrrr'},
-                    {'duration': yellow_time, 'state': 'rrryyyrrrrrr'},
-                    {'duration': green_time, 'state': 'rrrrrrGGGrrr'},
-                    {'duration': yellow_time, 'state': 'rrrrrryyyrrr'},
-                    {'duration': green_time, 'state': 'rrrrrrrrrGGG'},
-                    {'duration': yellow_time, 'state': 'rrrrrrrrryyy'},
-                ])
-
-        # Creates detectors
-        self.generate_all_detectors(boolean_detectors_length, saturation_detectors_length)
-        self.create_TLS_DETECTORS_4_phases()
+                if number_of_phases == 2:
+                    net.add_traffic_light_program(id=f'x{x}-y{y}', phases=[
+                        {'duration': 1000, 'state': 'rrrGGGrrrGGG'},
+                        {'duration': 1000, 'state': 'rrryyyrrryyy'},
+                        {'duration': 1000, 'state': 'GGGrrrGGGrrr'},
+                        {'duration': 1000, 'state': 'yyyrrryyyrrr'}])
+                elif number_of_phases == 4:
+                    net.add_traffic_light_program(id=f'x{x}-y{y}', phases=[
+                        {'duration': 1000, 'state': 'GGGrrrrrrrrr'},
+                        {'duration': 1000, 'state': 'yyyrrrrrrrrr'},
+                        {'duration': 1000, 'state': 'rrrGGGrrrrrr'},
+                        {'duration': 1000, 'state': 'rrryyyrrrrrr'},
+                        {'duration': 1000, 'state': 'rrrrrrGGGrrr'},
+                        {'duration': 1000, 'state': 'rrrrrryyyrrr'},
+                        {'duration': 1000, 'state': 'rrrrrrrrrGGG'},
+                        {'duration': 1000, 'state': 'rrrrrrrrryyy'},
+                    ])
 
         return net
 
@@ -688,13 +445,14 @@ class GridNetwork:
 
         return detectors
 
-    def generate_boolean_detectors(self, boolean_detector_length):
+    def generate_boolean_detectors(self, lane_length, boolean_detector_length):
         """
         Generate a DetectorBuilder with a boolean detector for each lane going to an intersection.
         A boolean detector returns if a vehicle is on its scope or not. In SUMO, a boolean
         detector is represented with a lane area detector whose scope is the entire lane,
         from the beginning to the end.
-
+        :param lane_length: The length of all edges (in meters)
+        :type lane_length: int
         :param boolean_detector_length: The scope size of the detectors (in meters)
         :type boolean_detector_length: int
         :return: An empty DetectorBuilder object.
@@ -712,26 +470,26 @@ class GridNetwork:
                     if y not in [0, self.height + 1]:
                         if x < self.width:
                             if x == 0:
-                                lane_length_x = self.edges_length[f'edge_x{x}-y{y}_x{x + 1}-y{y}'] if self.random else self.lane_length
+                                lane_length_x = self.edges_length[f'edge_x{x}-y{y}_x{x + 1}-y{y}'] if self.random else lane_length
                                 detectors.add_lane_area_detector(id=f'b_detector_x{x}-y{y}_x{x + 1}-y{y}',
                                                                  edge=f'edge_x{x}-y{y}_x{x + 1}-y{y}', lane=0,
                                                                  type='boolean',
                                                                  pos=(lane_length_x - boolean_detector_length - 7.2))
                             else:
-                                lane_length_x = self.edges_length[f'edge_x{x}-y{y}_x{x + 1}-y{y}'] if self.random else self.lane_length
+                                lane_length_x = self.edges_length[f'edge_x{x}-y{y}_x{x + 1}-y{y}'] if self.random else lane_length
                                 detectors.add_lane_area_detector(id=f'b_detector_x{x}-y{y}_x{x + 1}-y{y}',
                                                                  edge=f'edge_x{x}-y{y}_x{x + 1}-y{y}', lane=0,
                                                                  type='boolean',
                                                                  pos=(lane_length_x - boolean_detector_length - 7.2 * 2))
                         if x > 1:
                             if x == self.width + 1:
-                                lane_length_x = self.edges_length[f'edge_x{x}-y{y}_x{x - 1}-y{y}'] if self.random else self.lane_length
+                                lane_length_x = self.edges_length[f'edge_x{x}-y{y}_x{x - 1}-y{y}'] if self.random else lane_length
                                 detectors.add_lane_area_detector(id=f'b_detector_x{x}-y{y}_x{x - 1}-y{y}',
                                                                  edge=f'edge_x{x}-y{y}_x{x - 1}-y{y}', lane=0,
                                                                  type='boolean',
                                                                  pos=(lane_length_x - boolean_detector_length - 7.2))
                             else:
-                                lane_length_x = self.edges_length[f'edge_x{x}-y{y}_x{x - 1}-y{y}'] if self.random else self.lane_length
+                                lane_length_x = self.edges_length[f'edge_x{x}-y{y}_x{x - 1}-y{y}'] if self.random else lane_length
                                 detectors.add_lane_area_detector(id=f'b_detector_x{x}-y{y}_x{x - 1}-y{y}',
                                                                  edge=f'edge_x{x}-y{y}_x{x - 1}-y{y}', lane=0,
                                                                  type='boolean',
@@ -739,26 +497,26 @@ class GridNetwork:
                     if x not in [0, self.width + 1]:
                         if y < self.height:
                             if y == 0:
-                                lane_length_y = self.edges_length[f'edge_x{x}-y{y}_x{x}-y{y + 1}'] if self.random else self.lane_length
+                                lane_length_y = self.edges_length[f'edge_x{x}-y{y}_x{x}-y{y + 1}'] if self.random else lane_length
                                 detectors.add_lane_area_detector(id=f'b_detector_x{x}-y{y}_x{x}-y{y + 1}',
                                                                  edge=f'edge_x{x}-y{y}_x{x}-y{y + 1}', lane=0,
                                                                  type='boolean',
                                                                  pos=(lane_length_y - boolean_detector_length - 7.2))
                             else:
-                                lane_length_y = self.edges_length[f'edge_x{x}-y{y}_x{x}-y{y + 1}'] if self.random else self.lane_length
+                                lane_length_y = self.edges_length[f'edge_x{x}-y{y}_x{x}-y{y + 1}'] if self.random else lane_length
                                 detectors.add_lane_area_detector(id=f'b_detector_x{x}-y{y}_x{x}-y{y + 1}',
                                                                  edge=f'edge_x{x}-y{y}_x{x}-y{y + 1}', lane=0,
                                                                  type='boolean',
                                                                  pos=(lane_length_y - boolean_detector_length - 7.2 * 2))
                         if y > 1:
                             if y == self.height + 1:
-                                lane_length_y = self.edges_length[f'edge_x{x}-y{y}_x{x}-y{y - 1}'] if self.random else self.lane_length
+                                lane_length_y = self.edges_length[f'edge_x{x}-y{y}_x{x}-y{y - 1}'] if self.random else lane_length
                                 detectors.add_lane_area_detector(id=f'b_detector_x{x}-y{y}_x{x}-y{y - 1}',
                                                                  edge=f'edge_x{x}-y{y}_x{x}-y{y - 1}', lane=0,
                                                                  type='boolean',
                                                                  pos=(lane_length_y - boolean_detector_length - 7.2))
                             else:
-                                lane_length_y = self.edges_length[f'edge_x{x}-y{y}_x{x}-y{y - 1}'] if self.random else self.lane_length
+                                lane_length_y = self.edges_length[f'edge_x{x}-y{y}_x{x}-y{y - 1}'] if self.random else lane_length
                                 detectors.add_lane_area_detector(id=f'b_detector_x{x}-y{y}_x{x}-y{y - 1}',
                                                                  edge=f'edge_x{x}-y{y}_x{x}-y{y - 1}', lane=0,
                                                                  type='boolean',
@@ -814,11 +572,13 @@ class GridNetwork:
 
         return detectors
 
-    def generate_random_saturation_detectors(self, detector_length):
+    def generate_random_saturation_detectors(self, lane_length, detector_length):
         """
         Generate a DetectorBuilder with a saturation detector for each lane going to an intersection
         that is not a generating edge.
         The position of each detector is set randomly
+        :param lane_length: The length of all edges (in meters)
+        :type lane_length: int
         :param detector_length: The scope size of the detectors (in meters)
         :type detector_length: int
         :return: An empty DetectorBuilder object.
@@ -830,7 +590,7 @@ class GridNetwork:
         for x in range(self.width + 2):
             for y in range(self.height + 2):
 
-                detector_pos = np.random.uniform(high=self.lane_length - detector_length)
+                detector_pos = np.random.uniform(high=lane_length - detector_length)
 
                 # No nodes on the corners
                 if not self._is_corner(x, y):
@@ -864,7 +624,7 @@ class GridNetwork:
         return detectors
 
 
-    def generate_all_detectors(self, boolean_detector_length, saturation_detector_length, saturation_detector_pos=0, random_saturation_detectors=False):
+    def generate_all_detectors(self, lane_length, boolean_detector_length, saturation_detector_length, saturation_detector_pos=0, random_saturation_detectors=False):
         """
         Generate a DetectorBuilder with boolean and numerical detectors for each entry lane of an intersection.
         A boolean detector returns if a vehicle is on its scope or not. In SUMO, a boolean
@@ -873,6 +633,8 @@ class GridNetwork:
         A numerical detector counts and returns the number of vehicles on its scope. In SUMO, a numerical
         detector is represented with a lane area detector whose scope is the entire lane,
         from the beginning to the end.
+        :param lane_length: The length of all edges (in meters)
+        :type lane_length: int
         :param boolean_detector_length: The scope size of the detectors (in meters)
         :type boolean_detector_length: int
         :param saturation_detector_length: The scope size of the saturation detectors (in meters)
@@ -885,7 +647,7 @@ class GridNetwork:
         :rtype: sumo_experiments.src.components.DetectorBuilder
         """
         detectors = DetectorBuilder()
-        detectors.laneAreaDetectors.update(self.generate_boolean_detectors(boolean_detector_length).laneAreaDetectors)
+        detectors.laneAreaDetectors.update(self.generate_boolean_detectors(lane_length, boolean_detector_length).laneAreaDetectors)
         detectors.laneAreaDetectors.update(self.generate_numerical_detectors().laneAreaDetectors)
         if random_saturation_detectors:
             detectors.laneAreaDetectors.update(self.generate_saturation_detectors(saturation_detector_length).laneAreaDetectors)
@@ -976,5 +738,166 @@ class GridNetwork:
                 }
                 self.TLS_DETECTORS[f'x{x}-y{y}'] = detectors
                 self.TL_IDS.append(f'x{x}-y{y}')
+
+
+
+
+
+
+
+
+
+
+
+
+
+    # OBSOLETE
+    def generate_random_infrastructures(self,
+                                        green_time,
+                                        yellow_time,
+                                        max_speed,
+                                        minimum_edge_length=100,
+                                        maximum_edge_length=500,
+                                        boolean_detectors_length=20,
+                                        saturation_detectors_length=20):
+        """
+        Generate the sumo infrastructures for a square network.
+        The distance between two nodes of the network is set randomly, between 'minimum_edge_length' and 'maximum_edge_length' in config.
+        The crossroad is managed by traffic lights on each road.
+
+        :param green_time: The default green time for each phase (in seconds)
+        :type green_time: int
+        :param yellow_time: The default yellow time for each phase (in seconds)
+        :type yellow_time: int
+        :param max_speed: The max speed on each lane (in km/h)
+        :type max_speed: int
+        :param minimum_edge_length: The minimum length for an edge in the network (in meters)
+        :type minimum_edge_length: int
+        :param maximum_edge_length: The maximum length for an edge in the network (in meters)
+        :type maximum_edge_length: int
+        :param boolean_detectors_length: The length of the boolean detectors. Has to be lower than lane_length. Default is 20 meters.
+        :type boolean_detectors_length: int
+        :param saturation_detectors_length: The length of the saturation detectors. Has to be lower than lane_length. Default is 20 meters.
+        :type saturation_detectors_length: int
+        :return: All infrastructures in a NetworkBuilder object.
+        :rtype: sumo_experiments.src.components.NetworkBuilder
+        """
+
+        self.random = True
+
+        net = InfrastructureBuilder()
+
+        # Generate and save edges length
+        offset_values_x = [np.random.uniform(minimum_edge_length, maximum_edge_length) for _ in range(self.width + 1)]
+        offset_values_y = [np.random.uniform(minimum_edge_length, maximum_edge_length) for _ in range(self.height + 1)]
+        x_positions = [0] + offset_values_x
+        y_positions = [0] + offset_values_y
+
+        # We add the nodes
+        for x in range(self.width + 2):
+            for y in range(self.height + 2):
+
+                # No nodes on the corners
+                if not self._is_corner(x, y):
+                    # If node is on boarder, we configure it as a network entry
+                    if (x in [0, self.width + 1]) or (y in [0, self.height + 1]):
+                        net.add_node(id=f'x{x}-y{y}', x=sum(offset_values_x[:x]),
+                                     y=sum(offset_values_y[:y]))
+                    # Else, it's a traffic light
+                    else:
+                        net.add_node(id=f'x{x}-y{y}', x=sum(offset_values_x[:x]),
+                                     y=sum(offset_values_y[:y]), type='traffic_light', tl_program=f'x{x}-y{y}')
+
+        # We add an edge type
+        net.add_edge_type(id='default', params={'numLanes': 1, 'speed': max_speed})
+
+        # We add the edges
+        for x in range(self.width + 2):
+            for y in range(self.height + 2):
+
+                # No nodes on corner
+                if not self._is_corner(x, y):
+                    # We join current node with node left and right (if they exist, and if current is not on boarder)
+                    if y not in [0, self.height + 1]:
+                        if x < self.width + 1:
+                            net.add_edge(id=f'edge_x{x}-y{y}_x{x + 1}-y{y}', from_node=f'x{x}-y{y}',
+                                         to_node=f'x{x + 1}-y{y}', edge_type='default')
+                            self.edges_length[f'edge_x{x}-y{y}_x{x + 1}-y{y}'] = x_positions[x+1]
+                        if x > 0:
+                            net.add_edge(id=f'edge_x{x}-y{y}_x{x - 1}-y{y}', from_node=f'x{x}-y{y}',
+                                         to_node=f'x{x - 1}-y{y}', edge_type='default')
+                            self.edges_length[f'edge_x{x}-y{y}_x{x - 1}-y{y}'] = x_positions[x]
+                    # We join current node with node above and below (if they exist, and if current is not on boarder)
+                    if x not in [0, self.width + 1]:
+                        if y < self.height + 1:
+                            net.add_edge(id=f'edge_x{x}-y{y}_x{x}-y{y + 1}', from_node=f'x{x}-y{y}',
+                                         to_node=f'x{x}-y{y + 1}', edge_type='default')
+                            self.edges_length[f'edge_x{x}-y{y}_x{x}-y{y + 1}'] = y_positions[y + 1]
+                        if y > 0:
+                            net.add_edge(id=f'edge_x{x}-y{y}_x{x}-y{y - 1}', from_node=f'x{x}-y{y}',
+                                         to_node=f'x{x}-y{y - 1}', edge_type='default')
+                            self.edges_length[f'edge_x{x}-y{y}_x{x}-y{y - 1}'] = y_positions[y]
+
+        # We add the connections
+        for x in range(self.width + 2):
+            for y in range(self.height + 2):
+
+                # No nodes on corners
+                if not self._is_corner(x, y):
+
+                    # We join edges with every neighbours on right and left
+                    # If node is on boarder above or below, no connections
+                    if y not in [0, self.height + 1]:
+                        # Connections on the right
+                        if x < self.width:
+                            net.add_connection(from_edge=f'edge_x{x}-y{y}_x{x + 1}-y{y}',
+                                               to_edge=f'edge_x{x + 1}-y{y}_x{x + 2}-y{y}')
+                            net.add_connection(from_edge=f'edge_x{x}-y{y}_x{x + 1}-y{y}',
+                                               to_edge=f'edge_x{x + 1}-y{y}_x{x + 1}-y{y + 1}')
+                            net.add_connection(from_edge=f'edge_x{x}-y{y}_x{x + 1}-y{y}',
+                                               to_edge=f'edge_x{x + 1}-y{y}_x{x + 1}-y{y - 1}')
+                        # Connections on the left
+                        if x > 1:
+                            net.add_connection(from_edge=f'edge_x{x}-y{y}_x{x - 1}-y{y}',
+                                               to_edge=f'edge_x{x - 1}-y{y}_x{x - 2}-y{y}')
+                            net.add_connection(from_edge=f'edge_x{x}-y{y}_x{x - 1}-y{y}',
+                                               to_edge=f'edge_x{x - 1}-y{y}_x{x - 1}-y{y + 1}')
+                            net.add_connection(from_edge=f'edge_x{x}-y{y}_x{x - 1}-y{y}',
+                                               to_edge=f'edge_x{x - 1}-y{y}_x{x - 1}-y{y - 1}')
+
+                    # We join edges with every neighbours above and below
+                    # If node is on boarder right or left, no connections
+                    if x not in [0, self.width + 1]:
+                        # Above
+                        if y < self.height:
+                            net.add_connection(from_edge=f'edge_x{x}-y{y}_x{x}-y{y + 1}',
+                                               to_edge=f'edge_x{x}-y{y + 1}_x{x}-y{y + 2}')
+                            net.add_connection(from_edge=f'edge_x{x}-y{y}_x{x}-y{y + 1}',
+                                               to_edge=f'edge_x{x}-y{y + 1}_x{x + 1}-y{y + 1}')
+                            net.add_connection(from_edge=f'edge_x{x}-y{y}_x{x}-y{y + 1}',
+                                               to_edge=f'edge_x{x}-y{y + 1}_x{x - 1}-y{y + 1}')
+                        # Below
+                        if y > 1:
+                            net.add_connection(from_edge=f'edge_x{x}-y{y}_x{x}-y{y - 1}',
+                                               to_edge=f'edge_x{x}-y{y - 1}_x{x}-y{y - 2}')
+                            net.add_connection(from_edge=f'edge_x{x}-y{y}_x{x}-y{y - 1}',
+                                               to_edge=f'edge_x{x}-y{y - 1}_x{x + 1}-y{y - 1}')
+                            net.add_connection(from_edge=f'edge_x{x}-y{y}_x{x}-y{y - 1}',
+                                               to_edge=f'edge_x{x}-y{y - 1}_x{x - 1}-y{y - 1}')
+
+        # We add traffic light programs
+        for x in range(1, self.width + 1):
+            for y in range(1, self.height + 1):
+                net.add_traffic_light_program(id=f'x{x}-y{y}', phases=[
+                    {'duration': green_time, 'state': 'rrrGGGrrrGGG'},
+                    {'duration': yellow_time, 'state': 'rrryyyrrryyy'},
+                    {'duration': green_time, 'state': 'GGGrrrGGGrrr'},
+                    {'duration': yellow_time, 'state': 'yyyrrryyyrrr'}])
+
+        # Creates detectors
+        self.generate_all_detectors(boolean_detectors_length, saturation_detectors_length)
+        self.create_TLS_DETECTORS_2_phases()
+
+        return net
 
 

@@ -128,9 +128,9 @@ We recommand you to use the clean files method to delete all configuration and d
 
 ```python
 from sumo_experiments import Experiment
-from sumo_experiments.preset_networks import OneCrossroadNetwork
+from sumo_experiments.preset_networks import IntersectionNetwork
 
-network = OneCrossroadNetwork()
+network = IntersectionNetwork()
 exp = Experiment('Test', network.generate_infrastructures, network.generate_flows_all_directions)
 exp.run(gui=True)
 exp.clean_files()

@@ -1,22 +1,23 @@
-Loading net-file from '/home/ddailisan/sumo-experiments/src/sumo_experiments/preset_networks/bologna/acosta/acosta_buslanes.net.xml' ... done (9ms).
-Loading additional-files from '/home/ddailisan/sumo-experiments/src/sumo_experiments/preset_networks/bologna/acosta/acosta_tls.add.xml' ... done (0ms).
-Loading additional-files from '/home/ddailisan/sumo-experiments/src/sumo_experiments/preset_networks/bologna/acosta/acosta_vtypes.add.xml' ...
+Loading net-file from '/home/julesbompard/Documents/Projets/sumo-experiments/src/sumo_experiments/preset_networks/bologna/acosta/acosta_buslanes.net.xml' ... done (30ms).
+Loading additional-files from '/home/julesbompard/Documents/Projets/sumo-experiments/src/sumo_experiments/preset_networks/bologna/acosta/acosta_tls.add.xml' ... done (1ms).
+Loading additional-files from '/home/julesbompard/Documents/Projets/sumo-experiments/src/sumo_experiments/preset_networks/bologna/acosta/acosta_vtypes.add.xml' ...
  done (1ms).
-Loading additional-files from '/home/ddailisan/sumo-experiments/src/sumo_experiments/preset_networks/bologna/acosta/acosta_detectors.add.xml' ... done (1ms).
-Loading additional-files from '/home/ddailisan/sumo-experiments/src/sumo_experiments/preset_networks/bologna/acosta/acosta_bus_stops.add.xml' ... done (0ms).
-Loading route-files incrementally from '/home/ddailisan/sumo-experiments/src/sumo_experiments/preset_networks/bologna/acosta/acosta_6015.rou.xml'
-Loading route-files incrementally from '/home/ddailisan/sumo-experiments/src/sumo_experiments/preset_networks/bologna/acosta/acosta_busses.rou.xml'
+Loading additional-files from '/home/julesbompard/Documents/Projets/sumo-experiments/src/sumo_experiments/preset_networks/bologna/acosta/acosta_detectors.add.xml' ... done (4ms).
+Loading additional-files from '/home/julesbompard/Documents/Projets/sumo-experiments/src/sumo_experiments/preset_networks/bologna/acosta/acosta_bus_stops.add.xml' ... done (1ms).
+Loading route-files incrementally from '/home/julesbompard/Documents/Projets/sumo-experiments/src/sumo_experiments/preset_networks/bologna/acosta/acosta_46454.rou.xml'
+Loading route-files incrementally from '/home/julesbompard/Documents/Projets/sumo-experiments/src/sumo_experiments/preset_networks/bologna/acosta/acosta_busses.rou.xml'
 Loading done.
-Simulation version 1.24.0 started via libsumo with time: 0.00.
-Simulation ended at time: 100000.00.
-Reason: Libsumo requested termination.
+Simulation started with time: 0.00.
+Simulation ended at time: 9296.00.
+Reason: All vehicles have left the simulation.
 Performance:
- Duration: 21.45s
- Real time factor: 4661.14
- UPS: 132907.103570
+ Duration: 105.62s
+ Real time factor: 88.0128
+ UPS: 42423.277568
 Vehicles:
- Inserted: 8779
+ Inserted: 6185
  Running: 0
  Waiting: 0
- Emergency Stops: 3
- Emergency Braking: 4
+ Teleports: 85 (Jam: 23, Yield: 61, Wrong Lane: 1)
+ Emergency Stops: 17
+ Emergency Braking: 27

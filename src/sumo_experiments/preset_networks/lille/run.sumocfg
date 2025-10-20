@@ -5,7 +5,7 @@
     <input>
         <net-file value="lille.net.xml"/>
         <route-files value="lille.rou.xml"/>
-        <additional-files value="lille_detectors.add.xml"/>
+        <additional-files value="lille_detectors.add.xml, lille.tll.xml"/>
     </input>
 
     <output>
