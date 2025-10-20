@@ -1,23 +1,245 @@
-Loading net-file from '/home/julesbompard/Documents/Projets/sumo-experiments/src/sumo_experiments/preset_networks/bologna/acosta/acosta_buslanes.net.xml' ... done (30ms).
-Loading additional-files from '/home/julesbompard/Documents/Projets/sumo-experiments/src/sumo_experiments/preset_networks/bologna/acosta/acosta_tls.add.xml' ... done (1ms).
+Loading net-file from '/home/julesbompard/Documents/Projets/sumo-experiments/src/sumo_experiments/preset_networks/bologna/acosta/acosta_buslanes.net.xml' ... done (22ms).
+Loading additional-files from '/home/julesbompard/Documents/Projets/sumo-experiments/src/sumo_experiments/preset_networks/bologna/acosta/acosta_tls.add.xml' ... done (0ms).
 Loading additional-files from '/home/julesbompard/Documents/Projets/sumo-experiments/src/sumo_experiments/preset_networks/bologna/acosta/acosta_vtypes.add.xml' ...
+Warning: Emission classes should always use the model as a prefix, please recheck 'P_7_7'. Starting with SUMO 1.24 this will be an error.
+Warning: Emission classes should always use the model as a prefix, please recheck 'P_7_7'. Starting with SUMO 1.24 this will be an error.
+Warning: Emission classes should always use the model as a prefix, please recheck 'P_7_7'. Starting with SUMO 1.24 this will be an error.
+Warning: Emission classes should always use the model as a prefix, please recheck 'P_7_7'. Starting with SUMO 1.24 this will be an error.
+Warning: Emission classes should always use the model as a prefix, please recheck 'P_7_7'. Starting with SUMO 1.24 this will be an error.
+Warning: Emission classes should always use the model as a prefix, please recheck 'P_7_7'. Starting with SUMO 1.24 this will be an error.
+Warning: Emission classes should always use the model as a prefix, please recheck 'P_7_7'. Starting with SUMO 1.24 this will be an error.
+Warning: Emission classes should always use the model as a prefix, please recheck 'P_7_7'. Starting with SUMO 1.24 this will be an error.
+Warning: Emission classes should always use the model as a prefix, please recheck 'P_7_7'. Starting with SUMO 1.24 this will be an error.
+Warning: Emission classes should always use the model as a prefix, please recheck 'P_7_7'. Starting with SUMO 1.24 this will be an error.
+Warning: Emission classes should always use the model as a prefix, please recheck 'P_7_7'. Starting with SUMO 1.24 this will be an error.
+Warning: Emission classes should always use the model as a prefix, please recheck 'P_7_7'. Starting with SUMO 1.24 this will be an error.
+Warning: Emission classes should always use the model as a prefix, please recheck 'HDV_6_2'. Starting with SUMO 1.24 this will be an error.
  done (1ms).
-Loading additional-files from '/home/julesbompard/Documents/Projets/sumo-experiments/src/sumo_experiments/preset_networks/bologna/acosta/acosta_detectors.add.xml' ... done (4ms).
-Loading additional-files from '/home/julesbompard/Documents/Projets/sumo-experiments/src/sumo_experiments/preset_networks/bologna/acosta/acosta_bus_stops.add.xml' ... done (1ms).
-Loading route-files incrementally from '/home/julesbompard/Documents/Projets/sumo-experiments/src/sumo_experiments/preset_networks/bologna/acosta/acosta_46454.rou.xml'
+Loading additional-files from '/home/julesbompard/Documents/Projets/sumo-experiments/src/sumo_experiments/preset_networks/bologna/acosta/acosta_detectors.add.xml' ... done (3ms).
+Loading additional-files from '/home/julesbompard/Documents/Projets/sumo-experiments/src/sumo_experiments/preset_networks/bologna/acosta/acosta_bus_stops.add.xml' ... done (0ms).
+Warning: Missing yellow phase in tlLogic '220', program '0' for tl-index 3 when switching to phase 1.
+Warning: Unsafe green phase 0 in tlLogic '220', program '0'. Lane '161_0' is targeted by 2 'G'-links. (use 'g' instead)
+Warning: Missing yellow phase in tlLogic '235', program 'utopia' for tl-index 10 when switching to phase 2.
+Warning: Unsafe green phase 0 in tlLogic '235', program 'utopia'. Lane '114_1' is targeted by 2 'G'-links. (use 'g' instead) Overall 1 lanes in 2 phases are unsafe.
+Loading route-files incrementally from '/home/julesbompard/Documents/Projets/sumo-experiments/src/sumo_experiments/preset_networks/bologna/acosta/acosta_98423.rou.xml'
 Loading route-files incrementally from '/home/julesbompard/Documents/Projets/sumo-experiments/src/sumo_experiments/preset_networks/bologna/acosta/acosta_busses.rou.xml'
 Loading done.
-Simulation started with time: 0.00.
-Simulation ended at time: 9296.00.
-Reason: All vehicles have left the simulation.
+Simulation version 1.24.0 started via libsumo with time: 0.00.
+Warning: Vehicle 'Togliatti_10_77_x7' performs emergency braking on lane '1b_1' with decel=9.00, wished=4.50, severity=1.00, time=276.00.
+Warning: Vehicle 'Togliatti_10_77_x7' performs emergency stop at the end of lane '1b_1' because of a red traffic light (decel=-13.54, offset=4.39), time=276.00.
+Warning: Teleporting vehicle 'Togliatti_71_3_x7'; waited too long (yield), lane='113_0', time=346.00.
+Warning: Vehicle 'Togliatti_71_3_x7' ends teleporting on edge '209', time=346.00.
+Warning: Teleporting vehicle 'Silvani_7_18_x7'; waited too long (yield), lane='113_0', time=347.00.
+Warning: Vehicle 'Silvani_7_18_x7' ends teleporting on edge '209', time=347.00.
+Warning: Teleporting vehicle 'Pepoli_11_90_x7'; waited too long (yield), lane='43[1]_1', time=348.00.
+Warning: Vehicle 'Pepoli_11_90_x7' ends teleporting on edge '201', time=348.00.
+Warning: Teleporting vehicle 'Togliatti_71_6_x7'; waited too long (yield), lane='113_2', time=350.00.
+Warning: Vehicle 'Togliatti_71_6_x7' ends teleporting on edge '209', time=350.00.
+Warning: Teleporting vehicle 'Pepoli_11_93_x7'; waited too long (yield), lane='43[1]_0', time=356.00.
+Warning: Vehicle 'Pepoli_11_93_x7' ends teleporting on edge '201', time=356.00.
+Warning: Teleporting vehicle 'Pepoli_11_95_x7'; waited too long (yield), lane='43[1]_2', time=358.00.
+Warning: Vehicle 'Pepoli_11_95_x7' ends teleporting on edge '201', time=358.00.
+Warning: Vehicle 'Togliatti_10_92_x7' performs emergency braking on lane ':1b_0_0' with decel=9.00, wished=4.50, severity=1.00, time=405.00.
+Warning: Vehicle 'Togliatti_10_92_x7' performs emergency stop at the end of lane '1_0' because of a red traffic light (decel=-10.20, offset=0.84), time=405.00.
+Warning: Vehicle 'Silvani_7_109_x7' performs emergency braking on lane '203[1]_1' with decel=9.00, wished=4.50, severity=1.00, time=441.00.
+Warning: Vehicle 'Silvani_7_109_x7' performs emergency stop at the end of lane '203[1]_1' because of a red traffic light (decel=-13.24, offset=3.25), time=441.00.
+Warning: Vehicle 'Vittorio_Veneto_2_120_x7' performs emergency braking on lane '71_2' with decel=9.00, wished=4.50, severity=1.00, time=641.00.
+Warning: Vehicle 'Vittorio_Veneto_2_120_x7' performs emergency stop at the end of lane '71_2' because of a red traffic light (decel=-10.44, offset=0.65), time=641.00.
+Warning: Vehicle 'Pepoli_11_278_x7' performs emergency braking on lane '201_1' with decel=9.00, wished=4.50, severity=1.00, time=668.00.
+Warning: Vehicle 'Pepoli_11_278_x7' performs emergency stop at the end of lane '201_1' because of a red traffic light (decel=-13.88, offset=2.26), time=668.00.
+Warning: Vehicle 'Togliatti_71_213_x7' performs emergency braking on lane '2_0' with decel=9.00, wished=4.50, severity=1.00, time=754.00.
+Warning: Vehicle 'Togliatti_71_213_x7' performs emergency stop at the end of lane '2_0' because of a red traffic light (decel=-10.99, offset=0.64), time=754.00.
+Warning: Vehicle 'Pepoli_10_379_x7' performs emergency braking on lane '201c_0' with decel=9.00, wished=4.50, severity=1.00, time=826.00.
+Warning: Vehicle 'Pepoli_10_379_x7' performs emergency stop at the end of lane '201c_0' because of a red traffic light (decel=-12.27, offset=2.43), time=826.00.
+Warning: Vehicle 'Pepoli_11_401_x7' performs emergency braking on lane '201c_1' with decel=9.00, wished=4.50, severity=1.00, time=905.00.
+Warning: Vehicle 'Pepoli_11_408_x7' performs emergency braking on lane '201_1' with decel=9.00, wished=4.50, severity=1.00, time=905.00.
+Warning: Vehicle 'Pepoli_11_401_x7' performs emergency stop at the end of lane '201c_1' because of a red traffic light (decel=-14.56, offset=4.62), time=905.00.
+Warning: Vehicle 'Pepoli_11_408_x7' performs emergency stop at the end of lane '201_1' because of a red traffic light (decel=-13.94, offset=0.56), time=905.00.
+Warning: Teleporting vehicle 'XXI_Aprile_94_223_x7'; waited too long (yield), lane='1b_0', time=1192.00.
+Warning: Vehicle 'XXI_Aprile_94_223_x7' ends teleporting on edge '1', time=1192.00.
+Warning: Teleporting vehicle 'Togliatti_10_216_x7'; waited too long (yield), lane='1b_1', time=1194.00.
+Warning: Vehicle 'Togliatti_10_216_x7' ends teleporting on edge '204b[0]', time=1197.00.
+Warning: Teleporting vehicle 'Pepoli_10_379_x7'; waited too long (yield), lane='204a[0]_0', time=1269.00.
+Warning: Teleporting vehicle 'Pepoli_11_367_x7'; waited too long (yield), lane='204a[0]_1', time=1269.00.
+Warning: Teleporting vehicle 'Pepoli_11_381_x7'; waited too long (yield), lane='204a[0]_2', time=1269.00.
+Warning: Vehicle 'Pepoli_11_367_x7' ends teleporting on edge '124', time=1269.00.
+Warning: Vehicle 'Pepoli_10_379_x7' ends teleporting on edge '204b[0]', time=1269.00.
+Warning: Vehicle 'Pepoli_11_381_x7' ends teleporting on edge '124', time=1269.00.
+Warning: Teleporting vehicle 'Pepoli_11_554_x7'; waited too long (jam), lane='201_1', time=1303.00.
+Warning: Vehicle 'Pepoli_11_554_x7' ends teleporting on edge '201c', time=1303.00.
+Warning: Teleporting vehicle 'Togliatti_10_282_x7'; waited too long (yield), lane='1b_0', time=1347.00.
+Warning: Vehicle 'Togliatti_10_282_x7' ends teleporting on edge '1', time=1347.00.
+Warning: Vehicle 'Silvani_7_466_x7' performs emergency braking on lane ':1b_2_1' with decel=9.00, wished=4.50, severity=1.00, time=1374.00.
+Warning: Vehicle 'Silvani_7_466_x7' performs emergency stop at the end of lane '203[1]b_1' because of a red traffic light (decel=-11.04, offset=0.33), time=1374.00.
+Warning: Vehicle 'Silvani_7_479_x7' performs emergency braking on lane ':1b_2_2' with decel=9.00, wished=4.50, severity=1.00, time=1374.00.
+Warning: Vehicle 'Silvani_7_479_x7' performs emergency stop at the end of lane '203[1]b_2' because of a red traffic light (decel=-12.27, offset=0.37), time=1374.00.
+Warning: Teleporting vehicle 'Togliatti_9_247_x7'; waited too long (jam), lane='1b_0', time=1551.00.
+Warning: Vehicle 'Togliatti_9_247_x7' ends teleporting on edge '204b[0]', time=1554.00.
+Warning: Teleporting vehicle 'Pepoli_11_455_x7'; waited too long (yield), lane='204a[0]_1', time=1630.00.
+Warning: Teleporting vehicle 'Pepoli_11_494_x7'; waited too long (yield), lane='204a[0]_2', time=1630.00.
+Warning: Vehicle 'Pepoli_11_455_x7' ends teleporting on edge '124', time=1630.00.
+Warning: Vehicle 'Pepoli_11_494_x7' ends teleporting on edge '124', time=1630.00.
+Warning: Teleporting vehicle 'Pepoli_10_511_x7'; waited too long (yield), lane='204a[0]_0', time=1631.00.
+Warning: Vehicle 'Pepoli_10_511_x7' ends teleporting on edge '204b[0]', time=1631.00.
+Warning: Teleporting vehicle 'Togliatti_10_248_x7'; waited too long (jam), lane=':1b_0_0', time=1673.00.
+Warning: Teleporting vehicle 'Togliatti_10_254_x7'; waited too long (yield), lane='1b_1', time=1673.00.
+Warning: Vehicle 'Togliatti_10_248_x7' ends teleporting on edge '1', time=1673.00.
+Warning: Vehicle 'Togliatti_10_254_x7' ends teleporting on edge '204b[0]', time=1676.00.
+Warning: Vehicle 'Togliatti_10_254_x7' performs emergency braking on lane ':43_2_0' with decel=9.00, wished=4.50, severity=1.00, time=1678.00.
+Warning: Vehicle 'Togliatti_10_254_x7' performs emergency stop at the end of lane '204[1][0]_0' because of a red traffic light (decel=-13.99, offset=4.39), time=1678.00.
+Warning: Vehicle 'Silvani_7_637_x7' performs emergency braking on lane ':1b_2_0' with decel=9.00, wished=4.50, severity=1.00, time=1802.00.
+Warning: Vehicle 'Silvani_7_637_x7' performs emergency stop at the end of lane '203[1]b_0' because of a red traffic light (decel=-13.43, offset=2.05), time=1802.00.
+Warning: Vehicle 'Silvani_7_641_x7' performs emergency braking on lane '203[1]_1' with decel=9.00, wished=4.50, severity=1.00, time=1802.00.
+Warning: Vehicle 'Silvani_7_641_x7' performs emergency stop at the end of lane '203[1]_1' because of a red traffic light (decel=-10.92, offset=1.13), time=1802.00.
+Warning: Vehicle 'Silvani_7_734_x7' performs emergency braking on lane '203[1]b_1' with decel=9.00, wished=4.50, severity=1.00, time=2143.00.
+Warning: Vehicle 'Silvani_7_734_x7' performs emergency stop at the end of lane '203[1]b_1' because of a red traffic light (decel=-9.22, offset=0.04), time=2143.00.
+Warning: Teleporting vehicle 'Turati_10_53_x7'; waited too long (jam), lane='201_0', time=2442.00.
+Warning: Teleporting vehicle 'Costa_200_632_x7'; waited too long (jam), lane='201c_1', time=2443.00.
+Warning: Vehicle 'Costa_200_632_x7' ends teleporting on edge '204a[0]', time=2444.00.
+Warning: Vehicle 'Turati_10_53_x7' ends teleporting on edge '201c', time=2444.00.
+Warning: Teleporting vehicle 'Pepoli_11_1463_x7'; waited too long (yield), lane='43[1]_2', time=2838.00.
+Warning: Vehicle 'Pepoli_11_1463_x7' ends teleporting on edge '201', time=2838.00.
+Warning: Teleporting vehicle 'Pepoli_10_1413_x7'; waited too long (yield), lane='43[1]_1', time=2846.00.
+Warning: Vehicle 'Pepoli_10_1413_x7' ends teleporting on edge '201', time=2846.00.
+Warning: Teleporting vehicle 'Pepoli_11_1509_x7'; waited too long (jam), lane='43[0]_1', time=2863.00.
+Warning: Vehicle 'Pepoli_11_1509_x7' ends teleporting on edge '43[1]', time=2868.00.
+Warning: Teleporting vehicle 'Togliatti_10_458_x7'; waited too long (yield), lane='1b_0', time=2881.00.
+Warning: Teleporting vehicle 'Togliatti_10_452_x7'; waited too long (jam), lane=':1b_0_1', time=2884.00.
+Warning: Vehicle 'Togliatti_10_452_x7' ends teleporting on edge '204b[0]', time=2893.00.
+Warning: Vehicle 'Togliatti_10_458_x7' ends teleporting on edge '204b[0]', time=2897.00.
+Warning: Teleporting vehicle 'Togliatti_10_459_x7'; waited too long (yield), lane='1b_1', time=2899.00.
+Warning: Vehicle 'Togliatti_10_459_x7' ends teleporting on edge '204b[0]', time=2903.00.
+Warning: Teleporting vehicle 'Vittorio_Veneto_10_589_x7'; waited too long (yield), lane='18_1', time=2906.00.
+Warning: Vehicle 'Pepoli_11_1274_x7' performs emergency braking on lane '124_1' with decel=9.00, wished=4.50, severity=1.00, time=2906.00.
+Warning: Vehicle 'Pepoli_11_1274_x7' performs emergency stop at the end of lane '124_1' because of a red traffic light (decel=-12.67, offset=3.23), time=2906.00.
+Warning: Vehicle 'Vittorio_Veneto_10_589_x7' ends teleporting on edge '69', time=2906.00.
+Warning: Teleporting vehicle 'Togliatti_10_462_x7'; waited too long (jam), lane=':1b_0_0', time=2912.00.
+Warning: Vehicle 'Togliatti_10_462_x7' ends teleporting on edge '1', time=2912.00.
+Warning: Teleporting vehicle 'Togliatti_10_870_x7'; waited too long (jam), lane='72[1]_1', time=2917.00.
+Warning: Vehicle 'Togliatti_10_870_x7' ends teleporting on edge '69', time=2917.00.
+Warning: Vehicle 'Pepoli_10_1369_x7' performs emergency braking on lane '201c_0' with decel=9.00, wished=4.50, severity=1.00, time=3014.00.
+Warning: Vehicle 'Pepoli_10_1369_x7' performs emergency stop at the end of lane '201c_0' because of a red traffic light (decel=-10.07, offset=1.01), time=3014.00.
+Warning: Teleporting vehicle 'Vittorio_Veneto_82_595_x7'; waited too long (jam), lane='18_1', time=3061.00.
+Warning: Vehicle 'Vittorio_Veneto_82_595_x7' ends teleporting on edge '69', time=3061.00.
+Warning: Vehicle 'Costa_50_1145_x7' performs emergency braking on lane '103_1' with decel=9.00, wished=4.50, severity=1.00, time=3071.00.
+Warning: Teleporting vehicle 'Togliatti_10_872_x7'; waited too long (yield), lane='72[1]_1', time=3080.00.
+Warning: Vehicle 'Togliatti_10_872_x7' ends teleporting on edge '69', time=3080.00.
+Warning: Teleporting vehicle 'Togliatti_9_894_x7'; waited too long (yield), lane='72[0]_2', time=3084.00.
+Warning: Vehicle 'Togliatti_9_894_x7' ends teleporting on edge '72[1]', time=3093.00.
+Warning: Teleporting vehicle 'Togliatti_10_887_x7'; waited too long (jam), lane='72[1]_1', time=3113.00.
+Warning: Vehicle 'Togliatti_10_887_x7' ends teleporting on edge '69', time=3113.00.
+Warning: Teleporting vehicle 'Silvani_7_1105_x7'; waited too long (yield), lane='203[0]_2', time=3206.00.
+Warning: Teleporting vehicle 'Silvani_7_1107_x7'; waited too long (yield), lane='203[0]_1', time=3206.00.
+Warning: Vehicle 'Silvani_7_1105_x7' ends teleporting on edge '203[1]', time=3206.00.
+Warning: Vehicle 'Silvani_7_1107_x7' ends teleporting on edge '203[1]', time=3206.00.
+Warning: Teleporting vehicle 'Silvani_11_707_x7'; waited too long (yield), lane='203[0]_0', time=3207.00.
+Warning: Vehicle 'Silvani_11_707_x7' ends teleporting on edge '114', time=3207.00.
+Warning: Teleporting vehicle 'Vittorio_Veneto_10_610_x7'; waited too long (jam), lane='18_1', time=3218.00.
+Warning: Vehicle 'Vittorio_Veneto_10_610_x7' ends teleporting on edge '69', time=3218.00.
+Warning: Teleporting vehicle 'Togliatti_10_977_x7'; waited too long (yield), lane='85_1', time=3302.00.
+Warning: Vehicle 'Togliatti_10_977_x7' ends teleporting on edge '72[0]', time=3302.00.
+Warning: Teleporting vehicle 'Togliatti_10_991_x7'; waited too long (yield), lane='85_1', time=3521.00.
+Warning: Vehicle 'Togliatti_10_991_x7' ends teleporting on edge '72[0]', time=3521.00.
+Warning: Teleporting vehicle 'Togliatti_10_529_x7'; waited too long (yield), lane='204a[0]_1', time=3540.00.
+Warning: Vehicle 'Togliatti_10_529_x7' ends teleporting on edge '204b[0]', time=3540.00.
+Warning: Teleporting vehicle 'Pepoli_11_1536_x7'; waited too long (yield), lane='204a[0]_1', time=3541.00.
+Warning: Vehicle 'Pepoli_11_1536_x7' ends teleporting on edge '124', time=3541.00.
+Warning: Teleporting vehicle 'XXI_Aprile_94_756_x7'; waited too long (yield), lane='204a[0]_0', time=3543.00.
+Warning: Vehicle 'XXI_Aprile_94_756_x7' ends teleporting on edge '204b[0]', time=3543.00.
+Warning: Teleporting vehicle 'Togliatti_10_594_x7'; waited too long (jam), lane='1b_1', time=3573.00.
+Warning: Vehicle 'Togliatti_10_594_x7' ends teleporting on edge '1', time=3573.00.
+Warning: Teleporting vehicle 'Togliatti_10_872_x7'; waited too long (jam), lane='1b_0', time=3574.00.
+Warning: Teleporting vehicle 'Pepoli_10_1692_x7'; waited too long (jam), lane='201_0', time=3579.00.
+Warning: Vehicle 'Pepoli_10_1692_x7' ends teleporting on edge '201c', time=3579.00.
+Warning: Vehicle 'Togliatti_10_872_x7' ends teleporting on edge '204b[0]', time=3582.00.
+Warning: Teleporting vehicle 'Silvani_7_1280_x7'; waited too long (yield), lane='203[0]_1', time=3583.00.
+Warning: Vehicle 'Silvani_7_1280_x7' ends teleporting on edge '203[1]', time=3583.00.
+Warning: Teleporting vehicle 'Silvani_7_1262_x7'; waited too long (yield), lane='203[0]_2', time=3584.00.
+Warning: Teleporting vehicle 'Silvani_11_836_x7'; waited too long (yield), lane='203[0]_0', time=3584.00.
+Warning: Vehicle 'Silvani_11_836_x7' ends teleporting on edge '114', time=3584.00.
+Warning: Vehicle 'Silvani_7_1262_x7' ends teleporting on edge '203[1]', time=3584.00.
+Warning: Teleporting vehicle 'XXI_Aprile_94_863_x7'; waited too long (wrong lane), lane='122_0', time=3587.00.
+Warning: Teleporting vehicle 'Togliatti_10_977_x7'; waited too long (yield), lane='72[1]_1', time=3615.00.
+Warning: Vehicle 'Togliatti_10_977_x7' ends teleporting on edge '69', time=3615.00.
+Warning: Teleporting vehicle 'Togliatti_10_920_x7'; waited too long (yield), lane='72[0]_2', time=3616.00.
+Warning: Vehicle 'Togliatti_10_920_x7' ends teleporting on edge '72[1]', time=3616.00.
+Warning: Teleporting vehicle 'Pepoli_10_1909_x7'; waited too long (yield), lane='43[1]_1', time=3622.00.
+Warning: Vehicle 'Pepoli_10_1909_x7' ends teleporting on edge '201', time=3622.00.
+Warning: Vehicle 'XXI_Aprile_94_863_x7' ends teleporting on edge '1', time=3666.00.
+Warning: Teleporting vehicle 'Vittorio_Veneto_10_716_x7'; waited too long (jam), lane='18_1', time=3688.00.
+Warning: Vehicle 'Vittorio_Veneto_10_716_x7' ends teleporting on edge '69', time=3688.00.
+Warning: Teleporting vehicle 'Togliatti_10_917_x7'; waited too long (yield), lane='72[1]_1', time=3769.00.
+Warning: Vehicle 'Togliatti_10_917_x7' ends teleporting on edge '69', time=3769.00.
+Warning: Teleporting vehicle 'Togliatti_9_922_x7'; waited too long (yield), lane='72[0]_2', time=3790.00.
+Warning: Vehicle 'Togliatti_9_922_x7' ends teleporting on edge '72[1]', time=3790.00.
+Warning: Vehicle 'Silvani_7_1472_x7' performs emergency braking on lane '203[1]_0' with decel=9.00, wished=4.50, severity=1.00, time=3870.00.
+Warning: Vehicle 'Silvani_7_1472_x7' performs emergency stop at the end of lane '203[1]_0' because of a red traffic light (decel=-10.30, offset=1.24), time=3870.00.
+Warning: Teleporting vehicle 'Togliatti_10_960_x7'; waited too long (yield), lane='72[1]_1', time=4080.00.
+Warning: Vehicle 'Togliatti_10_960_x7' ends teleporting on edge '69', time=4080.00.
+Warning: Teleporting vehicle 'Togliatti_10_975_x7'; waited too long (yield), lane='72[0]_2', time=4083.00.
+Warning: Vehicle 'Togliatti_10_975_x7' ends teleporting on edge '72[1]', time=4083.00.
+Warning: Teleporting vehicle 'Togliatti_9_1088_x7'; waited too long (yield), lane='85_1', time=4144.00.
+Warning: Vehicle 'Togliatti_9_1088_x7' ends teleporting on edge '72[0]', time=4144.00.
+Warning: Teleporting vehicle 'XXI_Aprile_9_981_x7'; waited too long (yield), lane='1b_0', time=4216.00.
+Warning: Vehicle 'XXI_Aprile_9_981_x7' ends teleporting on edge '1', time=4216.00.
+Warning: Teleporting vehicle 'Togliatti_11_668_x7'; waited too long (yield), lane='1b_1', time=4218.00.
+Warning: Vehicle 'Pepoli_11_1868_x7' performs emergency braking on lane '124_0' with decel=9.00, wished=4.50, severity=1.00, time=4220.00.
+Warning: Vehicle 'Pepoli_11_1868_x7' performs emergency stop at the end of lane '124_0' because of a red traffic light (decel=-11.42, offset=1.91), time=4220.00.
+Warning: Vehicle 'Togliatti_11_668_x7' ends teleporting on edge '204a[0]', time=4220.00.
+Warning: Teleporting vehicle 'Togliatti_71_1196_x7'; waited too long (yield), lane='2_1', time=4279.00.
+Warning: Vehicle 'Togliatti_71_1196_x7' ends teleporting on edge '202', time=4279.00.
+Warning: Teleporting vehicle 'Togliatti_71_1105_x7'; waited too long (yield), lane='2_0', time=4280.00.
+Warning: Vehicle 'Togliatti_71_1105_x7' ends teleporting on edge '202', time=4280.00.
+Warning: Teleporting vehicle 'Togliatti_9_989_x7'; waited too long (yield), lane='72[1]_1', time=4530.00.
+Warning: Vehicle 'Togliatti_9_989_x7' ends teleporting on edge '69', time=4530.00.
+Warning: Teleporting vehicle 'Togliatti_10_1009_x7'; waited too long (yield), lane='72[0]_2', time=4535.00.
+Warning: Vehicle 'Togliatti_10_1009_x7' ends teleporting on edge '72[1]', time=4535.00.
+Warning: Teleporting vehicle 'Silvani_11_1049_x7'; waited too long (yield), lane='203[0]_0', time=4578.00.
+Warning: Vehicle 'Silvani_11_1049_x7' ends teleporting on edge '114', time=4578.00.
+Warning: Teleporting vehicle 'Silvani_3_1352_x7'; waited too long (yield), lane='34_0', time=5059.00.
+Warning: Vehicle 'Silvani_3_1352_x7' ends teleporting on edge '113', time=5059.00.
+Warning: Teleporting vehicle 'Silvani_11_1383_x7'; waited too long (yield), lane='203[0]_0', time=5533.00.
+Warning: Vehicle 'Silvani_11_1383_x7' ends teleporting on edge '114', time=5533.00.
+Warning: Teleporting vehicle 'Togliatti_10_1300_x7'; waited too long (yield), lane='204a[0]_0', time=5884.00.
+Warning: Vehicle 'Togliatti_10_1300_x7' ends teleporting on edge '204b[0]', time=5884.00.
+Warning: Teleporting vehicle 'Togliatti_11_1297_x7'; waited too long (yield), lane='204a[0]_2', time=5888.00.
+Warning: Teleporting vehicle 'Togliatti_10_1290_x7'; waited too long (yield), lane='204a[0]_1', time=5888.00.
+Warning: Vehicle 'Togliatti_10_1290_x7' ends teleporting on edge '204b[0]', time=5888.00.
+Warning: Vehicle 'Togliatti_11_1297_x7' ends teleporting on edge '124', time=5888.00.
+Warning: Teleporting vehicle 'Silvani_11_1504_x7'; waited too long (yield), lane='203[0]_0', time=6056.00.
+Warning: Vehicle 'Silvani_11_1504_x7' ends teleporting on edge '114', time=6056.00.
+Warning: Teleporting vehicle 'Togliatti_10_1587_x7'; waited too long (yield), lane='204a[0]_0', time=6280.00.
+Warning: Vehicle 'Togliatti_10_1587_x7' ends teleporting on edge '204b[0]', time=6280.00.
+Warning: Teleporting vehicle 'Togliatti_10_1569_x7'; waited too long (yield), lane='204a[0]_0', time=6286.00.
+Warning: Vehicle 'Togliatti_10_1569_x7' ends teleporting on edge '204b[0]', time=6286.00.
+Warning: Teleporting vehicle 'Togliatti_71_2263_x7'; waited too long (yield), lane='34_0', time=7238.00.
+Warning: Vehicle 'Togliatti_71_2263_x7' ends teleporting on edge '113', time=7238.00.
+Warning: Teleporting vehicle 'Togliatti_71_2276_x7'; waited too long (yield), lane='34_1', time=7239.00.
+Warning: Vehicle 'Togliatti_71_2276_x7' ends teleporting on edge '113', time=7239.00.
+Warning: Teleporting vehicle 'Togliatti_10_2066_x7'; waited too long (yield), lane='204a[0]_1', time=7575.00.
+Warning: Teleporting vehicle 'Togliatti_10_2061_x7'; waited too long (yield), lane='204a[0]_0', time=7575.00.
+Warning: Vehicle 'Togliatti_10_2061_x7' ends teleporting on edge '204b[0]', time=7575.00.
+Warning: Vehicle 'Togliatti_10_2066_x7' ends teleporting on edge '204b[0]', time=7576.00.
+Warning: Teleporting vehicle 'Togliatti_9_2298_x7'; waited too long (yield), lane='1b_0', time=7644.00.
+Warning: Vehicle 'Togliatti_9_2298_x7' ends teleporting on edge '204a[0]', time=7646.00.
+Warning: Teleporting vehicle 'Togliatti_10_2343_x7'; waited too long (jam), lane=':1b_0_0', time=7649.00.
+Warning: Vehicle 'Togliatti_10_2343_x7' ends teleporting on edge '1', time=7649.00.
+Warning: Teleporting vehicle 'Togliatti_10_2331_x7'; waited too long (yield), lane='1b_1', time=7650.00.
+Warning: Vehicle 'Togliatti_10_2331_x7' ends teleporting on edge '204a[0]', time=7652.00.
+Warning: Teleporting vehicle 'Togliatti_10_2429_x7'; waited too long (yield), lane='204a[0]_0', time=8775.00.
+Warning: Teleporting vehicle 'Togliatti_10_2511_x7'; waited too long (yield), lane='204a[0]_1', time=8775.00.
+Warning: Vehicle 'Togliatti_10_2429_x7' ends teleporting on edge '204b[0]', time=8775.00.
+Warning: Vehicle 'Togliatti_10_2511_x7' ends teleporting on edge '204b[0]', time=8776.00.
+Simulation ended at time: 8868.00.
+Reason: Libsumo requested termination.
 Performance:
- Duration: 105.62s
- Real time factor: 88.0128
- UPS: 42423.277568
+ Duration: 53.53s
+ Real time factor: 165.661
+ UPS: 68782.724029
 Vehicles:
- Inserted: 6185
+ Inserted: 6194
  Running: 0
  Waiting: 0
- Teleports: 85 (Jam: 23, Yield: 61, Wrong Lane: 1)
- Emergency Stops: 17
- Emergency Braking: 27
+ Teleports: 83 (Jam: 17, Yield: 65, Wrong Lane: 1)
+ Emergency Stops: 19
+ Emergency Braking: 20

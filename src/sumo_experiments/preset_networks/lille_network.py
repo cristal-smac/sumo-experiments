@@ -171,7 +171,18 @@ class LilleNetwork(Network):
         Run the network.
         """
         try:
-            traci.start((self.FULL_LINE_COMMAND_GUI + f' --time-to-teleport {time_to_teleport} --no-warnings').split())
+            if seed is not None:
+                seed_text = f'--seed {seed} '
+            else:
+                seed_text = '--random '
+            threads_text = f'--threads {nb_threads} '
+            no_warnings_text = ''
+            if no_warnings:
+                no_warnings_text = '--no-warnings '
+            if gui:
+                traci.start((self.FULL_LINE_COMMAND_GUI + f' --time-to-teleport {time_to_teleport} ' + threads_text + seed_text + no_warnings_text).split())
+            else:
+                traci.start((self.FULL_LINE_COMMAND + f' --time-to-teleport {time_to_teleport} ' + threads_text + seed_text + no_warnings_text).split())
             res = traci_function(traci)
             traci.close()
         except Exception as err:
