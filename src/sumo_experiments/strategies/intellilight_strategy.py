@@ -19,32 +19,36 @@ class IntellilightStrategy(Strategy):
     Wei, H., Zheng, G., Yao, H., & Li, Z. (2018, July). Intellilight: A reinforcement learning approach for intelligent traffic light control. In Proceedings of the 24th ACM SIGKDD international conference on knowledge discovery & data mining (pp. 2496-2505).
     """
 
-    def __init__(self, network, periods, gamma=0.99, buffer_size=32, update_target_frequency=10, learning_rate=1*10**-2, exploration_prob=1, cooling_rate=10**-3, hidden_layer_size=64, yellow_time=3):
+    def __init__(self, network, period=10, gamma=0.99, buffer_size=32, update_target_frequency=10, learning_rate=1 * 10 ** -2, exploration_prob=1, cooling_rate=10 ** -3, hidden_layer_size=64, yellow_time=3):
         """
         Init of class.
         :param network: The network to deploy the strategy
         :type network: src.sumo_experiments.Network
-        :param periods: The duration of a period (in seconds).
-        :type periods: dict
+        :param period: The duration of a period (in seconds).
+        :type period: int or dict
         :param gamma: Gamma parameter for the Bellman equation, to compute Q-Values
-        :type gamma: float
+        :type gamma: float or dict
         :param buffer_size: Memory buffer size for training the neural network. The network is trained when th memory buffer is full.
-        :type buffer_size: int
+        :type buffer_size: int or dict
         :param update_target_frequency: Frequency at which the target network is updated, in terms of number of trainings. The target network will be updated every ((buffer_size + len(buffer_size) * yellow_time) * update_target_frequency) timesteps.
-        :type update_target_frequency: int
+        :type update_target_frequency: int or dict
         :param learning_rate: Learning rate for the neural network. Must be a positive number.
-        :type learning_rate: float
+        :type learning_rate: float or dict
         :param exploration_prob: Probability of selecting a random action at the beginning of the simulation. Must be a positive number.
-        :type exploration_prob: float
+        :type exploration_prob: float or dict
         :param cooling_rate: Value used to update the exploration_prob. Each time an action is chosen, the next exploration_prob is (exploration_prob - (exploration_prob * cooling_rate)).
-        :type cooling_rate: float
+        :type cooling_rate: float or dict
         :param hidden_layer_size: The size of the hidden layers of the neural network.
+        :type hidden_layer_size: int or dict
         :param yellow_time: Yellow phases duration for all intersections
-        :type yellow_time: int
+        :type yellow_time: int or dict
         """
         super().__init__()
         self.network = network
-        self.yellow_time = yellow_time
+        if type(yellow_time) is dict:
+            self.yellow_time = yellow_time
+        else:
+            self.yellow_time = {identifiant: yellow_time for identifiant in network.TLS_DETECTORS}
         self.current_phase = {identifiant: 0 for identifiant in self.network.TLS_DETECTORS}
         self.time = {identifiant: 0 for identifiant in self.network.TLS_DETECTORS}
         self.current_max_time_index = {identifiant: 0 for identifiant in self.network.TLS_DETECTORS}
@@ -53,23 +57,49 @@ class IntellilightStrategy(Strategy):
         self.nb_phases = {}
         self.nb_switch = {identifiant: 0 for identifiant in self.network.TLS_DETECTORS}
         self.next_phase = {identifiant: 0 for identifiant in self.network.TLS_DETECTORS}
-        self.period = periods
+        self.period = period
+        if type(yellow_time) is dict:
+            self.yellow_time = yellow_time
+        else:
+            self.yellow_time = {identifiant: yellow_time for identifiant in network.TLS_DETECTORS}
 
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
         self.action_space = {identifiant: list(self.network.TLS_DETECTORS[identifiant].keys()) for identifiant in self.network.TLS_DETECTORS}
-        self.gamma = {identifiant: gamma for identifiant in self.network.TLS_DETECTORS}
+        if type(gamma) is dict:
+            self.gamma = gamma
+        else:
+            self.gamma = {identifiant: gamma for identifiant in network.TLS_DETECTORS}
         self.replay_buffer = {identifiant: deque() for identifiant in self.network.TLS_DETECTORS}
-        self.buffer_size = {identifiant: buffer_size for identifiant in self.network.TLS_DETECTORS}
-        self.hidden_layer_size = {identifiant: hidden_layer_size for identifiant in self.network.TLS_DETECTORS}
+        if type(buffer_size) is dict:
+            self.buffer_size = buffer_size
+        else:
+            self.buffer_size = {identifiant: buffer_size for identifiant in network.TLS_DETECTORS}
+        if type(hidden_layer_size) is dict:
+            self.hidden_layer_size = hidden_layer_size
+        else:
+            self.hidden_layer_size = {identifiant: hidden_layer_size for identifiant in network.TLS_DETECTORS}
         self.model = {identifiant: QNetwork(action_space=self.action_space[identifiant], input_dim=4, hidden_dim=self.hidden_layer_size[identifiant], output_dim=len(self.action_space[identifiant])).to(self.device) for identifiant in self.network.TLS_DETECTORS}
         self.target_model = {identifiant: QNetwork(action_space=self.action_space[identifiant], input_dim=4, hidden_dim=self.hidden_layer_size[identifiant], output_dim=len(self.action_space[identifiant])).to(self.device) for identifiant in self.network.TLS_DETECTORS}
-        self.update_target_frequency = {identifiant: update_target_frequency for identifiant in self.network.TLS_DETECTORS}
-        self.optimizer = {identifiant: optim.Adam(self.model[identifiant].parameters(), lr=learning_rate) for identifiant in self.network.TLS_DETECTORS}
+        if type(update_target_frequency) is dict:
+            self.update_target_frequency = update_target_frequency
+        else:
+            self.update_target_frequency = {identifiant: update_target_frequency for identifiant in network.TLS_DETECTORS}
+        if type(learning_rate) is dict:
+            self.learning_rate = learning_rate
+        else:
+            self.learning_rate = {identifiant: learning_rate for identifiant in network.TLS_DETECTORS}
+        self.optimizer = {identifiant: optim.Adam(self.model[identifiant].parameters(), lr=learning_rate[identifiant]) for identifiant in self.network.TLS_DETECTORS}
         self.loss_history = {identifiant: [] for identifiant in self.network.TLS_DETECTORS}
         self.current_phase = {identifiant: 0 for identifiant in self.network.TLS_DETECTORS}
-        self.exploration_prob = {identifiant: exploration_prob for identifiant in self.network.TLS_DETECTORS}  # Initial exploration probability
-        self.cooling_rate = {identifiant: cooling_rate for identifiant in self.network.TLS_DETECTORS}  # Cooling rate for exploration probability
+        if type(exploration_prob) is dict:
+            self.exploration_prob = exploration_prob
+        else:
+            self.exploration_prob = {identifiant: exploration_prob for identifiant in network.TLS_DETECTORS}
+        if type(cooling_rate) is dict:
+            self.cooling_rate = cooling_rate
+        else:
+            self.cooling_rate = {identifiant: cooling_rate for identifiant in network.TLS_DETECTORS}
         self.number_of_trainings = {identifiant: 0 for identifiant in self.network.TLS_DETECTORS}
 
         self.rewards = []

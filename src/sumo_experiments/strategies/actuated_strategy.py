@@ -11,20 +11,26 @@ class ActuatedStrategy(Strategy):
     of the phase is reached.
     """
 
-    def __init__(self, network, max_phases_durations, yellow_time=3):
+    def __init__(self, network, max_phases_duration=90, yellow_time=3):
         """
         Init of class.
         :param network: The network to deploy the strategy
         :type network: src.sumo_experiments.Network
-        :param max_phases_durations: Maximum duration of each phases for all intersections
-        :type max_phases_durations: dict
+        :param max_phases_duration: Maximum duration of each phases for all intersections
+        :type max_phases_duration: int or dict
         :param yellow_time: Yellow phases duration for all intersections
-        :type yellow_time: int
+        :type yellow_time: int or dict
         """
         super().__init__()
         self.network = network
-        self.max_phases_durations = max_phases_durations
-        self.yellow_time = yellow_time
+        if type(max_phases_duration) is dict:
+            self.max_phases_durations = max_phases_duration
+        else:
+            self.max_phases_durations = {identifiant: max_phases_duration for identifiant in network.TLS_DETECTORS}
+        if type(yellow_time) is dict:
+            self.yellow_time = yellow_time
+        else:
+            self.yellow_time = {identifiant: yellow_time for identifiant in network.TLS_DETECTORS}
         self.current_phase = {identifiant: 0 for identifiant in self.network.TLS_DETECTORS}
         self.time = {identifiant: 0 for identifiant in self.network.TLS_DETECTORS}
         self.current_max_time_index = {identifiant: 0 for identifiant in self.network.TLS_DETECTORS}

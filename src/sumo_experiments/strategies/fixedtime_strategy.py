@@ -11,15 +11,18 @@ class FixedTimeStrategy(Strategy):
         Init of class
         :param network: The network to deploy the strategy
         :type network: src.sumo_experiments.Network
-        :param phase_times: The time for each phase of each intersection
+        :param phase_times: The time for each phase of each intersection. If set to None, the intersections will have phases as defined in the net file.
         :type phase_times: dict
         :param yellow_time: Yellow phases duration for all intersections
-        :type yellow_time: int
+        :type yellow_time: int or dict
         """
         super().__init__()
         self.phase_times = phase_times
         self.started = False
-        self.yellow_time = yellow_time
+        if type(yellow_time) is dict:
+            self.yellow_time = yellow_time
+        else:
+            self.yellow_time = {identifiant: yellow_time for identifiant in network.TLS_DETECTORS}
         self.network = network
         self.time = {identifiant: 0 for identifiant in self.network.TLS_DETECTORS}
         self.current_yellow_time = {identifiant: 0 for identifiant in self.network.TLS_DETECTORS}

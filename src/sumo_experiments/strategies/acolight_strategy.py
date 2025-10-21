@@ -8,17 +8,17 @@ class AcolightStrategy(Strategy):
     Bompard, J., Mathieu, P., & Nongaillard, A. (2025). Optimizing road intersections using phase scheduling. 23rd International Conference of Practical applications on Agents and Multi-agent Systems.
     """
 
-    def __init__(self, network, min_phase_durations, max_phase_durations, yellow_time=3):
+    def __init__(self, network, min_phase_duration=1, max_phase_duration=90, yellow_time=3):
         """
         Init of class
         :param network: The network to deploy the strategy
         :type network: src.sumo_experiments.Network
-        :param min_phase_durations: The minimum phase durations
-        :type min_phase_durations: int
-        :param max_phase_durations: The maximum phase durations
-        :type max_phase_durations: int
+        :param min_phase_duration: The minimum phase durations
+        :type min_phase_duration: int or dict
+        :param max_phase_duration: The maximum phase durations
+        :type max_phase_duration: int or dict
         :param yellow_time: Yellow phases duration for all intersections
-        :type yellow_time: int
+        :type yellow_time: int or dict
         """
         super().__init__()
         self.network = network
@@ -30,9 +30,18 @@ class AcolightStrategy(Strategy):
         self.current_cycle = {identifiant: [] for identifiant in network.TLS_DETECTORS}
         self.current_yellow_time = {identifiant: 0 for identifiant in network.TLS_DETECTORS}
         self.is_phase = {identifiant: True for identifiant in network.TLS_DETECTORS}
-        self.min_phase_durations = min_phase_durations
-        self.max_phase_durations = max_phase_durations
-        self.yellow_time = yellow_time
+        if type(min_phase_duration) is dict:
+            self.min_phase_durations = min_phase_duration
+        else:
+            self.min_phase_durations = {identifiant: min_phase_duration for identifiant in network.TLS_DETECTORS}
+        if type(max_phase_duration) is dict:
+            self.max_phase_durations = max_phase_duration
+        else:
+            self.max_phase_durations = {identifiant: max_phase_duration for identifiant in network.TLS_DETECTORS}
+        if type(yellow_time) is dict:
+            self.yellow_time = yellow_time
+        else:
+            self.yellow_time = {identifiant: yellow_time for identifiant in network.TLS_DETECTORS}
 
         self.nb_switch = {identifiant: 0 for identifiant in network.TLS_DETECTORS}
         self.phases_occurences = {identifiant: {} for identifiant in network.TLS_DETECTORS}

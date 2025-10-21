@@ -11,19 +11,22 @@ class LongestQueueFirstStrategy(Strategy):
     Wunderlich, R., Liu, C., Elhanany, I., & Urbanik, T. (2008). A novel signal-scheduling algorithm with quality-of-service provisioning for an isolated intersection. IEEE Transactions on intelligent transportation systems, 9(3), 536-547.
     """
 
-    def __init__(self, network, periods, yellow_time=3):
+    def __init__(self, network, period=30, yellow_time=3):
         """
         Init of class.
         :param network: The network to deploy the strategy
         :type network: src.sumo_experiments.Network
-        :param periods: The duration of a period (in seconds).
-        :type periods: int
+        :param period: The duration of a period (in seconds).
+        :type period: int or dict
         :param yellow_time: Yellow phases duration for all intersections
-        :type yellow_time: int
+        :type yellow_time: int or dict
         """
         super().__init__()
         self.network = network
-        self.yellow_time = yellow_time
+        if type(yellow_time) is dict:
+            self.yellow_time = yellow_time
+        else:
+            self.yellow_time = {identifiant: yellow_time for identifiant in network.TLS_DETECTORS}
         self.current_phase = {identifiant: 0 for identifiant in self.network.TLS_DETECTORS}
         self.time = {identifiant: 0 for identifiant in self.network.TLS_DETECTORS}
         self.current_max_time_index = {identifiant: 0 for identifiant in self.network.TLS_DETECTORS}
@@ -32,7 +35,10 @@ class LongestQueueFirstStrategy(Strategy):
         self.nb_phases = {}
         self.nb_switch = {identifiant: 0 for identifiant in self.network.TLS_DETECTORS}
         self.next_phase = {identifiant: 0 for identifiant in self.network.TLS_DETECTORS}
-        self.period = periods
+        if type(period) is dict:
+            self.period = period
+        else:
+            self.period = {identifiant: period for identifiant in network.TLS_DETECTORS}
 
     def run_all_agents(self, traci):
         """
