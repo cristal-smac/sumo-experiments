@@ -21,7 +21,7 @@ class TraciWrapper:
     in terms of simulation time and visualization.
     """
 
-    def __init__(self, max_simulation_duration=None, data_frequency=1, graph_representation=False, print_timestep=500, vehicles_deletion_timesteps=[]):
+    def __init__(self, max_simulation_duration=None, data_frequency=1, graph_representation=False, print_timestep=500, vehicle_deletion_timesteps=[]):
         """
         Init of class
         Two conditions can trigger the end of the simulation : the maximum simulation duration is reached or there are no vehicles to run.
@@ -33,8 +33,8 @@ class TraciWrapper:
         :type graph_representation: bool
         :param print_timestep: The frequency at which the TraciWrapper will print the current step of the simulation.
         :type print_timestep: int
-        :param vehicles_deletion_timesteps: A list of timesteps at which the TraciWrapper will delete all the vehicles in simulation.
-        :type vehicles_deletion_timesteps: list
+        :param vehicle_deletion_timesteps: A list of timesteps at which the TraciWrapper will delete all the vehicles in simulation.
+        :type vehicle_deletion_timesteps: list
         """
         self.stats_functions = []
         self.behavioural_functions = []
@@ -43,7 +43,7 @@ class TraciWrapper:
         self.data_frequency = data_frequency
         self.graph_representation = graph_representation
         self.print_timestep = print_timestep
-        self.vehicles_deletion_timesteps = vehicles_deletion_timesteps
+        self.vehicles_deletion_timesteps = vehicle_deletion_timesteps
 
     def add_stats_function(self, function):
         """

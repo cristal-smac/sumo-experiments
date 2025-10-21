@@ -9,20 +9,26 @@ class MaxPressureStrategy(Strategy):
     Varaiya, P. (2013). Max pressure control of a network of signalized intersections. Transportation Research Part C: Emerging Technologies, 36, 177-195.
     """
 
-    def __init__(self, network, periods, yellow_time=3):
+    def __init__(self, network, period=30, yellow_time=3):
         """
         Init of class
         :param network: The network to deploy the strategy
         :type network: src.sumo_experiments.Network
-        :param periods: The duration of a period (in seconds).
-        :type periods: int
+        :param period: The duration of a period (in seconds).
+        :type period: int or dict
         :param yellow_time: Yellow phases duration for all intersections
-        :type yellow_time: int
+        :type yellow_time: int or dict
         """
         super().__init__()
         self.started = False
-        self.period_times = periods
-        self.yellow_time = yellow_time
+        if type(period) is dict:
+            self.period_times = period
+        else:
+            self.period_times = {identifiant: period for identifiant in network.TLS_DETECTORS}
+        if type(yellow_time) is dict:
+            self.yellow_time = yellow_time
+        else:
+            self.yellow_time = {identifiant: yellow_time for identifiant in network.TLS_DETECTORS}
         self.network = network
         self.countdowns = {identifiant: 0 for identifiant in self.network.TLS_DETECTORS}
         self.to_switch = {identifiant: None for identifiant in self.network.TLS_DETECTORS}

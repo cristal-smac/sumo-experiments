@@ -21,25 +21,34 @@ class AnalyticPlusStrategy(Strategy):
     Lämmer, S., & Helbing, D. (2008). Self-control of traffic lights and vehicle flows in urban road networks. Journal of Statistical Mechanics: Theory and Experiment, 2008(04), P04019.
     """
 
-    def __init__(self, network, min_phase_durations, max_phase_durations, yellow_time=3):
+    def __init__(self, network, min_phase_duration, max_phase_duration, yellow_time=3):
         """
         Init of class
         :param network: The network to deploy the strategy
         :type network: src.sumo_experiments.Network
-        :param min_phase_durations: The minimum phase durations
-        :type min_phase_durations: int
-        :param max_phase_durations: The maximum phase durations
-        :type max_phase_durations: int
+        :param min_phase_duration: The minimum phase durations
+        :type min_phase_duration: int
+        :param max_phase_duration: The maximum phase durations
+        :type max_phase_duration: int
         :param yellow_time: Yellow phases duration for all intersections
         :type yellow_time: int
         """
         super().__init__()
         self.started = False
-        self.min_phase_durations = min_phase_durations
-        self.max_phase_durations = max_phase_durations
-        self.yellow_time = yellow_time
-        self.step_length = 1
         self.network = network
+        if type(min_phase_duration) is dict:
+            self.min_phase_durations = min_phase_duration
+        else:
+            self.min_phase_durations = {identifiant: min_phase_duration for identifiant in network.TLS_DETECTORS}
+        if type(max_phase_duration) is dict:
+            self.max_phase_durations = max_phase_duration
+        else:
+            self.max_phase_durations = {identifiant: max_phase_duration for identifiant in network.TLS_DETECTORS}
+        if type(yellow_time) is dict:
+            self.yellow_time = yellow_time
+        else:
+            self.yellow_time = {identifiant: yellow_time for identifiant in network.TLS_DETECTORS}
+        self.step_length = 1
 
         # self.network.TL_IDS = ['221'] # For testing only one traffic light
         self.time = {k: 0 for k in self.network.TL_IDS}

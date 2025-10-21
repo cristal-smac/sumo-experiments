@@ -8,19 +8,19 @@ class SotlStrategy(Strategy):
     Gershenson, C. (2004). Self-organizing traffic lights. arXiv preprint nlin/0411066.
     """
 
-    def __init__(self, network, thresholds_switch, thresholds_force, min_phase_durations, yellow_time=3):
+    def __init__(self, network, threshold_switch=600, threshold_force=30, min_phase_duration=5, yellow_time=3):
         """
         Init of class
         :param network: The network to deploy the strategy
         :type network: src.sumo_experiments.Network
-        :param thresholds_switch: The thresholds of vehicles to reach to switch phase. The number of vehicles is computed by summing the number of waiting vehicles at each time step for red lanes.
-        :type thresholds_switch: dict
-        :param thresholds_force: The maximum number of vehicles allowed to wait on red lanes. When this number is reached, the intersection switches its phase.
-        :type thresholds_switch: dict
-        :param min_phase_durations: The minimum phase time for all intersections
-        :type min_phase_durations: dict
+        :param threshold_switch: The thresholds of vehicles to reach to switch phase. The number of vehicles is computed by summing the number of waiting vehicles at each time step for red lanes.
+        :type threshold_switch: int or dict
+        :param threshold_force: The maximum number of vehicles allowed to wait on red lanes. When this number is reached, the intersection switches its phase.
+        :type thresholds_switch: int or dict
+        :param min_phase_duration: The minimum phase time for all intersections
+        :type min_phase_duration: int or dict
         :param yellow_time: Yellow phases duration for all intersections
-        :type yellow_time: int
+        :type yellow_time: int or dict
         """
         super().__init__()
         self.started = False
@@ -28,10 +28,22 @@ class SotlStrategy(Strategy):
         self.countdowns = {identifiant: 0 for identifiant in self.network.TLS_DETECTORS}
         self.time = {identifiant: 0 for identifiant in self.network.TLS_DETECTORS}
         self.current_yellow_time = {identifiant: 0 for identifiant in self.network.TLS_DETECTORS}
-        self.thresholds_switch = thresholds_switch
-        self.thresholds_force = thresholds_force
-        self.min_phase_durations = min_phase_durations
-        self.yellow_time = yellow_time
+        if type(threshold_switch) is dict:
+            self.thresholds_switch = threshold_switch
+        else:
+            self.thresholds_switch = {identifiant: threshold_switch for identifiant in network.TLS_DETECTORS}
+        if type(threshold_force) is dict:
+            self.thresholds_force = threshold_force
+        else:
+            self.thresholds_force = {identifiant: threshold_force for identifiant in network.TLS_DETECTORS}
+        if type(min_phase_duration) is dict:
+            self.min_phase_durations = min_phase_duration
+        else:
+            self.min_phase_durations = {identifiant: min_phase_duration for identifiant in network.TLS_DETECTORS}
+        if type(yellow_time) is dict:
+            self.yellow_time = yellow_time
+        else:
+            self.yellow_time = {identifiant: yellow_time for identifiant in network.TLS_DETECTORS}
 
     def run_all_agents(self, traci):
         """
