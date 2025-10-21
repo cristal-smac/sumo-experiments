@@ -16,7 +16,7 @@ class SotlStrategy(Strategy):
         :param threshold_switch: The thresholds of vehicles to reach to switch phase. The number of vehicles is computed by summing the number of waiting vehicles at each time step for red lanes.
         :type threshold_switch: int or dict
         :param threshold_force: The maximum number of vehicles allowed to wait on red lanes. When this number is reached, the intersection switches its phase.
-        :type thresholds_switch: int or dict
+        :type threshold_force: int or dict
         :param min_phase_duration: The minimum phase time for all intersections
         :type min_phase_duration: int or dict
         :param yellow_time: Yellow phases duration for all intersections
@@ -60,7 +60,7 @@ class SotlStrategy(Strategy):
                 current_phase = self.traci.trafficlight.getPhase(id_tls)
                 current_state = self.traci.trafficlight.getRedYellowGreenState(id_tls)
                 if 'y' in current_state:
-                    if self.current_yellow_time[id_tls] >= self.yellow_time:
+                    if self.current_yellow_time[id_tls] >= self.yellow_time[id_tls]:
                         if current_phase + 1 != len(self.traci.trafficlight.getAllProgramLogics(id_tls)[0].phases):
                             self.traci.trafficlight.setPhase(id_tls, current_phase + 1)
                         else:

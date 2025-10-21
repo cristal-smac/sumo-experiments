@@ -55,7 +55,7 @@ class LongestQueueFirstStrategy(Strategy):
         else:
             for tl_id in self.network.TL_IDS:
                 if 'y' in self.traci.trafficlight.getRedYellowGreenState(tl_id):
-                    if self.current_yellow_time[tl_id] >= self.yellow_time:
+                    if self.current_yellow_time[tl_id] >= self.yellow_time[tl_id]:
                         self.traci.trafficlight.setPhase(tl_id, int(self.next_phase[tl_id]))
                         self.current_phase[tl_id] = self.next_phase[tl_id]
                         self.current_yellow_time[tl_id] = 0

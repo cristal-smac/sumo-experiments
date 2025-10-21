@@ -95,7 +95,7 @@ class AnalyticPlusStrategy(Strategy):
                 current_state = self.traci.trafficlight.getRedYellowGreenState(id_tls)
                 # if current_phase not in self.TLS_DETECTORS[id_tls]: # Handle the yellow phases
                 if 'y' in current_state:
-                    if self.yellow_time - self.current_yellow_time[id_tls] <= 0:
+                    if self.yellow_time[id_tls] - self.current_yellow_time[id_tls] <= 0:
                         # maybe there is a second yellow phase
                         self.switch_yellow(agent)
                         assert self.traci.trafficlight.getPhase(id_tls) != current_phase

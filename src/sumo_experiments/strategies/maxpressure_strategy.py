@@ -48,7 +48,7 @@ class MaxPressureStrategy(Strategy):
                 current_phase = self.traci.trafficlight.getPhase(id_tls)
                 current_state = self.traci.trafficlight.getRedYellowGreenState(id_tls)
                 if 'y' in current_state:
-                    if self.current_yellow_time[id_tls] >= self.yellow_time:
+                    if self.current_yellow_time[id_tls] >= self.yellow_time[id_tls]:
                         if current_phase + 1 != len(self.traci.trafficlight.getAllProgramLogics(id_tls)[0].phases):
                             self.traci.trafficlight.setPhase(id_tls, current_phase + 1)
                         else:

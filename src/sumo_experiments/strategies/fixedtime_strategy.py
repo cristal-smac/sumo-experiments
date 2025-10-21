@@ -38,14 +38,14 @@ class FixedTimeStrategy(Strategy):
             i = 0
             for phase in tl_logic.phases:
                 if 'y' in phase.state:
-                    phase.duration = self.yellow_time
-                    phase.maxDur = self.yellow_time
-                    phase.minDur = self.yellow_time
+                    phase.duration = self.yellow_time[tl] + 1
+                    phase.maxDur = self.yellow_time[tl] + 1
+                    phase.minDur = self.yellow_time[tl] + 1
                 if nb_phase in self.network.TLS_DETECTORS[tl]:
                     if nb_phase in self.phase_times:
-                        phase.duration = self.phase_times[tl][phase]
-                        phase.maxDur = self.phase_times[tl][phase]
-                        phase.minDur = self.phase_times[tl][phase]
+                        phase.duration = self.phase_times[tl][phase] + 1
+                        phase.maxDur = self.phase_times[tl][phase] + 1
+                        phase.minDur = self.phase_times[tl][phase] + 1
                         i += 1
                 nb_phase += 1
             self.traci.trafficlight.setProgramLogic(tl, tl_logic)
@@ -72,7 +72,7 @@ class FixedTimeStrategy(Strategy):
                     else:
                         self.time[id_tls] += 1
                 elif 'y' in current_state:
-                    if self.current_yellow_time[id_tls] >= self.yellow_time:
+                    if self.current_yellow_time[id_tls] >= self.yellow_time[id_tls]:
                         if current_phase + 1 != len(self.traci.trafficlight.getAllProgramLogics(id_tls)[0].phases):
                             self.traci.trafficlight.setPhase(id_tls, current_phase + 1)
                         else:

@@ -62,7 +62,7 @@ class AcolightStrategy(Strategy):
                 # If yellow phase
                 if current_phase not in self.network.TLS_DETECTORS[id_tls]:
                     if 'y' in current_state:
-                        if self.yellow_time - self.current_yellow_time[id_tls] <= 0:
+                        if self.yellow_time[id_tls] - self.current_yellow_time[id_tls] <= 0:
                             #if current_phase == self.next_phase[id_tls] - 1 or self.next_phase[id_tls] == 0:
                             self.traci.trafficlight.setPhase(id_tls, self.next_phase[id_tls])
                             self.current_cycle[id_tls].append(self.next_phase[id_tls])

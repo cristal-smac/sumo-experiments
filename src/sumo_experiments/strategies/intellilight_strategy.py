@@ -89,7 +89,7 @@ class IntellilightStrategy(Strategy):
             self.learning_rate = learning_rate
         else:
             self.learning_rate = {identifiant: learning_rate for identifiant in network.TLS_DETECTORS}
-        self.optimizer = {identifiant: optim.Adam(self.model[identifiant].parameters(), lr=learning_rate[identifiant]) for identifiant in self.network.TLS_DETECTORS}
+        self.optimizer = {identifiant: optim.Adam(self.model[identifiant].parameters(), lr=self.learning_rate[identifiant]) for identifiant in self.network.TLS_DETECTORS}
         self.loss_history = {identifiant: [] for identifiant in self.network.TLS_DETECTORS}
         self.current_phase = {identifiant: 0 for identifiant in self.network.TLS_DETECTORS}
         if type(exploration_prob) is dict:
@@ -121,7 +121,7 @@ class IntellilightStrategy(Strategy):
         else:
             for tl_id in self.network.TL_IDS:
                 if 'y' in self.traci.trafficlight.getRedYellowGreenState(tl_id):
-                    if self.current_yellow_time[tl_id] >= self.yellow_time:
+                    if self.current_yellow_time[tl_id] >= self.yellow_time[tl_id]:
                         self.traci.trafficlight.setPhase(tl_id, int(self.next_phase[tl_id]))
                         self.current_phase[tl_id] = self.next_phase[tl_id]
                         self.current_yellow_time[tl_id] = 0
