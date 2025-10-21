@@ -21,16 +21,29 @@ class TraciWrapper:
     in terms of simulation time and visualization.
     """
 
-    def __init__(self, simulation_duration=None, data_frequency=1, graph_representation=False):
+    def __init__(self, max_simulation_duration=None, data_frequency=1, graph_representation=False, print_timestep=500, vehicle_deletion_timesteps=[]):
         """
         Init of class
+        Two conditions can trigger the end of the simulation : the maximum simulation duration is reached or there are no vehicles to run.
+        :param max_simulation_duration: The maximum duration of the simulation in timestep.
+        :type max_simulation_duration: int
+        :param data_frequency: The frequence at which data are collected, in timestep.
+        :type data_frequency: int
+        :param graph_representation: If set to true, the TraciWrapper will create a visual representation of the network where intersections are nodes and lanes are edges. Lanes are colored by the color of the traffic light at its end, if any.
+        :type graph_representation: bool
+        :param print_timestep: The frequency at which the TraciWrapper will print the current step of the simulation.
+        :type print_timestep: int
+        :param vehicle_deletion_timesteps: A list of timesteps at which the TraciWrapper will delete all the vehicles in simulation.
+        :type vehicle_deletion_timesteps: list
         """
         self.stats_functions = []
         self.behavioural_functions = []
         self.data = {'simulation_step': []}
-        self.simulation_duration = simulation_duration
+        self.simulation_duration = max_simulation_duration
         self.data_frequency = data_frequency
         self.graph_representation = graph_representation
+        self.print_timestep = print_timestep
+        self.vehicles_deletion_timesteps = vehicle_deletion_timesteps
 
     def add_stats_function(self, function):
         """
@@ -54,7 +67,7 @@ class TraciWrapper:
         """
         self.behavioural_functions.append(function)
 
-    def net_to_graph(self):
+    def net_to_graph(self, traci):
         """
         Convert the network to a graph.
         :return: The graph representation of the network
@@ -72,7 +85,7 @@ class TraciWrapper:
                 G.add_edge(traci.edge.getFromJunction(edge), traci.edge.getToJunction(edge))
         return G, pos
 
-    def update_colors(self, G):
+    def update_colors(self, G, traci):
         """
         Update graph representation with current phases.
         :param G: The initial graph representation of the network
@@ -108,7 +121,6 @@ class TraciWrapper:
         return colors_list
 
 
-    def final_function(self):
     def final_function(self, traci):
         """
         The final function combine all functions added to the wrapper to make only one.
@@ -125,7 +137,7 @@ class TraciWrapper:
         phase_durations = []
 
         if self.graph_representation:
-            G, pos = self.net_to_graph()
+            G, pos = self.net_to_graph(traci)
 
         if self.simulation_duration is None:
             resume = traci.simulation.getMinExpectedNumber() > 0
@@ -134,11 +146,15 @@ class TraciWrapper:
 
         while resume:
 
+            if step in self.vehicles_deletion_timesteps:
+                for vehicle_id in traci.vehicle.getIDList():
+                    traci.vehicle.remove(vehicle_id)
+
             # Store the current state network as a graph
             if self.graph_representation:
                 plt.clf()
                 arc_rad = 0.25
-                colors = self.update_colors(G)
+                colors = self.update_colors(G, traci)
                 sizes = []
                 for color in colors:
                     if color == "green":
@@ -153,7 +169,7 @@ class TraciWrapper:
             traci.simulationStep()
 
             simulation_time = traci.simulation.getTime()
-            if simulation_time%500 == 0:
+            if simulation_time % self.print_timestep == 0:
                 print(f"Simulation time : {simulation_time} s")
             # We catch each inserted vehicle ID
             for id in traci.simulation.getDepartedIDList():

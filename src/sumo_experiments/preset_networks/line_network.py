@@ -1,10 +1,13 @@
+import os
+import random
 import numpy as np
-
 from sumo_experiments.components import InfrastructureBuilder, FlowBuilder, DetectorBuilder
 import libsumo as traci
 
+from sumo_experiments.preset_networks import ArtificialNetwork
 
-class LineNetwork:
+
+class LineNetwork(ArtificialNetwork):
     """
         The LineNetwork class contains a set of functions for creating a SUMO network containing
         n consecutive crossroads.
@@ -22,40 +25,104 @@ class LineNetwork:
     GREEN_LIGHT_HORIZONTAL = 0
     GREEN_LIGHT_VERTICAL = 2
 
-    def __init__(self, nb_intersections):
+    def __init__(self,
+                 nb_intersections,
+                 lane_length=100,
+                 max_speed=50,
+                 flow_type='all_directions',
+                 stop_generation_time=3600,
+                 flow_frequency=100,
+                 distribution='binomial',
+                 period_time=None,
+                 load_vector=None,
+                 coeff_matrix=None,
+                 boolean_detectors_length=20,
+                 saturation_detectors_length=20
+                 ):
         """
         Init of class.
         :param nb_intersections: The number of intersections for the network
         :type nb_intersections: int
+        :param lane_length: The length of all edges (in meters)
+        :type lane_length: int
+        :param max_speed: The max speed on each lane (in km/h)
+        :type max_speed: int
+        :param flow_type: The type of traffic flows to be generated. Can be 'all_directions', 'only_ahead' or 'matrix'.
+        If 'all_directions', generates flows from every entry to every exit.
+        If 'only_ahead', generates flows that do not turn at intersections.
+        If 'matrix', generates flows from every entry to every exit with flows varying according to 'load_vector' and 'coeff_matrix'.
+        :type flow_type: str
+        :param stop_generation_time: The default simulation step when flows will end
+        :type stop_generation_time: int
+        :param flow_frequency: The default flows frequency (in vehicles/hour/entry)
+        :type flow_frequency: int
+        :param distribution: The distribution law for all flows. "uniform" inserts vehicles each n simulation steps
+        'binomial' inserts vehicle at each simulation step with a given probability. Each of the law respect the flow frequency.
+        :type distribution: str
+        :param period_time: The period duration (in simulation steps). Only used if flow_type is 'matrix'.
+        :type period_time: int
+        :param load_vector: The vehicle frequency on the network for each period (in vehs/h). Only used if flow_type is 'matrix'.
+        :type load_vector: numpy.ndarray
+        :param coeff_matrix: The proportion of load charge for each route. Only used if flow_type is 'matrix'.
+        :type coeff_matrix: numpy.ndarray
+        :param boolean_detectors_length: The scope size of the detectors (in meters)
+        :type boolean_detectors_length: int
+        :param saturation_detectors_length: The scope size of the saturation detectors (in meters)
+        :type saturation_detectors_length: int
         """
+        super().__init__(f'line_network_{random.randint(1, 1000000)}')
         if nb_intersections < 2:
             raise ValueError('nb_intersections must be 2 or more.')
         self.nb_intersections = nb_intersections
+        # Create infrastructures
+        infrastructures = self.generate_infrastructures(lane_length, max_speed)
+        # Create flows
+        if flow_type == 'only_ahead':
+            self.generate_flows_only_ahead(stop_generation_time, flow_frequency, distribution)
+        elif flow_type == 'all_directions':
+            flows = self.generate_flows_all_directions(stop_generation_time, flow_frequency, distribution)
+        elif flow_type == 'matrix':
+            if load_vector != None and period_time != None and coeff_matrix != None:
+                flows = self.generate_flows_with_matrix(period_time, load_vector, coeff_matrix)
+            else:
+                raise ValueError("load_vector and coeff_matrix ad period_time must be provided when flow_type is 'matrix'.")
+        else:
+            raise ValueError("flow_type must be 'only_ahead' or 'all_directions' or 'matrix'.")
+        # Creates detectors
+        detectors = self.generate_all_detectors(lane_length, boolean_detectors_length, saturation_detectors_length)
+        self.create_TLS_DETECTORS()
+        # Building files
+        infrastructures.build(self.file_names)
+        flows.build(self.file_names)
+        detectors.build(self.file_names)
+        # Using netconvert to create the network
+        cmd = f'$SUMO_HOME/bin/netconvert -n {self.file_names["nodes"]} -e {self.file_names["edges"]} -x {self.file_names["connections"]} -i {self.file_names["trafic_light_programs"]} -t {self.file_names["types"]} -o {self.file_names["network"]} --no-warnings'
+        os.system(cmd)
+
+
+
 
     ### Networks ###
 
     def generate_infrastructures(self,
                                  lane_length,
-                                 green_time,
-                                 yellow_time,
                                  max_speed):
         """
         Generate the sumo infrastructures for a network with n consecutive crossroads.
 
         :param lane_length: The default length for each lane (in meters)
         :type lane_length: int
-        :param green_time: The default green time for each phase (in seconds)
-        :type green_time: int
-        :param yellow_time: The default yellow time for each phase (in seconds)
-        :type yellow_time: int
         :param max_speed: The max speed on each lane (in km/h)
         :type max_speed: int
+        :param boolean_detectors_length: The length of the boolean detectors. Has to be lower than lane_length. Default is 20 meters.
+        :type boolean_detectors_length: int
+        :param saturation_detectors_length: The length of the saturation detectors. Has to be lower than lane_length. Default is 20 meters.
+        :type saturation_detectors_length: int
         :return: All infrastructures in a NetworkBuilder object.
         :rtype: sumo_experiments.src.components.NetworkBuilder
         :raise: ValueError if nb_intersections is under 2
         """
         net = InfrastructureBuilder()
-        self.lane_length = lane_length
 
         # Create nodes
         net.add_node(id='w', x=0, y=0)
@@ -134,10 +201,10 @@ class LineNetwork:
         for i in range(self.nb_intersections):
             i = i + 1
             net.add_traffic_light_program(id=f'c{i}',
-                                          phases=[{'duration': green_time, 'state': 'rrrGGGrrrGGG'},
-                                                  {'duration': yellow_time, 'state': 'rrryyyrrryyy'},
-                                                  {'duration': green_time, 'state': 'GGGrrrGGGrrr'},
-                                                  {'duration': yellow_time, 'state': 'yyyrrryyyrrr'}])
+                                          phases=[{'duration': 1000, 'state': 'rrrGGGrrrGGG'},
+                                                  {'duration': 1000, 'state': 'rrryyyrrryyy'},
+                                                  {'duration': 1000, 'state': 'GGGrrrGGGrrr'},
+                                                  {'duration': 1000, 'state': 'yyyrrryyyrrr'}])
 
         return net
 
@@ -324,26 +391,28 @@ class LineNetwork:
 
         return detectors
 
-    def generate_boolean_detectors(self, boolean_detector_length):
+    def generate_boolean_detectors(self, lane_length, boolean_detector_length):
         """
         Generate a DetectorBuilder with a boolean detector for each lane going to an intersection.
         A boolean detector returns if a vehicle is on its scope or not. In SUMO, a boolean
         detector is represented with a lane area detector whose scope is the entire lane,
         from the beginning to the end.
+        :param lane_length: The default length for each lane (in meters)
+        :type lane_length: int
         :param boolean_detector_length: The scope size of the detectors (in meters)
         :type boolean_detector_length: int
         :return: A DetectorBuilder object.
         :rtype: sumo_experiments.src.components.DetectorBuilder
         """
         detectors = DetectorBuilder()
-        detectors.add_lane_area_detector(id="b_wc1", edge="edge_wc1", lane=0, type='boolean', pos=(self.lane_length - boolean_detector_length - 7.2))
+        detectors.add_lane_area_detector(id="b_wc1", edge="edge_wc1", lane=0, type='boolean', pos=(lane_length - boolean_detector_length - 7.2))
         for i in range(1, self.nb_intersections + 1):
-            detectors.add_lane_area_detector(id=f"b_s{i}c{i}", edge=f"edge_s{i}c{i}", lane=0, type='boolean', pos=(self.lane_length - boolean_detector_length - 7.2))
-            detectors.add_lane_area_detector(id=f"b_n{i}c{i}", edge=f"edge_n{i}c{i}", lane=0, type='boolean', pos=(self.lane_length - boolean_detector_length - 7.2))
+            detectors.add_lane_area_detector(id=f"b_s{i}c{i}", edge=f"edge_s{i}c{i}", lane=0, type='boolean', pos=(lane_length - boolean_detector_length - 7.2))
+            detectors.add_lane_area_detector(id=f"b_n{i}c{i}", edge=f"edge_n{i}c{i}", lane=0, type='boolean', pos=(lane_length - boolean_detector_length - 7.2))
             if i != self.nb_intersections:
-                detectors.add_lane_area_detector(id=f"b_c{i + 1}c{i}", edge=f"edge_c{i + 1}c{i}", lane=0, type='boolean', pos=(self.lane_length - boolean_detector_length - 14))
-                detectors.add_lane_area_detector(id=f"b_c{i}c{i + 1}", edge=f"edge_c{i}c{i + 1}", lane=0, type='boolean', pos=(self.lane_length - boolean_detector_length - 14))
-        detectors.add_lane_area_detector(id=f"b_ec{self.nb_intersections}", edge=f"edge_ec{self.nb_intersections}", lane=0, type='boolean', pos=(self.lane_length - boolean_detector_length - 7.2))
+                detectors.add_lane_area_detector(id=f"b_c{i + 1}c{i}", edge=f"edge_c{i + 1}c{i}", lane=0, type='boolean', pos=(lane_length - boolean_detector_length - 14))
+                detectors.add_lane_area_detector(id=f"b_c{i}c{i + 1}", edge=f"edge_c{i}c{i + 1}", lane=0, type='boolean', pos=(lane_length - boolean_detector_length - 14))
+        detectors.add_lane_area_detector(id=f"b_ec{self.nb_intersections}", edge=f"edge_ec{self.nb_intersections}", lane=0, type='boolean', pos=(lane_length - boolean_detector_length - 7.2))
         return detectors
 
     def generate_saturation_detectors(self, detector_length):
@@ -355,13 +424,17 @@ class LineNetwork:
         :rtype: sumo_experiments.src.components.DetectorBuilder
         """
         detectors = DetectorBuilder()
+        detectors.add_lane_area_detector(id="s_wc1", edge="edge_wc1", lane=0, type='saturation', pos=0, end_pos=detector_length)
         for i in range(1, self.nb_intersections + 1):
+            detectors.add_lane_area_detector(id=f"s_s{i}c{i}", edge=f"edge_s{i}c{i}", lane=0, type='saturation', pos=0, end_pos=detector_length)
+            detectors.add_lane_area_detector(id=f"s_n{i}c{i}", edge=f"edge_n{i}c{i}", lane=0, type='saturation', pos=0, end_pos=detector_length)
             if i != self.nb_intersections:
                 detectors.add_lane_area_detector(id=f"s_c{i + 1}c{i}", edge=f"edge_c{i + 1}c{i}", lane=0, type='saturation', pos=0, end_pos=detector_length)
                 detectors.add_lane_area_detector(id=f"s_c{i}c{i + 1}", edge=f"edge_c{i}c{i + 1}", lane=0, type='saturation', pos=0, end_pos=detector_length)
+        detectors.add_lane_area_detector(id=f"s_ec{self.nb_intersections}", edge=f"edge_ec{self.nb_intersections}", lane=0, type='saturation', pos=0, end_pos=detector_length)
         return detectors
 
-    def generate_all_detectors(self, boolean_detector_length, saturation_detector_length):
+    def generate_all_detectors(self, lane_length, boolean_detector_length, saturation_detector_length):
         """
         Generate a DetectorBuilder with boolean and numerical detectors for each entry lane of an intersection.
         A boolean detector returns if a vehicle is on its scope or not. In SUMO, a boolean
@@ -370,6 +443,8 @@ class LineNetwork:
         A numerical detector counts and returns the number of vehicles on its scope. In SUMO, a numerical
         detector is represented with a lane area detector whose scope is the entire lane,
         from the beginning to the end.
+        :param lane_length: The default length for each lane (in meters)
+        :type lane_length: int
         :param boolean_detector_length: The scope size of the boolean detectors (in meters)
         :type boolean_detector_length: int
         :param saturation_detector_length: The scope size of the saturation detectors (in meters)
@@ -378,7 +453,67 @@ class LineNetwork:
         :rtype: sumo_experiments.src.components.DetectorBuilder
         """
         detectors = DetectorBuilder()
-        detectors.laneAreaDetectors.update(self.generate_boolean_detectors(boolean_detector_length).laneAreaDetectors)
+        detectors.laneAreaDetectors.update(self.generate_boolean_detectors(lane_length, boolean_detector_length).laneAreaDetectors)
         detectors.laneAreaDetectors.update(self.generate_numerical_detectors().laneAreaDetectors)
         detectors.laneAreaDetectors.update(self.generate_saturation_detectors(saturation_detector_length).laneAreaDetectors)
         return detectors
+
+
+    def create_TLS_DETECTORS(self):
+        """
+        Creates the self.TLS_DETECTORS variable.
+        :return: Nothing
+        :rtype: None
+        """
+        self.TL_IDS = []
+        self.TLS_DETECTORS = {}
+        detectors = {
+            0: {
+                'boolean': ['b_wc1', 'b_c2c1'],
+                'saturation': ['s_wc1', 's_c2c1'],
+                'numerical': ['n_wc1', 'n_c2c1'],
+                'exit': []
+            },
+            2: {
+                'boolean': ['b_nc1', 'b_sc1'],
+                'saturation': ['s_n1', 's_sc1'],
+                'numerical': ['n_n1', 'n_sc1'],
+                'exit': []
+            },
+        }
+        self.TLS_DETECTORS['c1'] = detectors
+        self.TL_IDS.append(f'c1')
+        for i in range(2, self.nb_intersections):
+            detectors = {
+                0: {
+                    'boolean': [f'b_c{i-1}c{i}', f'b_c{i+1}c{i}'],
+                    'saturation': [f'b_c{i-1}c{i}', f'b_c{i+1}c{i}'],
+                    'numerical': [f'b_c{i-1}c{i}', f'b_c{i+1}c{i}'],
+                    'exit': []
+                },
+                2: {
+                    'boolean': [f'b_n{i}c{i}', f'b_s{i}c{i}'],
+                    'saturation': [f's_n{i}c{i}', f's_s{i}c{i}'],
+                    'numerical': [f'n_n{i}c{i}', f'n_s{i}c{i}'],
+                    'exit': []
+                },
+            }
+            self.TLS_DETECTORS[f'c{i}'] = detectors
+            self.TL_IDS.append(f'c{i}')
+        detectors = {
+            0: {
+                'boolean': [f'b_c{self.nb_intersections - 1}c{self.nb_intersections}', f'b_ec{self.nb_intersections}'],
+                'saturation': [f's_c{self.nb_intersections - 1}c{self.nb_intersections}', f's_ec{self.nb_intersections}'],
+                'numerical': [f'n_c{self.nb_intersections - 1}c{self.nb_intersections}', f'n_ec{self.nb_intersections}'],
+                'exit': []
+            },
+            2: {
+                'boolean': [f'b_n{self.nb_intersections}c{self.nb_intersections}', f'b_s{self.nb_intersections}c{self.nb_intersections}'],
+                'saturation': [f's_n{self.nb_intersections}c{self.nb_intersections}', f's_s{self.nb_intersections}c{self.nb_intersections}'],
+                'numerical': [f'n_n{self.nb_intersections}c{self.nb_intersections}', f'n_s{self.nb_intersections}c{self.nb_intersections}'],
+                'exit': []
+            },
+        }
+        self.TLS_DETECTORS[f'c{self.nb_intersections}'] = detectors
+        self.TL_IDS.append(f'c{self.nb_intersections}')
+

@@ -1,6 +1,6 @@
 numpy<3
 pandas<3
 traci<2
-keras<4
-tensorflow<3
-networkx>3
+libsumo<2
+networkx>=3.3
+torch>=2.9.0
