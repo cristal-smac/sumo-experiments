@@ -19,7 +19,7 @@ class IntellilightStrategy(Strategy):
     Wei, H., Zheng, G., Yao, H., & Li, Z. (2018, July). Intellilight: A reinforcement learning approach for intelligent traffic light control. In Proceedings of the 24th ACM SIGKDD international conference on knowledge discovery & data mining (pp. 2496-2505).
     """
 
-    def __init__(self, network, period=10, gamma=0.99, buffer_size=32, update_target_frequency=10, learning_rate=1 * 10 ** -2, exploration_prob=1, cooling_rate=10 ** -3, hidden_layer_size=64, yellow_time=3):
+    def __init__(self, network, period=10, gamma=0.99, episode_duration=300, buffer_size=32, update_target_frequency=10, learning_rate=1 * 10 ** -2, exploration_prob=1, cooling_rate=10 ** -3, hidden_layer_size=64, yellow_time=3):
         """
         Init of class.
         :param network: The network to deploy the strategy
@@ -28,7 +28,9 @@ class IntellilightStrategy(Strategy):
         :type period: int or dict
         :param gamma: Gamma parameter for the Bellman equation, to compute Q-Values
         :type gamma: float or dict
-        :param buffer_size: Memory buffer size for training the neural network. The network is trained when th memory buffer is full.
+        :param episode_duration: The duration of an episode for training, in timestep
+        :type episode_duration: int or dict
+        :param buffer_size: Maximum memory buffer size for training the neural network.
         :type buffer_size: int or dict
         :param update_target_frequency: Frequency at which the target network is updated, in terms of number of trainings. The target network will be updated every ((buffer_size + len(buffer_size) * yellow_time) * update_target_frequency) timesteps.
         :type update_target_frequency: int or dict
@@ -70,11 +72,15 @@ class IntellilightStrategy(Strategy):
             self.gamma = gamma
         else:
             self.gamma = {identifiant: gamma for identifiant in network.TLS_DETECTORS}
-        self.replay_buffer = {identifiant: deque() for identifiant in self.network.TLS_DETECTORS}
+        if type(episode_duration) is dict:
+            self.episode_duration = episode_duration
+        else:
+            self.episode_duration = {identifiant: episode_duration for identifiant in network.TLS_DETECTORS}
         if type(buffer_size) is dict:
             self.buffer_size = buffer_size
         else:
             self.buffer_size = {identifiant: buffer_size for identifiant in network.TLS_DETECTORS}
+        self.replay_buffer = {identifiant: deque(maxlen=self.buffer_size[identifiant]) for identifiant in self.network.TLS_DETECTORS}
         if type(hidden_layer_size) is dict:
             self.hidden_layer_size = hidden_layer_size
         else:
@@ -120,6 +126,10 @@ class IntellilightStrategy(Strategy):
             self.started = True
         else:
             for tl_id in self.network.TL_IDS:
+                if self.traci.simulation.getTime() % self.episode_duration[tl_id] == 0:
+                    self.train(tl_id)
+                    self.exploration_prob[tl_id] = self.exploration_prob[tl_id] - (self.exploration_prob[tl_id] * self.cooling_rate[tl_id])
+                    self.replay_buffer[tl_id] = deque()
                 if 'y' in self.traci.trafficlight.getRedYellowGreenState(tl_id):
                     if self.current_yellow_time[tl_id] >= self.yellow_time[tl_id]:
                         self.traci.trafficlight.setPhase(tl_id, int(self.next_phase[tl_id]))
@@ -179,17 +189,9 @@ class IntellilightStrategy(Strategy):
         # self.replay_buffer[tl_id].append((state, abstract_action, reward, next_state, abstract_phase))
         self.replay_buffer[tl_id].append((state, action, reward, next_state, phase))
 
-        if len(self.replay_buffer[tl_id]) == self.buffer_size[tl_id]:
-            self.train(tl_id)
-            self.replay_buffer[tl_id] = deque()
-
         if self.number_of_trainings[tl_id] == self.update_target_frequency[tl_id]:
             self.number_of_trainings[tl_id] = 0
             self.update_target_model(tl_id)
-
-        if train:
-            #self.exploration_prob[tl_id] = 0.5 / (1 + self.cooling_rate[tl_id] * self.time[tl_id])
-            self.exploration_prob[tl_id] = self.exploration_prob[tl_id] - (self.exploration_prob[tl_id] * self.cooling_rate[tl_id])
 
         return action
 
