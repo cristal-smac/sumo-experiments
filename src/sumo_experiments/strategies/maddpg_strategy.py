@@ -1,0 +1,885 @@
+#from sumo.tools.emissions.findMinDiffModel import model
+
+from sumo_experiments.strategies import Strategy
+import numpy as np
+import torch
+import torch.nn as nn
+import torch.optim as optim
+from torch.autograd import Variable
+from collections import deque
+import random
+
+import matplotlib.pyplot as plt
+
+
+class MADDPGStrategy(Strategy):
+    """
+    Implements an MADDPG system.
+
+    Wei, H., Zheng, G., Yao, H., & Li, Z. (2018, July). Intellilight: A reinforcement learning approach for intelligent traffic light control. In Proceedings of the 24th ACM SIGKDD international conference on knowledge discovery & data mining (pp. 2496-2505).
+    """
+
+    def __init__(self, network, period=10, gamma=0.99, buffer_size=32, update_target_frequency=10, learning_rate=1e-2, exploration_prob=1, cooling_rate=10e-3, hidden_layer_size=64, yellow_time=3):
+        """
+        Init of class.
+        :param network: The network to deploy the strategy
+        :type network: src.sumo_experiments.Network
+        :param period: The duration of a period (in seconds).
+        :type period: int or dict
+        :param gamma: Gamma parameter for the Bellman equation, to compute Q-Values
+        :type gamma: float or dict
+        :param buffer_size: Memory buffer size for training the neural network. The network is trained when th memory buffer is full.
+        :type buffer_size: int or dict
+        :param update_target_frequency: Frequency at which the target network is updated, in terms of number of trainings. The target network will be updated every ((buffer_size + len(buffer_size) * yellow_time) * update_target_frequency) timesteps.
+        :type update_target_frequency: int or dict
+        :param learning_rate: Learning rate for the neural network. Must be a positive number.
+        :type learning_rate: float or dict
+        :param exploration_prob: Probability of selecting a random action at the beginning of the simulation. Must be a positive number.
+        :type exploration_prob: float or dict
+        :param cooling_rate: Value used to update the exploration_prob. Each time an action is chosen, the next exploration_prob is (exploration_prob - (exploration_prob * cooling_rate)).
+        :type cooling_rate: float or dict
+        :param hidden_layer_size: The size of the hidden layers of the neural network.
+        :type hidden_layer_size: int or dict
+        :param yellow_time: Yellow phases duration for all intersections
+        :type yellow_time: int or dict
+        """
+        super().__init__()
+        self.network = network
+        if type(yellow_time) is dict:
+            self.yellow_time = yellow_time
+        else:
+            self.yellow_time = {tl_id: yellow_time for tl_id in network.TLS_DETECTORS}
+        self.current_phase = {tl_id: 0 for tl_id in self.network.TLS_DETECTORS}
+        self.time = {tl_id: 0 for tl_id in self.network.TLS_DETECTORS}
+        self.current_max_time_index = {tl_id: 0 for tl_id in self.network.TLS_DETECTORS}
+        self.current_yellow_time = {tl_id: 0 for tl_id in self.network.TLS_DETECTORS}
+        self.started = False
+        self.nb_phases = {}
+        self.nb_switch = {tl_id: 0 for tl_id in self.network.TLS_DETECTORS}
+        self.next_phase = {tl_id: 0 for tl_id in self.network.TLS_DETECTORS}
+        self.period = period
+        if type(yellow_time) is dict:
+            self.yellow_time = yellow_time
+        else:
+            self.yellow_time = {tl_id: yellow_time for tl_id in network.TLS_DETECTORS}
+
+        # self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.device = torch.device("cpu")
+
+
+        self.observation_sizes = {}
+        self.action_space = {tl_id: list(self.network.TLS_DETECTORS[tl_id].keys()) for tl_id in self.network.TLS_DETECTORS}
+
+        self.gamma = gamma if isinstance(gamma, dict) else {tl_id: gamma for tl_id in network.TLS_DETECTORS}
+
+        self.buffer_size = buffer_size# if isinstance(buffer_size, dict) else {tl_id: buffer_size for tl_id in network.TLS_DETECTORS}
+        self.hidden_layer_size = hidden_layer_size if isinstance(hidden_layer_size, dict) else {tl_id: hidden_layer_size for tl_id in network.TLS_DETECTORS}
+        self.update_target_frequency = update_target_frequency if isinstance(update_target_frequency, dict) else {tl_id: update_target_frequency for tl_id in network.TLS_DETECTORS}
+        self.learning_rate = learning_rate if isinstance(learning_rate, dict) else {tl_id: learning_rate for tl_id in network.TLS_DETECTORS}
+        self.exploration_prob = exploration_prob if isinstance(exploration_prob, dict) else {tl_id: exploration_prob for tl_id in network.TLS_DETECTORS}
+        self.cooling_rate = cooling_rate if isinstance(cooling_rate, dict) else {tl_id: cooling_rate for tl_id in network.TLS_DETECTORS}
+
+        self.agents = {}
+        self.loss_history = {tl_id: [] for tl_id in self.network.TLS_DETECTORS}
+        self.current_phase = {tl_id: 0 for tl_id in self.network.TLS_DETECTORS}
+
+        self.number_of_trainings = {tl_id: 0 for tl_id in self.network.TLS_DETECTORS}
+
+        self.val_losses = []
+        self.pol_losses = []
+        self.rewards = []
+        self.times = []
+
+
+    def run_all_agents(self, traci):
+        """
+        Process agents to make one action each.
+        :param traci: The simulation Traci instance
+        :type traci: Traci
+        :return: Nothing
+        """
+        if not self.started:
+            self.traci = traci
+            for tl_id in self.network.TL_IDS:
+                self._start_agent(tl_id)
+            self.maddpg = MADDPG(agents=list(self.agents.values()), alg_types=['MADDPG' for _ in self.network.TLS_DETECTORS], 
+                                 gamma=self.gamma[tl_id],
+                                 discrete_action=True)
+            self.replay_buffer = ReplayBuffer(max_steps=1e5, num_agents=self.maddpg.nagents, obs_dims=list(self.observation_sizes.values()),
+                                               ac_dims=[len(self.action_space[tl_id]) for tl_id in self.network.TLS_DETECTORS])
+            self.started = True
+
+            self.states = [self.get_state(tl_id) for tl_id in self.network.TL_IDS]
+            self.action_indices = [np.zeros_like(self.action_space[tl_id]) for tl_id in self.network.TL_IDS]
+
+            self.time_step = 0
+        else:
+            for tl_id in self.network.TL_IDS:
+                if 'y' in self.traci.trafficlight.getRedYellowGreenState(tl_id):
+                    if self.current_yellow_time[tl_id] >= self.yellow_time[tl_id]:
+                        self.traci.trafficlight.setPhase(tl_id, int(self.next_phase[tl_id]))
+                        self.current_phase[tl_id] = self.next_phase[tl_id]
+                        self.current_yellow_time[tl_id] = 0
+                    else:
+                        self.current_yellow_time[tl_id] += 1
+                else:
+                    self.time[tl_id] += 1
+            if self.time_step % self.period == 0:
+                self.switch_next_phase()
+            self.time_step += 1
+
+
+    def switch_next_phase(self):
+        """
+        Queue switch of the traffic light id_tls to the next, set up the yellow phase if needed.
+        """
+        #current_phase = self.traci.trafficlight.getPhase(id_tls)
+        next_phases = self.get_next_phases()
+        for tl_id in self.network.TL_IDS:
+            if next_phases[tl_id] != self.current_phase[tl_id]:
+                self.nb_switch[tl_id] += 1
+                self.next_phase[tl_id] = next_phases[tl_id]
+                if self.traci.trafficlight.getPhase(tl_id) == self.nb_phases[tl_id] - 1:
+                    self.traci.trafficlight.setPhase(tl_id, 0)
+                else:
+                    self.traci.trafficlight.setPhase(tl_id, int(self.current_phase[tl_id] + 1))
+        self.time[tl_id] = 0
+
+    def get_next_phases(self, train=True):
+        """
+        Get the next phase for the controller using MADDPG.
+        """
+        # Store experience in replay buffer
+        next_states = [self.get_state(tl_id) for tl_id in self.network.TLS_DETECTORS]
+        rewards = [self.get_reward(tl_id) for tl_id in self.network.TLS_DETECTORS]
+        dones = [False for _ in self.network.TLS_DETECTORS]
+
+        # Global rewards for coordinating MADDPG
+        rewards = np.ones_like(rewards) * sum(rewards)
+
+        # Update buffer from previous action step
+        self.replay_buffer.push(self.states, self.action_indices, rewards, next_states, dones=dones)
+
+        self.maddpg.scale_noise(self.exploration_prob)
+
+        state_tensor = torch.tensor(next_states, dtype=torch.float32).unsqueeze(1).to(self.device)
+        with torch.no_grad():
+            torch_action_indices = self.maddpg.step(state_tensor, explore=True)
+            action_indices = [ac.data.cpu().numpy() for ac in torch_action_indices]
+
+        self.states = next_states
+        self.action_indices = action_indices        
+
+
+        # Train the MADDPG model once buffer reaches minimum size
+        if len(self.replay_buffer) >= self.buffer_size:
+            self.maddpg.prep_training(device=self.device)
+            for tl_id in self.network.TL_IDS:
+                self.number_of_trainings[tl_id] += 1
+            USE_CUDA = False
+            for a_i in range(self.maddpg.nagents):
+                sample = self.replay_buffer.sample(self.buffer_size,
+                                            to_gpu=USE_CUDA, norm_rews=True)
+                val_loss, pol_loss = self.maddpg.update(sample, a_i)
+                self.val_losses.append(val_loss)
+                self.pol_losses.append(pol_loss)
+            self.maddpg.update_all_targets()
+            self.maddpg.prep_rollouts(device='cpu')
+
+        # Update exploration probability
+        if train:
+            for tl_id in self.network.TL_IDS:
+                self.exploration_prob[tl_id] -= self.exploration_prob[tl_id] * self.cooling_rate[tl_id]
+
+        return {tl_id: self.action_space[tl_id][action_indices[i].argmax()] for i, tl_id in enumerate(self.network.TLS_DETECTORS)}
+
+
+    def get_state(self, tl_id):
+        L = sum(self.traci.lanearea.getLastStepVehicleNumber(det) for det in self._detectors_green_lanes(tl_id))
+        W = self.compute_waiting_time(self._detectors_red_lanes(tl_id))
+        V = self.compute_number_of_vehicles(tl_id)
+        P = self.current_phase[tl_id]
+        return np.array([L, W, V, P], dtype=np.float32)
+
+    def get_reward(self, tl_id):
+        L = sum(self.traci.lanearea.getLastStepVehicleNumber(det) for det in self._detectors_red_lanes(tl_id))
+        W = self.compute_waiting_time(self._detectors_red_lanes(tl_id))
+        return -0.5 * L - 0.7 * W
+
+    def compute_waiting_time(self, detectors):
+        waiting_time = 0
+        for det in detectors:
+            veh_ids = self.traci.lanearea.getLastStepVehicleIDs(det)
+            for veh_id in veh_ids:
+                waiting_time += self.traci.vehicle.getWaitingTime(veh_id)
+        return waiting_time
+
+    def compute_number_of_vehicles(self, tl_id):
+        detectors = []
+        for phase in self.network.TLS_DETECTORS[tl_id]:
+            for det in self.network.TLS_DETECTORS[tl_id][phase]['numerical']:
+                if det not in detectors:
+                    detectors.append(det)
+        return sum(self.traci.lanearea.getLastStepVehicleNumber(det) for det in detectors)
+
+
+
+    def _detectors_red_lanes(self, tl_id):
+        """
+        Return the detectors related to red lanes for a phase.
+        :param tl_id: The id of the TL
+        :type tl_id: str
+        :return: The list of all concerned detectors
+        :rtype: list
+        """
+        detectors = []
+        if self.current_phase[tl_id] in self.network.TLS_DETECTORS[tl_id]:
+            detectors_current_phase = self.network.TLS_DETECTORS[tl_id][self.current_phase[tl_id]]['numerical']
+            for i in self.network.TLS_DETECTORS[tl_id]:
+                if i != self.current_phase[tl_id]:
+                    for det in self.network.TLS_DETECTORS[tl_id][i]['numerical']:
+                        if det not in detectors_current_phase:
+                            detectors.append(det)
+        return detectors
+
+
+    def _detectors_green_lanes(self, tl_id):
+        """
+        Return the detectors related to green lanes for a phase.
+        :param tl_id: The id of the TL
+        :type tl_id: str
+        :return: The list of all concerned detectors
+        :rtype: list
+        """
+        detectors_current_phase = []
+        if self.current_phase[tl_id] in self.network.TLS_DETECTORS[tl_id]:
+            detectors_current_phase = self.network.TLS_DETECTORS[tl_id][self.current_phase[tl_id]]['numerical']
+        return detectors_current_phase
+
+
+
+    def _start_agent(self, tl_id):
+        """
+        Start an agent at the beginning of the simulation.
+        :param tl_id: The id of the TL
+        :type tl_id: str
+        """
+        self.nb_phases[tl_id] = len(self.traci.trafficlight.getAllProgramLogics(tl_id)[0].phases)
+        tl_logic = self.traci.trafficlight.getAllProgramLogics(tl_id)[0]
+        phase_index = 0
+        for phase in tl_logic.phases:
+            phase.duration = 10000
+            phase.maxDur = 10000
+            phase.minDur = 10000
+            phase_index += 1
+        self.traci.trafficlight.setProgramLogic(tl_id, tl_logic)
+        self.traci.trafficlight.setPhase(tl_id, 0)
+        self.traci.trafficlight.setPhaseDuration(tl_id, 10000)
+
+        # DEFER INITIALIZATION OF DDPG AGENTS TO HERE
+        input_dims = {tl_id: len(self.get_state(tl_id)) for tl_id in self.network.TL_IDS}
+        critic_dim = sum(input_dims.values())
+        critic_dim += sum(len(self.action_space[tl_id]) for tl_id in self.network.TL_IDS)
+        self.agents[tl_id] = DDPGAgent(num_out_pol=len(self.action_space[tl_id]), 
+                                       num_in_pol=input_dims[tl_id], 
+                                       num_in_critic=critic_dim, 
+                                       hidden_dim=self.hidden_layer_size[tl_id],
+                                       lr=self.learning_rate[tl_id],
+                                       discrete_action=True).to(self.device)
+        self.observation_sizes[tl_id] = input_dims[tl_id]
+        # self.target_model = {tl_id: DDPGAgent(num_out_pol=self.action_space[tl_id], num_in_pol=input_dim, num_in_critic=input_dim, hidden_dim=self.hidden_layer_size[tl_id]).to(self.device) for tl_id in self.network.TLS_DETECTORS}
+
+
+
+
+
+
+class DeepNN(nn.Module):
+    def __init__(self, input_dim, out_dim, hidden_dim=64, nonlin=nn.functional.relu,
+                 constrain_out=False, norm_in=False, discrete_action=True):
+        """
+        Inputs:
+            input_dim (int): Number of dimensions in input
+            out_dim (int): Number of dimensions in output
+            hidden_dim (int): Number of hidden dimensions
+            nonlin (PyTorch function): Nonlinearity to apply to hidden layers
+        """
+        super(DeepNN, self).__init__()
+
+        if norm_in:  # normalize inputs
+            self.in_fn = nn.BatchNorm1d(input_dim)
+            self.in_fn.weight.data.fill_(1)
+            self.in_fn.bias.data.fill_(0)
+        else:
+            self.in_fn = lambda x: x
+        self.fc1 = nn.Linear(input_dim, hidden_dim)
+        self.fc2 = nn.Linear(hidden_dim, hidden_dim)
+        self.fc3 = nn.Linear(hidden_dim, out_dim)
+        self.nonlin = nonlin
+        if constrain_out and not discrete_action:
+            # initialize small to prevent saturation
+            self.fc3.weight.data.uniform_(-3e-3, 3e-3)
+            self.out_fn = nn.functional.tanh
+        else:  # logits for discrete action (will softmax later)
+            self.out_fn = lambda x: x
+
+    def forward(self, X):
+        """
+        Inputs:
+            X (PyTorch Matrix): Batch of observations
+        Outputs:
+            out (PyTorch Matrix): Output of network (actions, values, etc)
+        """
+        h1 = self.nonlin(self.fc1(self.in_fn(X)))
+        h2 = self.nonlin(self.fc2(h1))
+        out = self.out_fn(self.fc3(h2))
+        return out
+    
+    # def __init__(self, action_space, input_dim, hidden_dim, output_dim):
+    #     super().__init__()
+    #     self.action_space = action_space
+    #     self.convert_phase = {
+    #         k: self.action_space.index(k) for k in self.action_space
+    #     }
+    #     self.shared = nn.Sequential(
+    #         nn.Linear(input_dim, hidden_dim),
+    #         nn.ReLU()
+    #     )
+    #     self.heads = nn.ModuleList([
+    #         nn.Sequential(nn.Linear(hidden_dim, output_dim)) for _ in range(len(action_space))
+    #     ])
+
+    # def forward(self, x, phase):
+    #     #if 0 <= abstract_phase < len(self.heads):
+    #     try:
+    #         h = self.shared(x)
+    #         return self.heads[self.convert_phase[phase]](h)
+    #     except:
+    #         raise ValueError(f"Invalid phase index: {self.convert_phase[phase]}")
+
+
+
+## MADDPG Algorithm
+import torch
+import torch.distributed as dist
+# from utils.networks import DeepNN
+# from utils.misc import soft_update, average_gradients, onehot_from_logits, gumbel_softmax
+# from utils.agents import DDPGAgent
+from typing import List
+MSELoss = torch.nn.MSELoss()
+
+
+
+class MADDPG(object):
+    """
+    Wrapper class for DDPG-esque (i.e. also MADDPG) agents in multi-agent task
+    """
+    def __init__(self, agents, alg_types,
+                 gamma=0.95, tau=0.01, lr=0.01, hidden_dim=64,
+                 discrete_action=False):
+        """
+        Inputs:
+            agent_init_params (list of dict): List of dicts with parameters to
+                                              initialize each agent
+                num_in_pol (int): Input dimensions to policy
+                num_out_pol (int): Output dimensions to policy
+                num_in_critic (int): Input dimensions to critic
+            alg_types (list of str): Learning algorithm for each agent (DDPG
+                                       or MADDPG)
+            gamma (float): Discount factor
+            tau (float): Target update rate
+            lr (float): Learning rate for policy and critic
+            hidden_dim (int): Number of hidden dimensions for networks
+            discrete_action (bool): Whether or not to use discrete action space
+        """
+        self.alg_types = alg_types
+        # self.agents = [DDPGAgent(lr=lr, discrete_action=discrete_action,
+        #                          hidden_dim=hidden_dim,
+        #                          **params)
+        #                for params in agent_init_params]
+        self.agents: List[DDPGAgent] = agents
+        self.central_critic = self.agents[0].critic # relook and finish the code
+        self.central_target_critic = self.agents[0].target_critic # relook and finish the code
+        self.gamma = gamma
+        self.tau = tau
+        self.lr = lr
+        self.discrete_action = discrete_action
+        self.pol_dev = 'cpu'  # device for policies
+        self.critic_dev = 'cpu'  # device for critics
+        self.trgt_pol_dev = 'cpu'  # device for target policies
+        self.trgt_critic_dev = 'cpu'  # device for target critics
+        self.niter = 0
+
+    @property
+    def nagents(self):
+        return len(self.agents) #len(alg_types)
+
+    @property
+    def policies(self):
+        return [a.policy for a in self.agents]
+
+    @property
+    def target_policies(self):
+        return [a.target_policy for a in self.agents]
+
+    def scale_noise(self, scale):
+        """
+        Scale noise for each agent
+        Inputs:
+            scale (float): scale of noise
+        """
+        for a in self.agents:
+            a.scale_noise(scale)
+
+    def reset_noise(self):
+        for a in self.agents:
+            a.reset_noise()
+
+    
+    def step(self, observations, explore=False):
+        """
+        Take a step forward in environment with all agents
+        Inputs:
+            observations: List of observations for each agent
+            explore (boolean): Whether or not to add exploration noise
+        Outputs:
+            actions: List of actions for each agent
+        """
+        assert len(observations) == self.nagents, (len(observations), self.nagents)
+        return [a.step(obs, explore=explore) for a, obs in zip(self.agents,
+                                                                 observations)]
+
+    def update(self, sample, agent_i, parallel=False, logger=None):
+        """
+        Update parameters of agent model based on sample from replay buffer
+        Inputs:
+            sample: tuple of (observations, actions, rewards, next
+                    observations, and episode end masks) sampled randomly from
+                    the replay buffer. Each is a list with entries
+                    corresponding to each agent
+            agent_i (int): index of agent to update
+            parallel (bool): If true, will average gradients across threads
+            logger (SummaryWriter from Tensorboard-Pytorch):
+                If passed in, important quantities will be logged
+        """
+        obs, acs, rews, next_obs, dones = sample
+        curr_agent = self.agents[agent_i]
+
+        curr_agent.critic_optimizer.zero_grad()
+        if self.alg_types[agent_i] == 'MADDPG':
+            if self.discrete_action: # one-hot encode action
+                all_trgt_acs = [onehot_from_logits(pi(nobs)) for pi, nobs in
+                                zip(self.target_policies, next_obs)]
+            else:
+                all_trgt_acs = [pi(nobs) for pi, nobs in zip(self.target_policies,
+                                                             next_obs)]
+            trgt_vf_in = torch.cat((*next_obs, *all_trgt_acs), dim=1)
+        else:  # DDPG
+            if self.discrete_action:
+                trgt_vf_in = torch.cat((next_obs[agent_i],
+                                        onehot_from_logits(
+                                            curr_agent.target_policy(
+                                                next_obs[agent_i]))),
+                                       dim=1)
+            else:
+                trgt_vf_in = torch.cat((next_obs[agent_i],
+                                        curr_agent.target_policy(next_obs[agent_i])),
+                                       dim=1)
+        target_value = (rews[agent_i].view(-1, 1) + self.gamma *
+                        curr_agent.target_critic(trgt_vf_in) *
+                        (1 - dones[agent_i].view(-1, 1)))
+
+        if self.alg_types[agent_i] == 'MADDPG':
+            vf_in = torch.cat((*obs, *acs), dim=1)
+        else:  # DDPG
+            vf_in = torch.cat((obs[agent_i], acs[agent_i]), dim=1)
+        actual_value = curr_agent.critic(vf_in)
+        vf_loss = MSELoss(actual_value, target_value.detach())
+        vf_loss.backward()
+        if parallel:
+            average_gradients(curr_agent.critic)
+        torch.nn.utils.clip_grad_norm(curr_agent.critic.parameters(), 0.5)
+        curr_agent.critic_optimizer.step()
+
+        curr_agent.policy_optimizer.zero_grad()
+
+        if self.discrete_action:
+            # Forward pass as if onehot (hard=True) but backprop through a differentiable
+            # Gumbel-Softmax sample. The MADDPG paper uses the Gumbel-Softmax trick to backprop
+            # through discrete categorical samples, but I'm not sure if that is
+            # correct since it removes the assumption of a deterministic policy for
+            # DDPG. Regardless, discrete policies don't seem to learn properly without it.
+            curr_pol_out = curr_agent.policy(obs[agent_i])
+            curr_pol_vf_in = gumbel_softmax(curr_pol_out, hard=True)
+        else:
+            curr_pol_out = curr_agent.policy(obs[agent_i])
+            curr_pol_vf_in = curr_pol_out
+        if self.alg_types[agent_i] == 'MADDPG':
+            all_pol_acs = []
+            for i, pi, ob in zip(range(self.nagents), self.policies, obs):
+                if i == agent_i:
+                    all_pol_acs.append(curr_pol_vf_in)
+                elif self.discrete_action:
+                    all_pol_acs.append(onehot_from_logits(pi(ob)))
+                else:
+                    all_pol_acs.append(pi(ob))
+            vf_in = torch.cat((*obs, *all_pol_acs), dim=1)
+        else:  # DDPG
+            vf_in = torch.cat((obs[agent_i], curr_pol_vf_in),
+                              dim=1)
+        pol_loss = -curr_agent.critic(vf_in).mean()
+        pol_loss += (curr_pol_out**2).mean() * 1e-3
+        pol_loss.backward()
+        if parallel:
+            average_gradients(curr_agent.policy)
+        torch.nn.utils.clip_grad_norm(curr_agent.policy.parameters(), 0.5)
+        curr_agent.policy_optimizer.step()
+        if logger is not None:
+            logger.add_scalars('agent%i/losses' % agent_i,
+                               {'vf_loss': vf_loss,
+                                'pol_loss': pol_loss},
+                               self.niter)
+        return vf_loss.cpu().detach().numpy(), pol_loss.cpu().detach().numpy()
+
+    def update_all_targets(self):
+        """
+        Update all target networks (called after normal updates have been
+        performed for each agent)
+        """
+        for a in self.agents:
+            soft_update(a.target_critic, a.critic, self.tau)
+            soft_update(a.target_policy, a.policy, self.tau)
+        self.niter += 1
+
+    def prep_training(self, device='gpu'):
+        for a in self.agents:
+            a.policy.train()
+            a.critic.train()
+            a.target_policy.train()
+            a.target_critic.train()
+        fn = lambda x: x.to(device)
+        if not self.pol_dev == device:
+            for a in self.agents:
+                a.policy = fn(a.policy)
+            self.pol_dev = device
+        if not self.critic_dev == device:
+            for a in self.agents:
+                a.critic = fn(a.critic)
+            self.critic_dev = device
+        if not self.trgt_pol_dev == device:
+            for a in self.agents:
+                a.target_policy = fn(a.target_policy)
+            self.trgt_pol_dev = device
+        if not self.trgt_critic_dev == device:
+            for a in self.agents:
+                a.target_critic = fn(a.target_critic)
+            self.trgt_critic_dev = device
+
+    def prep_rollouts(self, device='cpu'):
+        for a in self.agents:
+            a.policy.eval()
+        fn = lambda x: x.to(device)
+        # only need main policy for rollouts
+        if not self.pol_dev == device:
+            for a in self.agents:
+                a.policy = fn(a.policy)
+            self.pol_dev = device
+
+    def save(self, filename):
+        """
+        Save trained parameters of all agents into one file
+        """
+        self.prep_training(device='cpu')  # move parameters to CPU before saving
+        save_dict = {'init_dict': self.init_dict,
+                     'agent_params': [a.get_params() for a in self.agents]}
+        torch.save(save_dict, filename)
+
+    @classmethod
+    def init_from_save(cls, filename):
+        """
+        Instantiate instance of this class from file created by 'save' method
+        """
+        save_dict = torch.load(filename, map_location=torch.device('cpu'))
+        instance = cls(**save_dict['init_dict'])
+        instance.init_dict = save_dict['init_dict']
+        for a, params in zip(instance.agents, save_dict['agent_params']):
+            a.load_params(params)
+        return instance
+
+class DDPGAgent(object):
+    """
+    General class for DDPG agents (policy, critic, target policy, target
+    critic, exploration noise)
+    """
+    def __init__(self, num_in_pol, num_out_pol, num_in_critic, hidden_dim=64,
+                 lr=0.01, discrete_action=True):
+        """
+        Inputs:
+            num_in_pol (int): number of dimensions for policy input
+            num_out_pol (int): number of dimensions for policy output
+            num_in_critic (int): number of dimensions for critic input
+        """
+        self.policy = DeepNN(num_in_pol, num_out_pol,
+                                 hidden_dim=hidden_dim,
+                                 constrain_out=True,
+                                 discrete_action=discrete_action)
+        self.critic = DeepNN(num_in_critic, 1,
+                                 hidden_dim=hidden_dim,
+                                 constrain_out=False)
+        self.target_policy = DeepNN(num_in_pol, num_out_pol,
+                                        hidden_dim=hidden_dim,
+                                        constrain_out=True,
+                                        discrete_action=discrete_action)
+        self.target_critic = DeepNN(num_in_critic, 1,
+                                        hidden_dim=hidden_dim,
+                                        constrain_out=False)
+        hard_update(self.target_policy, self.policy)
+        hard_update(self.target_critic, self.critic)
+        self.policy_optimizer = optim.Adam(self.policy.parameters(), lr=lr)
+        self.critic_optimizer = optim.Adam(self.critic.parameters(), lr=lr)
+        if not discrete_action:
+            self.exploration = OUNoise(num_out_pol)
+        else:
+            self.exploration = 0.3  # epsilon for eps-greedy
+        self.discrete_action = discrete_action
+
+    def reset_noise(self):
+        if not self.discrete_action:
+            self.exploration.reset()
+
+    def scale_noise(self, scale):
+        if self.discrete_action:
+            self.exploration = scale
+        else:
+            self.exploration.scale = scale
+
+    def step(self, obs, explore=False):
+        """
+        Take a step forward in environment for a minibatch of observations
+        Inputs:
+            obs (PyTorch Variable): Observations for this agent
+            explore (boolean): Whether or not to add exploration noise
+        Outputs:
+            action (PyTorch Variable): Actions for this agent
+        """
+        action = self.policy(obs)
+        if self.discrete_action:
+            if explore:
+                action = gumbel_softmax(action, hard=False) # consider replacing with other estimators from https://github.com/uoe-agents/revisiting-maddpg
+            else:
+                action = onehot_from_logits(action)
+            action = action.clamp(0, 1)
+        else:  # continuous action
+            if explore:
+                action += Variable(torch.tensor(self.exploration.noise()),
+                                   requires_grad=False)
+            action = action.clamp(-1, 1)
+        return action
+
+    def get_params(self):
+        return {'policy': self.policy.state_dict(),
+                'critic': self.critic.state_dict(),
+                'target_policy': self.target_policy.state_dict(),
+                'target_critic': self.target_critic.state_dict(),
+                'policy_optimizer': self.policy_optimizer.state_dict(),
+                'critic_optimizer': self.critic_optimizer.state_dict()}
+
+    def load_params(self, params):
+        self.policy.load_state_dict(params['policy'])
+        self.critic.load_state_dict(params['critic'])
+        self.target_policy.load_state_dict(params['target_policy'])
+        self.target_critic.load_state_dict(params['target_critic'])
+        self.policy_optimizer.load_state_dict(params['policy_optimizer'])
+        self.critic_optimizer.load_state_dict(params['critic_optimizer'])
+
+    def to(self, device):
+        self.policy.to(device)
+        self.critic.to(device)
+        self.target_policy.to(device)
+        self.target_critic.to(device)
+        return self
+
+class ReplayBuffer:
+    """
+    Replay Buffer for multi-agent RL with parallel rollouts
+    """
+    def __init__(self, max_steps, num_agents, obs_dims, ac_dims):
+        """
+        Inputs:
+            max_steps (int): Maximum number of timepoints to store in buffer
+            num_agents (int): Number of agents in environment
+            obs_dims (list of ints): number of obervation dimensions for each
+                                     agent
+            ac_dims (list of ints): number of action dimensions for each agent
+        """
+        max_steps = int(max_steps)
+        self.max_steps = max_steps
+        self.num_agents = num_agents
+        self.obs_buffs = []
+        self.ac_buffs = []
+        self.rew_buffs = []
+        self.next_obs_buffs = []
+        self.done_buffs = []
+        for odim, adim in zip(obs_dims, ac_dims):
+            self.obs_buffs.append(np.zeros((max_steps, odim)))
+            self.ac_buffs.append(np.zeros((max_steps, adim)))
+            self.rew_buffs.append(np.zeros(max_steps))
+            self.next_obs_buffs.append(np.zeros((max_steps, odim)))
+            self.done_buffs.append(np.zeros(max_steps))
+
+
+        self.filled_i = 0  # index of first empty location in buffer (last index when full)
+        self.curr_i = 0  # current index to write to (ovewrite oldest data)
+
+    def __len__(self):
+        return self.filled_i
+
+    def push(self, observations, actions, rewards, next_observations, dones):
+        nentries = 1  # single environment at a time
+        if self.curr_i + nentries > self.max_steps:
+            rollover = self.max_steps - self.curr_i # num of indices to roll over
+            for agent_i in range(self.num_agents):
+                self.obs_buffs[agent_i] = np.roll(self.obs_buffs[agent_i],
+                                                  rollover, axis=0)
+                self.ac_buffs[agent_i] = np.roll(self.ac_buffs[agent_i],
+                                                 rollover, axis=0)
+                self.rew_buffs[agent_i] = np.roll(self.rew_buffs[agent_i],
+                                                  rollover)
+                self.next_obs_buffs[agent_i] = np.roll(
+                    self.next_obs_buffs[agent_i], rollover, axis=0)
+                self.done_buffs[agent_i] = np.roll(self.done_buffs[agent_i],
+                                                   rollover)
+            self.curr_i = 0
+            self.filled_i = self.max_steps
+        for agent_i in range(self.num_agents):
+            self.obs_buffs[agent_i][self.curr_i:self.curr_i + nentries] = observations[agent_i]
+            # actions are already batched by agent, so they are indexed differently
+            self.ac_buffs[agent_i][self.curr_i:self.curr_i + nentries] = actions[agent_i]
+            self.rew_buffs[agent_i][self.curr_i:self.curr_i + nentries] = rewards[agent_i]
+            self.next_obs_buffs[agent_i][self.curr_i:self.curr_i + nentries] = next_observations[agent_i]
+            self.done_buffs[agent_i][self.curr_i:self.curr_i + nentries] = dones[agent_i]
+        self.curr_i += nentries
+        if self.filled_i < self.max_steps:
+            self.filled_i += nentries
+        if self.curr_i == self.max_steps:
+            self.curr_i = 0
+
+    def sample(self, N, to_gpu=False, norm_rews=True):
+        inds = np.random.choice(np.arange(self.filled_i), size=N,
+                                replace=False)
+        if to_gpu:
+            cast = lambda x: torch.tensor(x, dtype=torch.float32).cuda()
+        else:
+            cast = lambda x: torch.tensor(x, dtype=torch.float32)
+        if norm_rews:
+            ret_rews = [cast((self.rew_buffs[i][inds] -
+                              self.rew_buffs[i][:self.filled_i].mean()) /
+                             self.rew_buffs[i][:self.filled_i].std())
+                        for i in range(self.num_agents)]
+        else:
+            ret_rews = [cast(self.rew_buffs[i][inds]) for i in range(self.num_agents)]
+        return ([cast(self.obs_buffs[i][inds]) for i in range(self.num_agents)],
+                [cast(self.ac_buffs[i][inds]) for i in range(self.num_agents)],
+                ret_rews,
+                [cast(self.next_obs_buffs[i][inds]) for i in range(self.num_agents)],
+                [cast(self.done_buffs[i][inds]) for i in range(self.num_agents)])
+    
+## MISCILLANEOUS UTILITIES
+
+# from https://github.com/songrotek/DDPG/blob/master/ou_noise.py
+class OUNoise:
+    def __init__(self, action_dimension, scale=0.1, mu=0, theta=0.15, sigma=0.2):
+        self.action_dimension = action_dimension
+        self.scale = scale
+        self.mu = mu
+        self.theta = theta
+        self.sigma = sigma
+        self.state = np.ones(self.action_dimension) * self.mu
+        self.reset()
+
+    def reset(self):
+        self.state = np.ones(self.action_dimension) * self.mu
+
+    def noise(self):
+        x = self.state
+        dx = self.theta * (self.mu - x) + self.sigma * np.random.randn(len(x))
+        self.state = x + dx
+        return self.state * self.scale
+
+# https://github.com/seba-1511/dist_tuto.pth/blob/gh-pages/train_dist.py
+def average_gradients(model):
+    """ Gradient averaging. """
+    size = float(dist.get_world_size())
+    for param in model.parameters():
+        dist.all_reduce(param.grad.data, op=dist.reduce_op.SUM, group=0)
+        param.grad.data /= size
+
+# https://github.com/ikostrikov/pytorch-ddpg-naf/blob/master/ddpg.py#L11
+def soft_update(target, source, tau):
+    """
+    Perform DDPG soft update (move target params toward source based on weight
+    factor tau)
+    Inputs:
+        target (torch.nn.Module): Net to copy parameters to
+        source (torch.nn.Module): Net whose parameters to copy
+        tau (float, 0 < x < 1): Weight factor for update
+    """
+    for target_param, param in zip(target.parameters(), source.parameters()):
+        target_param.data.copy_(target_param.data * (1.0 - tau) + param.data * tau)
+
+# https://github.com/ikostrikov/pytorch-ddpg-naf/blob/master/ddpg.py#L15
+def hard_update(target, source):
+    """
+    Copy network parameters from source to target
+    Inputs:
+        target (torch.nn.Module): Net to copy parameters to
+        source (torch.nn.Module): Net whose parameters to copy
+    """
+    for target_param, param in zip(target.parameters(), source.parameters()):
+        target_param.data.copy_(param.data)
+
+def onehot_from_logits(logits, eps=0.0):
+    """
+    Given batch of logits, return one-hot sample using epsilon greedy strategy
+    (based on given epsilon)
+    """
+    # get best (according to current policy) actions in one-hot form
+    argmax_acs = (logits == logits.max(1, keepdim=True)[0]).float()
+    if eps == 0.0:
+        return argmax_acs
+    # get random actions in one-hot form
+    rand_acs = (torch.eye(logits.shape[1])[[np.random.choice(
+        range(logits.shape[1]), size=logits.shape[0])]]).detach()
+    # chooses between best and random actions using epsilon greedy
+    return torch.stack([argmax_acs[i] if r > eps else rand_acs[i] for i, r in
+                        enumerate(torch.rand(logits.shape[0]))])
+
+# modified for PyTorch from https://github.com/ericjang/gumbel-softmax/blob/master/Categorical%20VAE.ipynb
+def sample_gumbel(shape, eps=1e-20, tens_type=torch.FloatTensor):
+    """Sample from Gumbel(0, 1)"""
+    U = tens_type(*shape).uniform_().detach()
+    return -torch.log(-torch.log(U + eps) + eps)
+
+# modified for PyTorch from https://github.com/ericjang/gumbel-softmax/blob/master/Categorical%20VAE.ipynb
+def gumbel_softmax_sample(logits, temperature):
+    """ Draw a sample from the Gumbel-Softmax distribution"""
+    y = logits + sample_gumbel(logits.shape, tens_type=type(logits.data)).to(logits.device)
+    return nn.functional.softmax(y / temperature, dim=1)
+
+# modified for PyTorch from https://github.com/ericjang/gumbel-softmax/blob/master/Categorical%20VAE.ipynb
+def gumbel_softmax(logits, temperature=1.0, hard=False):
+    """Sample from the Gumbel-Softmax distribution and optionally discretize.
+    Args:
+      logits: [batch_size, n_class] unnormalized log-probs
+      temperature: non-negative scalar
+      hard: if True, take argmax, but differentiate w.r.t. soft sample y
+    Returns:
+      [batch_size, n_class] sample from the Gumbel-Softmax distribution.
+      If hard=True, then the returned sample will be one-hot, otherwise it will
+      be a probabilitiy distribution that sums to 1 across classes
+    """
+    y = gumbel_softmax_sample(logits, temperature)
+    if hard:
+        y_hard = onehot_from_logits(y)
+        y = (y_hard - y).detach() + y
+    return y
