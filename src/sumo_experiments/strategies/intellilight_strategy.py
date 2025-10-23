@@ -1,4 +1,5 @@
 #from sumo.tools.emissions.findMinDiffModel import model
+from networkx.algorithms.bipartite import color
 
 from sumo_experiments.strategies import Strategy
 import numpy as np
@@ -107,7 +108,10 @@ class IntellilightStrategy(Strategy):
         else:
             self.cooling_rate = {identifiant: cooling_rate for identifiant in network.TLS_DETECTORS}
         self.number_of_trainings = {identifiant: 0 for identifiant in self.network.TLS_DETECTORS}
+        self.last_state = {identifiant: None for identifiant in self.network.TLS_DETECTORS}
 
+        self.mean_rewards = []
+        self.trainnn = {identifiant: True for identifiant in self.network.TLS_DETECTORS}
         self.rewards = []
         self.times = []
 
@@ -126,10 +130,19 @@ class IntellilightStrategy(Strategy):
             self.started = True
         else:
             for tl_id in self.network.TL_IDS:
-                if self.traci.simulation.getTime() % self.episode_duration[tl_id] == 0:
+                if self.traci.simulation.getTime() % self.episode_duration[tl_id] == 0 and self.trainnn[tl_id]:
+                    # if tl_id == "c":
+                    #     self.mean_rewards.append(np.mean(self.rewards))
+                    #     self.rewards = []
+                    #     # if np.mean(self.mean_rewards[-10:0]) < 20 and traci.simulation.getTime() > 50000:
+                    #     #     print("LAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
+                    #     #     self.trainnn[tl_id] = False
+                    #     plt.plot(range(len(self.mean_rewards)), self.mean_rewards)
+                    #     plt.show()
                     self.train(tl_id)
                     self.exploration_prob[tl_id] = self.exploration_prob[tl_id] - (self.exploration_prob[tl_id] * self.cooling_rate[tl_id])
-                    self.replay_buffer[tl_id] = deque()
+                    self.replay_buffer[tl_id] = deque(maxlen=self.buffer_size[tl_id])
+                    self.last_state[tl_id] = None
                 if 'y' in self.traci.trafficlight.getRedYellowGreenState(tl_id):
                     if self.current_yellow_time[tl_id] >= self.yellow_time[tl_id]:
                         self.traci.trafficlight.setPhase(tl_id, int(self.next_phase[tl_id]))
@@ -180,18 +193,20 @@ class IntellilightStrategy(Strategy):
                 action = self.action_space[tl_id][torch.argmax(q_values).item()]
 
         reward = self.get_reward(tl_id)
-        # if tl_id == "x1-y2":
+        # if tl_id == "c":
         #     self.rewards.append(reward)
         #     self.times.append(self.traci.simulation.getTime())
-        next_state = self.get_state(tl_id)
-        next_state[3] = self.action_space[tl_id].index(next_state[3])
+        state[3] = self.action_space[tl_id].index(state[3])
 
         # self.replay_buffer[tl_id].append((state, abstract_action, reward, next_state, abstract_phase))
-        self.replay_buffer[tl_id].append((state, action, reward, next_state, phase))
+        if self.last_state[tl_id] is not None:
+            self.replay_buffer[tl_id].append((self.last_state[tl_id], action, reward, state, phase))
 
         if self.number_of_trainings[tl_id] == self.update_target_frequency[tl_id]:
             self.number_of_trainings[tl_id] = 0
             self.update_target_model(tl_id)
+
+        self.last_state[tl_id] = state
 
         return action
 
@@ -212,7 +227,7 @@ class IntellilightStrategy(Strategy):
         rewards = torch.tensor(rewards, dtype=torch.float32).unsqueeze(1).to(self.device)
 
         loss = 0
-        for i in range(self.buffer_size[tl_id]):
+        for i in range(len(self.replay_buffer[tl_id])):
             abstract_phase = phases[i]
             with torch.no_grad():
                 next_q = self.target_model[tl_id](next_states[i].unsqueeze(0), abstract_phase)
@@ -245,7 +260,12 @@ class IntellilightStrategy(Strategy):
 
     def get_reward(self, tl_id):
         L = sum(self.traci.lanearea.getLastStepVehicleNumber(det) for det in self._detectors_red_lanes(tl_id))
+        #L = self.compute_number_of_vehicles(tl_id)
         W = self.compute_waiting_time(self._detectors_red_lanes(tl_id))
+        # detectors = []
+        # for phase in self.network.TLS_DETECTORS[tl_id]:
+        #     detectors += self.network.TLS_DETECTORS[tl_id][phase]['numerical']
+        # W = self.compute_waiting_time(detectors)
         return -0.5 * L - 0.7 * W
 
     def update_target_model(self, tl_id):
@@ -256,7 +276,7 @@ class IntellilightStrategy(Strategy):
         for det in detectors:
             veh_ids = self.traci.lanearea.getLastStepVehicleIDs(det)
             for veh_id in veh_ids:
-                waiting_time += self.traci.vehicle.getWaitingTime(veh_id)
+                waiting_time += self.traci.vehicle.getAccumulatedWaitingTime(veh_id)
         return waiting_time
 
     def compute_number_of_vehicles(self, tl_id):
@@ -350,4 +370,3 @@ class QNetwork(nn.Module):
             return self.heads[self.convert_phase[phase]](h)
         except:
             raise ValueError(f"Invalid phase index: {self.convert_phase[phase]}")
-
