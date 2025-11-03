@@ -22,28 +22,32 @@ class MADDPGStrategy(IntellilightStrategy):
     """
 
     def __init__(self, network, period=10, episode_duration=300, reward_coeffs=(1, 1, 1, 1), gamma=0.99, buffer_size=10000, batch_size=32, steps_per_update=10, 
-                 learning_rate=1e-2, tau=0.01, exploration_prob=1, cooling_rate=10e-3, hidden_layer_size=64, yellow_time=3):
+                 learning_rate=1e-2, tau=0.01, hidden_layer_size=64, yellow_time=3):
         """
         Init of class.
         :param network: The network to deploy the strategy
         :type network: src.sumo_experiments.Network
         :param period: The duration of a period (in seconds).
         :type period: int or dict
-        :param gamma: Gamma parameter for the Bellman equation, to compute Q-Values
+        :param episode_duration: Maximum duration of one episode (in seconds).
+        :type episode_duration: int
+        :param reward_coeffs: Coefficients for computing the reward (e.g. queue, waiting time, throughput, etc.).
+        :type reward_coeffs: tuple
+        :param gamma: Gamma parameter for the Bellman equation, to compute Q-values.
         :type gamma: float or dict
-        :param buffer_size: Memory buffer size for training the neural network. The network is trained when th memory buffer is full.
+        :param buffer_size: Memory buffer size for training the neural network. The network is trained when the memory buffer is full.
         :type buffer_size: int or dict
-        :param update_target_frequency: Frequency at which the target network is updated, in terms of number of trainings. The target network will be updated every ((buffer_size + len(buffer_size) * yellow_time) * update_target_frequency) timesteps.
-        :type update_target_frequency: int or dict
-        :param learning_rate: Learning rate for the neural network. Must be a positive number.
+        :param batch_size: Number of samples per training batch.
+        :type batch_size: int
+        :param steps_per_update: Number of simulation steps between each network update.
+        :type steps_per_update: int
+        :param learning_rate: Learning rate for the neural networks. Must be a positive number.
         :type learning_rate: float or dict
-        :param exploration_prob: Probability of selecting a random action at the beginning of the simulation. Must be a positive number.
-        :type exploration_prob: float or dict
-        :param cooling_rate: Value used to update the exploration_prob. Each time an action is chosen, the next exploration_prob is (exploration_prob - (exploration_prob * cooling_rate)).
-        :type cooling_rate: float or dict
+        :param tau: Soft update coefficient for target network synchronization.
+        :type tau: float
         :param hidden_layer_size: The size of the hidden layers of the neural network.
         :type hidden_layer_size: int or dict
-        :param yellow_time: Yellow phases duration for all intersections
+        :param yellow_time: Yellow phases duration for all intersections (in seconds).
         :type yellow_time: int or dict
         """
         # super().__init__()
@@ -82,8 +86,6 @@ class MADDPGStrategy(IntellilightStrategy):
         self.hidden_layer_size = hidden_layer_size if isinstance(hidden_layer_size, dict) else {tl_id: hidden_layer_size for tl_id in network.TLS_DETECTORS}
         self.steps_per_update = steps_per_update# if isinstance(update_target_frequency, dict) else {tl_id: update_target_frequency for tl_id in network.TLS_DETECTORS}
         self.learning_rate = learning_rate if isinstance(learning_rate, dict) else {tl_id: learning_rate for tl_id in network.TLS_DETECTORS}
-        self.exploration_prob = exploration_prob #if isinstance(exploration_prob, dict) else {tl_id: exploration_prob for tl_id in network.TLS_DETECTORS}
-        self.cooling_rate = cooling_rate# if isinstance(cooling_rate, dict) else {tl_id: cooling_rate for tl_id in network.TLS_DETECTORS}
 
         self.agents = {}
         self.loss_history = {tl_id: [] for tl_id in self.network.TLS_DETECTORS}
@@ -326,19 +328,6 @@ class MADDPG(object):
     def target_policies(self):
         return [a.target_policy for a in self.agents]
 
-    def scale_noise(self, scale):
-        """
-        Scale noise for each agent
-        Inputs:
-            scale (float): scale of noise
-        """
-        for a in self.agents:
-            a.scale_noise(scale)
-
-    def reset_noise(self):
-        for a in self.agents:
-            a.reset_noise()
-
     def step(self, observations, explore=False):
         """
         Take a step forward in environment with all agents
@@ -519,15 +508,6 @@ class DDPGAgent(object):
         self.exploration = 0.3  # epsilon for eps-greedy, unused
         self.discrete_action = discrete_action
 
-    def reset_noise(self):
-        if not self.discrete_action:
-            self.exploration.reset()
-
-    def scale_noise(self, scale):
-        if self.discrete_action:
-            self.exploration = scale
-        else:
-            self.exploration.scale = scale
 
     def step(self, obs, explore=False):
         """
