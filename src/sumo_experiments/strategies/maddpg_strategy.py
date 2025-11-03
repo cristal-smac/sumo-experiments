@@ -5,21 +5,24 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from torch.autograd import Variable
 from collections import deque
 import random
-
+from sumo_experiments.strategies.maxpressure_strategy import MaxPressureStrategy
+from sumo_experiments.strategies import IntellilightStrategy
 import matplotlib.pyplot as plt
 
 
-class MADDPGStrategy(Strategy):
+class MADDPGStrategy(IntellilightStrategy):
     """
     Implements an MADDPG system.
 
-    Wei, H., Zheng, G., Yao, H., & Li, Z. (2018, July). Intellilight: A reinforcement learning approach for intelligent traffic light control. In Proceedings of the 24th ACM SIGKDD international conference on knowledge discovery & data mining (pp. 2496-2505).
+    References:
+    - https://github.com/shariqiqbal2810/maddpg-pytorch/blob/master/algorithms/maddpg.py#L143
+    - Lowe, R., Wu, Y. I., Tamar, A., Harb, J., Pieter Abbeel, O., & Mordatch, I. (2017). Multi-agent actor-critic for mixed cooperative-competitive environments. Advances in neural information processing systems, 30.
     """
 
-    def __init__(self, network, period=10, gamma=0.99, buffer_size=32, update_target_frequency=10, learning_rate=1e-2, exploration_prob=1, cooling_rate=10e-3, hidden_layer_size=64, yellow_time=3):
+    def __init__(self, network, period=10, episode_duration=300, reward_coeffs=(1, 1, 1, 1), gamma=0.99, buffer_size=10000, batch_size=32, steps_per_update=10, 
+                 learning_rate=1e-2, tau=0.01, exploration_prob=1, cooling_rate=10e-3, hidden_layer_size=64, yellow_time=3):
         """
         Init of class.
         :param network: The network to deploy the strategy
@@ -43,7 +46,7 @@ class MADDPGStrategy(Strategy):
         :param yellow_time: Yellow phases duration for all intersections
         :type yellow_time: int or dict
         """
-        super().__init__()
+        # super().__init__()
         self.network = network
         if type(yellow_time) is dict:
             self.yellow_time = yellow_time
@@ -62,28 +65,32 @@ class MADDPGStrategy(Strategy):
             self.yellow_time = yellow_time
         else:
             self.yellow_time = {tl_id: yellow_time for tl_id in network.TLS_DETECTORS}
+        self.c1, self.c2, self.c3, self.c4 = reward_coeffs
 
-        # self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        self.device = torch.device("cpu")
-
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.rollout_device = torch.device('cpu')
 
         self.observation_sizes = {}
         self.action_space = {tl_id: list(self.network.TLS_DETECTORS[tl_id].keys()) for tl_id in self.network.TLS_DETECTORS}
 
         self.gamma = gamma if isinstance(gamma, dict) else {tl_id: gamma for tl_id in network.TLS_DETECTORS}
+        self.tau = tau
+        self.episode_duration = episode_duration
 
         self.buffer_size = buffer_size# if isinstance(buffer_size, dict) else {tl_id: buffer_size for tl_id in network.TLS_DETECTORS}
+        self.batch_size = batch_size
         self.hidden_layer_size = hidden_layer_size if isinstance(hidden_layer_size, dict) else {tl_id: hidden_layer_size for tl_id in network.TLS_DETECTORS}
-        self.update_target_frequency = update_target_frequency if isinstance(update_target_frequency, dict) else {tl_id: update_target_frequency for tl_id in network.TLS_DETECTORS}
+        self.steps_per_update = steps_per_update# if isinstance(update_target_frequency, dict) else {tl_id: update_target_frequency for tl_id in network.TLS_DETECTORS}
         self.learning_rate = learning_rate if isinstance(learning_rate, dict) else {tl_id: learning_rate for tl_id in network.TLS_DETECTORS}
-        self.exploration_prob = exploration_prob if isinstance(exploration_prob, dict) else {tl_id: exploration_prob for tl_id in network.TLS_DETECTORS}
-        self.cooling_rate = cooling_rate if isinstance(cooling_rate, dict) else {tl_id: cooling_rate for tl_id in network.TLS_DETECTORS}
+        self.exploration_prob = exploration_prob #if isinstance(exploration_prob, dict) else {tl_id: exploration_prob for tl_id in network.TLS_DETECTORS}
+        self.cooling_rate = cooling_rate# if isinstance(cooling_rate, dict) else {tl_id: cooling_rate for tl_id in network.TLS_DETECTORS}
 
         self.agents = {}
         self.loss_history = {tl_id: [] for tl_id in self.network.TLS_DETECTORS}
         self.current_phase = {tl_id: 0 for tl_id in self.network.TLS_DETECTORS}
 
         self.number_of_trainings = {tl_id: 0 for tl_id in self.network.TLS_DETECTORS}
+        self.mean_rewards = []
 
         self.val_losses = []
         self.pol_losses = []
@@ -104,17 +111,32 @@ class MADDPGStrategy(Strategy):
                 self._start_agent(tl_id)
             self.maddpg = MADDPG(agents=list(self.agents.values()), alg_types=['MADDPG' for _ in self.network.TLS_DETECTORS], 
                                  gamma=self.gamma[tl_id],
-                                 discrete_action=True)
-            self.replay_buffer = ReplayBuffer(max_steps=1e5, num_agents=self.maddpg.nagents, obs_dims=list(self.observation_sizes.values()),
+                                 discrete_action=True,
+                                 tau=self.tau)
+            self.replay_buffer = ReplayBuffer(max_steps=self.buffer_size, num_agents=self.maddpg.nagents, obs_dims=list(self.observation_sizes.values()),
                                                ac_dims=[len(self.action_space[tl_id]) for tl_id in self.network.TLS_DETECTORS])
             self.started = True
 
-            self.states = [self.get_state(tl_id) for tl_id in self.network.TL_IDS]
-            self.action_indices = [np.zeros_like(self.action_space[tl_id]) for tl_id in self.network.TL_IDS]
+            # self.states = [self.get_state(tl_id) for tl_id in self.network.TL_IDS]
+            # self.action_indices = [np.zeros_like(self.action_space[tl_id]) for tl_id in self.network.TL_IDS] # TODO: one hot encode current phase
+            self.states = None
+            self.action_indices = None
+            self.changed_phase = [None for _ in self.network.TLS_DETECTORS]
 
-            self.time_step = 0
+            self.time_step = 1
         else:
             for tl_id in self.network.TL_IDS:
+                # assert self.time_step == self.traci.simulation.getTime(), print(self.time_step, self.traci.simulation.getTime())
+                if self.traci.simulation.getTime() % self.episode_duration == 0:
+                    if tl_id == "c":
+                        self.mean_rewards.append(np.mean(self.rewards))
+                        self.rewards = []
+                        plt.plot(range(len(self.mean_rewards)), self.mean_rewards)
+                        plt.savefig('strategy_debug.png')
+                        # reset states and action
+                        self.states = None
+                        self.action_indices = None
+                        self.changed_phase = [None for _ in self.network.TLS_DETECTORS]
                 if 'y' in self.traci.trafficlight.getRedYellowGreenState(tl_id):
                     if self.current_yellow_time[tl_id] >= self.yellow_time[tl_id]:
                         self.traci.trafficlight.setPhase(tl_id, int(self.next_phase[tl_id]))
@@ -126,6 +148,8 @@ class MADDPGStrategy(Strategy):
                     self.time[tl_id] += 1
             if self.time_step % self.period == 0:
                 self.switch_next_phase()
+            if (len(self.replay_buffer) >= self.batch_size) and (self.time_step % self.steps_per_update == 0):
+                self.train()
             self.time_step += 1
 
 
@@ -151,112 +175,55 @@ class MADDPGStrategy(Strategy):
         """
         # Store experience in replay buffer
         next_states = [self.get_state(tl_id) for tl_id in self.network.TLS_DETECTORS]
-        rewards = [self.get_reward(tl_id) for tl_id in self.network.TLS_DETECTORS]
-        dones = [False for _ in self.network.TLS_DETECTORS]
+        rewards = [self.get_reward(tl_id, self.changed_phase[i]) for i, tl_id in enumerate(self.network.TLS_DETECTORS)]
+        dones = [(self.traci.simulation.getTime()%self.episode_duration)==0 for _ in self.network.TLS_DETECTORS]
+        # if dones[0]:
+        #     print(f"Rewards at time {self.traci.simulation.getTime()}: {rewards}")
+        # if self.states is not None and self.action_indices is not None:
+        #     with np.printoptions(precision=2, suppress=True):
+        #         print(self.states[0], self.action_indices[0], rewards[0])
 
         # Global rewards for coordinating MADDPG
-        rewards = np.ones_like(rewards) * sum(rewards)
+        rewards = np.ones_like(rewards) * np.mean(rewards)
 
         # Update buffer from previous action step
-        self.replay_buffer.push(self.states, self.action_indices, rewards, next_states, dones=dones)
+        if self.states is not None and self.action_indices is not None and not dones[0]:
+            assert rewards[0]>-(self.c4*self.DEBUG_REWARD), (rewards, self.changed_phase)
 
-        self.maddpg.scale_noise(self.exploration_prob)
-
-        state_tensor = torch.tensor(next_states, dtype=torch.float32).unsqueeze(1).to(self.device)
+            self.replay_buffer.push(self.states, self.action_indices, rewards, next_states, dones=dones)
+            if "c" in self.network.TL_IDS:  # debugging for single intersection
+                self.rewards.append(rewards[0])
+                self.times.append(self.traci.simulation.getTime())
+        state_tensor = [torch.tensor(n_s, dtype=torch.float32).unsqueeze(0).to(self.rollout_device) for n_s in next_states]
         with torch.no_grad():
-            torch_action_indices = self.maddpg.step(state_tensor, explore=True)
+            torch_action_indices = self.maddpg.step(state_tensor, explore=True) # exploration handled by softmax
             action_indices = [ac.data.cpu().numpy() for ac in torch_action_indices]
+            # DEBUG: force an action
+            # s = 1 if self.traci.simulation.getTime() // 100 % 2 == 0 else -1
+            # action_indices = [np.array([1,0])[::s]]
 
+        if self.action_indices is None:
+            self.changed_phase = [False for _ in self.network.TLS_DETECTORS]
+        else:
+            self.changed_phase = [np.argmax(action_indices[i]) != np.argmax(self.action_indices[i]) for i, tl_id in enumerate(self.network.TLS_DETECTORS)]
         self.states = next_states
-        self.action_indices = action_indices        
-
-
-        # Train the MADDPG model once buffer reaches minimum size
-        if len(self.replay_buffer) >= self.buffer_size:
-            self.maddpg.prep_training(device=self.device)
-            for tl_id in self.network.TL_IDS:
-                self.number_of_trainings[tl_id] += 1
-            USE_CUDA = False
-            for a_i in range(self.maddpg.nagents):
-                sample = self.replay_buffer.sample(self.buffer_size,
-                                            to_gpu=USE_CUDA, norm_rews=True)
-                val_loss, pol_loss = self.maddpg.update(sample, a_i)
-                self.val_losses.append(val_loss)
-                self.pol_losses.append(pol_loss)
-            self.maddpg.update_all_targets()
-            self.maddpg.prep_rollouts(device='cpu')
-
-        # Update exploration probability
-        if train:
-            for tl_id in self.network.TL_IDS:
-                self.exploration_prob[tl_id] -= self.exploration_prob[tl_id] * self.cooling_rate[tl_id]
+        self.action_indices = action_indices     
 
         return {tl_id: self.action_space[tl_id][action_indices[i].argmax()] for i, tl_id in enumerate(self.network.TLS_DETECTORS)}
 
-
-    def get_state(self, tl_id):
-        L = sum(self.traci.lanearea.getLastStepVehicleNumber(det) for det in self._detectors_green_lanes(tl_id))
-        W = self.compute_waiting_time(self._detectors_red_lanes(tl_id))
-        V = self.compute_number_of_vehicles(tl_id)
-        P = self.current_phase[tl_id]
-        return np.array([L, W, V, P], dtype=np.float32)
-
-    def get_reward(self, tl_id):
-        L = sum(self.traci.lanearea.getLastStepVehicleNumber(det) for det in self._detectors_red_lanes(tl_id))
-        W = self.compute_waiting_time(self._detectors_red_lanes(tl_id))
-        return -0.5 * L - 0.7 * W
-
-    def compute_waiting_time(self, detectors):
-        waiting_time = 0
-        for det in detectors:
-            veh_ids = self.traci.lanearea.getLastStepVehicleIDs(det)
-            for veh_id in veh_ids:
-                waiting_time += self.traci.vehicle.getWaitingTime(veh_id)
-        return waiting_time
-
-    def compute_number_of_vehicles(self, tl_id):
-        detectors = []
-        for phase in self.network.TLS_DETECTORS[tl_id]:
-            for det in self.network.TLS_DETECTORS[tl_id][phase]['numerical']:
-                if det not in detectors:
-                    detectors.append(det)
-        return sum(self.traci.lanearea.getLastStepVehicleNumber(det) for det in detectors)
-
-
-
-    def _detectors_red_lanes(self, tl_id):
-        """
-        Return the detectors related to red lanes for a phase.
-        :param tl_id: The id of the TL
-        :type tl_id: str
-        :return: The list of all concerned detectors
-        :rtype: list
-        """
-        detectors = []
-        if self.current_phase[tl_id] in self.network.TLS_DETECTORS[tl_id]:
-            detectors_current_phase = self.network.TLS_DETECTORS[tl_id][self.current_phase[tl_id]]['numerical']
-            for i in self.network.TLS_DETECTORS[tl_id]:
-                if i != self.current_phase[tl_id]:
-                    for det in self.network.TLS_DETECTORS[tl_id][i]['numerical']:
-                        if det not in detectors_current_phase:
-                            detectors.append(det)
-        return detectors
-
-
-    def _detectors_green_lanes(self, tl_id):
-        """
-        Return the detectors related to green lanes for a phase.
-        :param tl_id: The id of the TL
-        :type tl_id: str
-        :return: The list of all concerned detectors
-        :rtype: list
-        """
-        detectors_current_phase = []
-        if self.current_phase[tl_id] in self.network.TLS_DETECTORS[tl_id]:
-            detectors_current_phase = self.network.TLS_DETECTORS[tl_id][self.current_phase[tl_id]]['numerical']
-        return detectors_current_phase
-
-
+    def train(self):
+        # Train the MADDPG model once buffer reaches minimum size
+        self.maddpg.prep_training(device=self.device)
+        for tl_id in self.network.TL_IDS:
+            self.number_of_trainings[tl_id] += 1
+        for a_i in range(self.maddpg.nagents):
+            sample = self.replay_buffer.sample(self.batch_size,
+                                        device=self.device, norm_rews=False)
+            val_loss, pol_loss = self.maddpg.update(sample, a_i)
+            self.val_losses.append(val_loss)
+            self.pol_losses.append(pol_loss)
+        self.maddpg.update_all_targets()
+        self.maddpg.prep_rollouts(device=self.rollout_device)
 
     def _start_agent(self, tl_id):
         """
@@ -285,89 +252,31 @@ class MADDPGStrategy(Strategy):
                                        num_in_critic=critic_dim, 
                                        hidden_dim=self.hidden_layer_size[tl_id],
                                        lr=self.learning_rate[tl_id],
-                                       discrete_action=True).to(self.device)
+                                       discrete_action=True).to(self.rollout_device)
         self.observation_sizes[tl_id] = input_dims[tl_id]
-        # self.target_model = {tl_id: DDPGAgent(num_out_pol=self.action_space[tl_id], num_in_pol=input_dim, num_in_critic=input_dim, hidden_dim=self.hidden_layer_size[tl_id]).to(self.device) for tl_id in self.network.TLS_DETECTORS}
-
-
-
-
 
 
 class DeepNN(nn.Module):
-    def __init__(self, input_dim, out_dim, hidden_dim=64, nonlin=nn.functional.relu,
-                 constrain_out=False, norm_in=False, discrete_action=True):
-        """
-        Inputs:
-            input_dim (int): Number of dimensions in input
-            out_dim (int): Number of dimensions in output
-            hidden_dim (int): Number of hidden dimensions
-            nonlin (PyTorch function): Nonlinearity to apply to hidden layers
-        """
-        super(DeepNN, self).__init__()
-
-        if norm_in:  # normalize inputs
-            self.in_fn = nn.BatchNorm1d(input_dim)
-            self.in_fn.weight.data.fill_(1)
-            self.in_fn.bias.data.fill_(0)
-        else:
-            self.in_fn = lambda x: x
+    def __init__(self, input_dim, out_dim, hidden_dim=64, nonlin=nn.functional.relu):
+        super().__init__()
         self.fc1 = nn.Linear(input_dim, hidden_dim)
         self.fc2 = nn.Linear(hidden_dim, hidden_dim)
         self.fc3 = nn.Linear(hidden_dim, out_dim)
         self.nonlin = nonlin
-        if constrain_out and not discrete_action:
-            # initialize small to prevent saturation
-            self.fc3.weight.data.uniform_(-3e-3, 3e-3)
-            self.out_fn = nn.functional.tanh
-        else:  # logits for discrete action (will softmax later)
-            self.out_fn = lambda x: x
+
 
     def forward(self, X):
-        """
-        Inputs:
-            X (PyTorch Matrix): Batch of observations
-        Outputs:
-            out (PyTorch Matrix): Output of network (actions, values, etc)
-        """
-        h1 = self.nonlin(self.fc1(self.in_fn(X)))
-        h2 = self.nonlin(self.fc2(h1))
-        out = self.out_fn(self.fc3(h2))
+        h = self.nonlin(self.fc1(X))
+        h = self.nonlin(self.fc2(h))
+        out = self.fc3(h)
         return out
     
-    # def __init__(self, action_space, input_dim, hidden_dim, output_dim):
-    #     super().__init__()
-    #     self.action_space = action_space
-    #     self.convert_phase = {
-    #         k: self.action_space.index(k) for k in self.action_space
-    #     }
-    #     self.shared = nn.Sequential(
-    #         nn.Linear(input_dim, hidden_dim),
-    #         nn.ReLU()
-    #     )
-    #     self.heads = nn.ModuleList([
-    #         nn.Sequential(nn.Linear(hidden_dim, output_dim)) for _ in range(len(action_space))
-    #     ])
-
-    # def forward(self, x, phase):
-    #     #if 0 <= abstract_phase < len(self.heads):
-    #     try:
-    #         h = self.shared(x)
-    #         return self.heads[self.convert_phase[phase]](h)
-    #     except:
-    #         raise ValueError(f"Invalid phase index: {self.convert_phase[phase]}")
-
-
 
 ## MADDPG Algorithm
 import torch
 import torch.distributed as dist
-# from utils.networks import DeepNN
-# from utils.misc import soft_update, average_gradients, onehot_from_logits, gumbel_softmax
-# from utils.agents import DDPGAgent
 from typing import List
-MSELoss = torch.nn.MSELoss()
-
+loss_fn = torch.nn.HuberLoss()
 
 
 class MADDPG(object):
@@ -375,7 +284,7 @@ class MADDPG(object):
     Wrapper class for DDPG-esque (i.e. also MADDPG) agents in multi-agent task
     """
     def __init__(self, agents, alg_types,
-                 gamma=0.95, tau=0.01, lr=0.01, hidden_dim=64,
+                 gamma=0.95, tau=0.01,
                  discrete_action=False):
         """
         Inputs:
@@ -393,16 +302,11 @@ class MADDPG(object):
             discrete_action (bool): Whether or not to use discrete action space
         """
         self.alg_types = alg_types
-        # self.agents = [DDPGAgent(lr=lr, discrete_action=discrete_action,
-        #                          hidden_dim=hidden_dim,
-        #                          **params)
-        #                for params in agent_init_params]
         self.agents: List[DDPGAgent] = agents
         self.central_critic = self.agents[0].critic # relook and finish the code
         self.central_target_critic = self.agents[0].target_critic # relook and finish the code
         self.gamma = gamma
         self.tau = tau
-        self.lr = lr
         self.discrete_action = discrete_action
         self.pol_dev = 'cpu'  # device for policies
         self.critic_dev = 'cpu'  # device for critics
@@ -435,7 +339,6 @@ class MADDPG(object):
         for a in self.agents:
             a.reset_noise()
 
-    
     def step(self, observations, explore=False):
         """
         Take a step forward in environment with all agents
@@ -446,10 +349,10 @@ class MADDPG(object):
             actions: List of actions for each agent
         """
         assert len(observations) == self.nagents, (len(observations), self.nagents)
-        return [a.step(obs, explore=explore) for a, obs in zip(self.agents,
+        return [a.step(obs, explore=explore)[0] for a, obs in zip(self.agents,
                                                                  observations)]
 
-    def update(self, sample, agent_i, parallel=False, logger=None):
+    def update(self, sample, agent_i, logger=None):
         """
         Update parameters of agent model based on sample from replay buffer
         Inputs:
@@ -458,47 +361,30 @@ class MADDPG(object):
                     the replay buffer. Each is a list with entries
                     corresponding to each agent
             agent_i (int): index of agent to update
-            parallel (bool): If true, will average gradients across threads
             logger (SummaryWriter from Tensorboard-Pytorch):
                 If passed in, important quantities will be logged
         """
         obs, acs, rews, next_obs, dones = sample
         curr_agent = self.agents[agent_i]
-
         curr_agent.critic_optimizer.zero_grad()
-        if self.alg_types[agent_i] == 'MADDPG':
-            if self.discrete_action: # one-hot encode action
-                all_trgt_acs = [onehot_from_logits(pi(nobs)) for pi, nobs in
-                                zip(self.target_policies, next_obs)]
-            else:
-                all_trgt_acs = [pi(nobs) for pi, nobs in zip(self.target_policies,
-                                                             next_obs)]
-            trgt_vf_in = torch.cat((*next_obs, *all_trgt_acs), dim=1)
-        else:  # DDPG
-            if self.discrete_action:
-                trgt_vf_in = torch.cat((next_obs[agent_i],
-                                        onehot_from_logits(
-                                            curr_agent.target_policy(
-                                                next_obs[agent_i]))),
-                                       dim=1)
-            else:
-                trgt_vf_in = torch.cat((next_obs[agent_i],
-                                        curr_agent.target_policy(next_obs[agent_i])),
-                                       dim=1)
+        if self.discrete_action: # one-hot encode action
+            all_trgt_acs = [nn.functional.gumbel_softmax(pi(nobs), hard=True) for pi, nobs in
+                            zip(self.target_policies, next_obs)]
+        else:
+            all_trgt_acs = [pi(nobs) for pi, nobs in zip(self.target_policies,
+                                                            next_obs)]
+        trgt_vf_in = torch.cat((*next_obs, *all_trgt_acs), dim=1)
         target_value = (rews[agent_i].view(-1, 1) + self.gamma *
                         curr_agent.target_critic(trgt_vf_in) *
                         (1 - dones[agent_i].view(-1, 1)))
 
-        if self.alg_types[agent_i] == 'MADDPG':
-            vf_in = torch.cat((*obs, *acs), dim=1)
-        else:  # DDPG
-            vf_in = torch.cat((obs[agent_i], acs[agent_i]), dim=1)
+        vf_in = torch.cat((*obs, *acs), dim=1)
+
         actual_value = curr_agent.critic(vf_in)
-        vf_loss = MSELoss(actual_value, target_value.detach())
+        vf_loss = loss_fn(actual_value, target_value.detach())
         vf_loss.backward()
-        if parallel:
-            average_gradients(curr_agent.critic)
-        torch.nn.utils.clip_grad_norm(curr_agent.critic.parameters(), 0.5)
+
+        torch.nn.utils.clip_grad_norm_(curr_agent.critic.parameters(), 0.5)
         curr_agent.critic_optimizer.step()
 
         curr_agent.policy_optimizer.zero_grad()
@@ -510,29 +396,27 @@ class MADDPG(object):
             # correct since it removes the assumption of a deterministic policy for
             # DDPG. Regardless, discrete policies don't seem to learn properly without it.
             curr_pol_out = curr_agent.policy(obs[agent_i])
-            curr_pol_vf_in = gumbel_softmax(curr_pol_out, hard=True)
+            curr_pol_vf_in = nn.functional.gumbel_softmax(curr_pol_out, hard=False)
         else:
             curr_pol_out = curr_agent.policy(obs[agent_i])
             curr_pol_vf_in = curr_pol_out
-        if self.alg_types[agent_i] == 'MADDPG':
-            all_pol_acs = []
-            for i, pi, ob in zip(range(self.nagents), self.policies, obs):
-                if i == agent_i:
-                    all_pol_acs.append(curr_pol_vf_in)
-                elif self.discrete_action:
-                    all_pol_acs.append(onehot_from_logits(pi(ob)))
-                else:
-                    all_pol_acs.append(pi(ob))
-            vf_in = torch.cat((*obs, *all_pol_acs), dim=1)
-        else:  # DDPG
-            vf_in = torch.cat((obs[agent_i], curr_pol_vf_in),
-                              dim=1)
+
+        all_pol_acs = []
+        for i, pi, ob in zip(range(self.nagents), self.policies, obs):
+            if i == agent_i:
+                all_pol_acs.append(curr_pol_vf_in)
+                assert all_pol_acs[-1].requires_grad == True
+            else: #discrete action must be one-hot encoded
+                all_pol_acs.append(onehot_from_logits(pi(ob)))
+                assert all_pol_acs[-1].requires_grad == False
+
+        vf_in = torch.cat((*obs, *all_pol_acs), dim=1)
+
         pol_loss = -curr_agent.critic(vf_in).mean()
-        pol_loss += (curr_pol_out**2).mean() * 1e-3
+        pol_loss += (curr_pol_out**2).mean() * 1e-3 # regularization prevents large logits
         pol_loss.backward()
-        if parallel:
-            average_gradients(curr_agent.policy)
-        torch.nn.utils.clip_grad_norm(curr_agent.policy.parameters(), 0.5)
+
+        torch.nn.utils.clip_grad_norm_(curr_agent.policy.parameters(), 0.5)
         curr_agent.policy_optimizer.step()
         if logger is not None:
             logger.add_scalars('agent%i/losses' % agent_i,
@@ -620,27 +504,19 @@ class DDPGAgent(object):
             num_in_critic (int): number of dimensions for critic input
         """
         self.policy = DeepNN(num_in_pol, num_out_pol,
-                                 hidden_dim=hidden_dim,
-                                 constrain_out=True,
-                                 discrete_action=discrete_action)
+                                 hidden_dim=hidden_dim)
         self.critic = DeepNN(num_in_critic, 1,
-                                 hidden_dim=hidden_dim,
-                                 constrain_out=False)
+                                 hidden_dim=hidden_dim)
         self.target_policy = DeepNN(num_in_pol, num_out_pol,
-                                        hidden_dim=hidden_dim,
-                                        constrain_out=True,
-                                        discrete_action=discrete_action)
+                                        hidden_dim=hidden_dim)
         self.target_critic = DeepNN(num_in_critic, 1,
-                                        hidden_dim=hidden_dim,
-                                        constrain_out=False)
+                                        hidden_dim=hidden_dim)
         hard_update(self.target_policy, self.policy)
         hard_update(self.target_critic, self.critic)
-        self.policy_optimizer = optim.Adam(self.policy.parameters(), lr=lr)
+        self.policy_optimizer = optim.Adam(self.policy.parameters(), lr=lr/10)
         self.critic_optimizer = optim.Adam(self.critic.parameters(), lr=lr)
-        if not discrete_action:
-            self.exploration = OUNoise(num_out_pol)
-        else:
-            self.exploration = 0.3  # epsilon for eps-greedy
+
+        self.exploration = 0.3  # epsilon for eps-greedy, unused
         self.discrete_action = discrete_action
 
     def reset_noise(self):
@@ -665,15 +541,10 @@ class DDPGAgent(object):
         action = self.policy(obs)
         if self.discrete_action:
             if explore:
-                action = gumbel_softmax(action, hard=False) # consider replacing with other estimators from https://github.com/uoe-agents/revisiting-maddpg
+                # note: for MADDPG step, we should output onehot vectors
+                action = nn.functional.gumbel_softmax(action, hard=True) # consider replacing with other estimators from https://github.com/uoe-agents/revisiting-maddpg
             else:
                 action = onehot_from_logits(action)
-            action = action.clamp(0, 1)
-        else:  # continuous action
-            if explore:
-                action += Variable(torch.tensor(self.exploration.noise()),
-                                   requires_grad=False)
-            action = action.clamp(-1, 1)
         return action
 
     def get_params(self):
@@ -764,13 +635,10 @@ class ReplayBuffer:
         if self.curr_i == self.max_steps:
             self.curr_i = 0
 
-    def sample(self, N, to_gpu=False, norm_rews=True):
+    def sample(self, N, device='cpu', norm_rews=False):
         inds = np.random.choice(np.arange(self.filled_i), size=N,
                                 replace=False)
-        if to_gpu:
-            cast = lambda x: torch.tensor(x, dtype=torch.float32).cuda()
-        else:
-            cast = lambda x: torch.tensor(x, dtype=torch.float32)
+        cast = lambda x: torch.tensor(x, dtype=torch.float32).to(device)
         if norm_rews:
             ret_rews = [cast((self.rew_buffs[i][inds] -
                               self.rew_buffs[i][:self.filled_i].mean()) /
@@ -785,34 +653,6 @@ class ReplayBuffer:
                 [cast(self.done_buffs[i][inds]) for i in range(self.num_agents)])
     
 ## MISCILLANEOUS UTILITIES
-
-# from https://github.com/songrotek/DDPG/blob/master/ou_noise.py
-class OUNoise:
-    def __init__(self, action_dimension, scale=0.1, mu=0, theta=0.15, sigma=0.2):
-        self.action_dimension = action_dimension
-        self.scale = scale
-        self.mu = mu
-        self.theta = theta
-        self.sigma = sigma
-        self.state = np.ones(self.action_dimension) * self.mu
-        self.reset()
-
-    def reset(self):
-        self.state = np.ones(self.action_dimension) * self.mu
-
-    def noise(self):
-        x = self.state
-        dx = self.theta * (self.mu - x) + self.sigma * np.random.randn(len(x))
-        self.state = x + dx
-        return self.state * self.scale
-
-# https://github.com/seba-1511/dist_tuto.pth/blob/gh-pages/train_dist.py
-def average_gradients(model):
-    """ Gradient averaging. """
-    size = float(dist.get_world_size())
-    for param in model.parameters():
-        dist.all_reduce(param.grad.data, op=dist.reduce_op.SUM, group=0)
-        param.grad.data /= size
 
 # https://github.com/ikostrikov/pytorch-ddpg-naf/blob/master/ddpg.py#L11
 def soft_update(target, source, tau):
@@ -831,55 +671,15 @@ def soft_update(target, source, tau):
 def hard_update(target, source):
     """
     Copy network parameters from source to target
-    Inputs:
-        target (torch.nn.Module): Net to copy parameters to
-        source (torch.nn.Module): Net whose parameters to copy
     """
     for target_param, param in zip(target.parameters(), source.parameters()):
         target_param.data.copy_(param.data)
 
-def onehot_from_logits(logits, eps=0.0):
+def onehot_from_logits(logits):
     """
     Given batch of logits, return one-hot sample using epsilon greedy strategy
     (based on given epsilon)
     """
     # get best (according to current policy) actions in one-hot form
     argmax_acs = (logits == logits.max(1, keepdim=True)[0]).float()
-    if eps == 0.0:
-        return argmax_acs
-    # get random actions in one-hot form
-    rand_acs = (torch.eye(logits.shape[1])[[np.random.choice(
-        range(logits.shape[1]), size=logits.shape[0])]]).detach()
-    # chooses between best and random actions using epsilon greedy
-    return torch.stack([argmax_acs[i] if r > eps else rand_acs[i] for i, r in
-                        enumerate(torch.rand(logits.shape[0]))])
-
-# modified for PyTorch from https://github.com/ericjang/gumbel-softmax/blob/master/Categorical%20VAE.ipynb
-def sample_gumbel(shape, eps=1e-20, tens_type=torch.FloatTensor):
-    """Sample from Gumbel(0, 1)"""
-    U = tens_type(*shape).uniform_().detach()
-    return -torch.log(-torch.log(U + eps) + eps)
-
-# modified for PyTorch from https://github.com/ericjang/gumbel-softmax/blob/master/Categorical%20VAE.ipynb
-def gumbel_softmax_sample(logits, temperature):
-    """ Draw a sample from the Gumbel-Softmax distribution"""
-    y = logits + sample_gumbel(logits.shape, tens_type=type(logits.data)).to(logits.device)
-    return nn.functional.softmax(y / temperature, dim=1)
-
-# modified for PyTorch from https://github.com/ericjang/gumbel-softmax/blob/master/Categorical%20VAE.ipynb
-def gumbel_softmax(logits, temperature=1.0, hard=False):
-    """Sample from the Gumbel-Softmax distribution and optionally discretize.
-    Args:
-      logits: [batch_size, n_class] unnormalized log-probs
-      temperature: non-negative scalar
-      hard: if True, take argmax, but differentiate w.r.t. soft sample y
-    Returns:
-      [batch_size, n_class] sample from the Gumbel-Softmax distribution.
-      If hard=True, then the returned sample will be one-hot, otherwise it will
-      be a probabilitiy distribution that sums to 1 across classes
-    """
-    y = gumbel_softmax_sample(logits, temperature)
-    if hard:
-        y_hard = onehot_from_logits(y)
-        y = (y_hard - y).detach() + y
-    return y
+    return argmax_acs
