@@ -8,7 +8,7 @@ class AcolightStrategy(Strategy):
     Bompard, J., Mathieu, P., & Nongaillard, A. (2025). Optimizing road intersections using phase scheduling. 23rd International Conference of Practical applications on Agents and Multi-agent Systems.
     """
 
-    def __init__(self, network, min_phase_duration=1, max_phase_duration=90, yellow_time=3):
+    def __init__(self, network, min_phase_duration=1, max_phase_duration=90, yellow_time=3, supervisor=True):
         """
         Init of class
         :param network: The network to deploy the strategy
@@ -30,6 +30,10 @@ class AcolightStrategy(Strategy):
         self.current_cycle = {identifiant: [] for identifiant in network.TLS_DETECTORS}
         self.current_yellow_time = {identifiant: 0 for identifiant in network.TLS_DETECTORS}
         self.is_phase = {identifiant: True for identifiant in network.TLS_DETECTORS}
+        if type(supervisor) is dict:
+            self.supervisor = supervisor
+        else:
+            self.supervisor = {identifiant: supervisor for identifiant in network.TLS_DETECTORS}
         if type(min_phase_duration) is dict:
             self.min_phase_durations = min_phase_duration
         else:
@@ -122,13 +126,14 @@ class AcolightStrategy(Strategy):
         """
         Add the current priority phases (the phases with saturated lanes) to the pile.
         """
-        current_phase = self.traci.trafficlight.getPhase(id_tls)
-        for phase in self.network.TLS_DETECTORS[id_tls]:
-            detectors = self.network.TLS_DETECTORS[id_tls][phase]['saturation']
-            #if any([any([self.traci.vehicle.isStopped(veh) == True for veh in self.traci.lanearea.getLastStepVehicleIDs(det)]) for det in detectors]) and phase != current_phase:
-            if any([0 < self.traci.lanearea.getLastStepMeanSpeed(det) < 0.5 and self.traci.lanearea.getLastStepVehicleNumber(det) > 0 for det in detectors]) and phase != current_phase:
-                if phase not in self.priority_pile[id_tls]:
-                    self.priority_pile[id_tls].append(phase)
+        if self.supervisor[id_tls]:
+            current_phase = self.traci.trafficlight.getPhase(id_tls)
+            for phase in self.network.TLS_DETECTORS[id_tls]:
+                detectors = self.network.TLS_DETECTORS[id_tls][phase]['saturation']
+                #if any([any([self.traci.vehicle.isStopped(veh) == True for veh in self.traci.lanearea.getLastStepVehicleIDs(det)]) for det in detectors]) and phase != current_phase:
+                if any([0 < self.traci.lanearea.getLastStepMeanSpeed(det) < 0.5 and self.traci.lanearea.getLastStepVehicleNumber(det) > 0 for det in detectors]) and phase != current_phase:
+                    if phase not in self.priority_pile[id_tls]:
+                        self.priority_pile[id_tls].append(phase)
 
     def is_cycle_complete(self, id_tls):
         """

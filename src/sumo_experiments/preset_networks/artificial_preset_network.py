@@ -55,9 +55,9 @@ class ArtificialNetwork(Network):
             res = traci_function(traci)
             traci.close()
         except Exception as err:
-            print("Error during simulation :", sys.exc_info()[0])
-            print("OS error: {0}".format(err))
-            res = None
+           print("Error during simulation :", sys.exc_info()[0])
+           print("OS error: {0}".format(err))
+           res = None
         self.clean_files()
         return res
 
