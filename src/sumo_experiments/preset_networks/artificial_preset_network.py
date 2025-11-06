@@ -3,7 +3,7 @@ import sys
 
 from sumo_experiments.preset_networks import Network
 import libsumo as traci
-
+import traceback
 
 class ArtificialNetwork(Network):
     """
@@ -49,15 +49,16 @@ class ArtificialNetwork(Network):
         try:
             args = self.build_arguments(seed, no_warnings, nb_threads, time_to_teleport)
             if gui:
-                traci.start(["sumo-gui"] + args.split())
+                traci.start(["sumo-gui"] + args.split() + ['--waiting-time-memory', '1000000'])
             else:
-                traci.start(["sumo"] + args.split())
+                traci.start(["sumo"] + args.split() + ['--waiting-time-memory', '1000000'])
             res = traci_function(traci)
             traci.close()
         except Exception as err:
-           print("Error during simulation :", sys.exc_info()[0])
-           print("OS error: {0}".format(err))
-           res = None
+            print("Error during simulation :", sys.exc_info()[0])
+            print("OS error: {0}".format(err))
+            print(traceback.format_exc())
+            res = None
         self.clean_files()
         return res
 
@@ -86,3 +87,14 @@ class ArtificialNetwork(Network):
         for file in self.file_names.values():
             if os.path.exists(file):
                 os.remove(file)
+
+    def detector2tlid(self):
+        mapping = {}
+        for tlid, phases in self.TLS_DETECTORS.items():
+            for phase, detectors in phases.items():
+                # numerical detectors
+                numerical = detectors['numerical']
+                for detector in numerical:
+                    mapping.setdefault(detector, [])
+                    mapping[detector].append(tlid)
+        return mapping

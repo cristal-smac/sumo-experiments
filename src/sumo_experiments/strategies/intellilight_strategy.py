@@ -142,8 +142,6 @@ class IntellilightStrategy(Strategy):
             for tl_id in self.network.TL_IDS:
                 if timestep % self.episode_duration[tl_id] == 0 and self.trainnn[tl_id]:
                     if tl_id == "c":
-                        self.mean_rewards.append(np.mean(self.rewards))
-                        self.rewards = []
                         plt.plot(range(len(self.mean_rewards)), self.mean_rewards)
                         plt.xlabel("Episode")
                         plt.ylabel("Mean Reward")
@@ -320,14 +318,12 @@ class IntellilightStrategy(Strategy):
     def get_reward(self, tl_id, change_phase=None):
         detectors = self._detectors(tl_id)
         L = self.c1 * sum([self.traci.lanearea.getJamLengthVehicle(det) for det in detectors])
-        D = self.c2 * sum([1 - (self.traci.lanearea.getLastStepMeanSpeed(det) / self.traci.lane.getMaxSpeed(self.traci.lanearea.getLaneID(det))) for det in detectors])
+        D = self.c2 * sum([1 - (self.traci.lanearea.getIntervalMeanSpeed(det) / self.traci.lane.getMaxSpeed(self.traci.lanearea.getLaneID(det))) for det in detectors])
         W = self.c3 * sum(self.compute_waiting_time(detectors))
         A = self.c4 * (self.DEBUG_REWARD if change_phase is None else change_phase)  # if change_phase is None this should not be in replay buffer
         # Number of vehicles that passed intersection have to be implemented
         # Travel time of vehicles that passed the intersection have to be implemented
         reward = -(L + D + W + A)
-        # if reward <-500:
-        #     print(f"Reward: {reward} \t {L,D,W,A}")
         return reward
 
 
