@@ -92,11 +92,13 @@ class MADDPGStrategy(IntellilightStrategy):
         self.current_phase = {tl_id: 0 for tl_id in self.network.TLS_DETECTORS}
 
         self.number_of_trainings = {tl_id: 0 for tl_id in self.network.TLS_DETECTORS}
-        self.mean_rewards = []
+        self.mean_scores = []
+        self.mean_scores = []
 
         self.val_losses = []
         self.pol_losses = []
         self.rewards = []
+        self.scores = []
         self.times = []
 
 
@@ -127,18 +129,18 @@ class MADDPGStrategy(IntellilightStrategy):
 
             self.time_step = 1
         else:
+            if self.traci.simulation.getTime() % self.episode_duration == 0:
+                self.mean_scores.append(np.mean(self.scores))
+                self.scores = []
+                # reset states and action
+                self.states = None
+                self.action_indices = None
+                self.changed_phase = [None for _ in self.network.TLS_DETECTORS]
+                if self.network.TL_IDS[0] == "c":
+                    plt.plot(range(len(self.mean_scores)), self.mean_scores)
+                    plt.savefig('strategy_debug.png')
             for tl_id in self.network.TL_IDS:
                 # assert self.time_step == self.traci.simulation.getTime(), print(self.time_step, self.traci.simulation.getTime())
-                if self.traci.simulation.getTime() % self.episode_duration == 0:
-                    if tl_id == "c":
-                        self.mean_rewards.append(np.mean(self.rewards))
-                        self.rewards = []
-                        plt.plot(range(len(self.mean_rewards)), self.mean_rewards)
-                        plt.savefig('strategy_debug.png')
-                        # reset states and action
-                        self.states = None
-                        self.action_indices = None
-                        self.changed_phase = [None for _ in self.network.TLS_DETECTORS]
                 if 'y' in self.traci.trafficlight.getRedYellowGreenState(tl_id):
                     if self.current_yellow_time[tl_id] >= self.yellow_time[tl_id]:
                         self.traci.trafficlight.setPhase(tl_id, int(self.next_phase[tl_id]))
@@ -179,6 +181,7 @@ class MADDPGStrategy(IntellilightStrategy):
         next_states = [self.get_state(tl_id) for tl_id in self.network.TLS_DETECTORS]
         rewards = [self.get_reward(tl_id, self.changed_phase[i]) for i, tl_id in enumerate(self.network.TLS_DETECTORS)]
         dones = [(self.traci.simulation.getTime()%self.episode_duration)==0 for _ in self.network.TLS_DETECTORS]
+        scores = [self.get_score(tl_id, self.changed_phase[i]) for i, tl_id in enumerate(self.network.TLS_DETECTORS)]
         # if dones[0]:
         #     print(f"Rewards at time {self.traci.simulation.getTime()}: {rewards}")
         # if self.states is not None and self.action_indices is not None:
@@ -196,6 +199,7 @@ class MADDPGStrategy(IntellilightStrategy):
             if "c" in self.network.TL_IDS:  # debugging for single intersection
                 self.rewards.append(rewards[0])
                 self.times.append(self.traci.simulation.getTime())
+            self.scores.append(np.mean(scores))
         state_tensor = [torch.tensor(n_s, dtype=torch.float32).unsqueeze(0).to(self.rollout_device) for n_s in next_states]
         with torch.no_grad():
             torch_action_indices = self.maddpg.step(state_tensor, explore=True) # exploration handled by softmax
@@ -227,6 +231,10 @@ class MADDPGStrategy(IntellilightStrategy):
         self.maddpg.update_all_targets()
         self.maddpg.prep_rollouts(device=self.rollout_device)
 
+    def get_reward(self, tl_id, change_phase=None):
+        pressure = MaxPressureStrategy._compute_pressure(self, self.network.TLS_DETECTORS[tl_id])
+        return -np.nanmean(list(pressure.values()))/2000
+    
     def _start_agent(self, tl_id):
         """
         Start an agent at the beginning of the simulation.

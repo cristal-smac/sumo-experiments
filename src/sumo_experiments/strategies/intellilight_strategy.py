@@ -121,8 +121,10 @@ class IntellilightStrategy(Strategy):
         self.last_action = {identifiant: None for identifiant in self.network.TLS_DETECTORS}
 
         self.mean_rewards = []
+        self.mean_scores= []
         self.trainnn = {identifiant: True for identifiant in self.network.TLS_DETECTORS}
         self.rewards = []
+        self.scores = []
         self.times = []
 
     def run_all_agents(self, traci):
@@ -139,9 +141,15 @@ class IntellilightStrategy(Strategy):
             self.started = True
         else:
             timestep = self.traci.simulation.getTime()
+            tl_id = self.network.TL_IDS[0]
+            if timestep % self.episode_duration[tl_id] == 0 and self.trainnn[tl_id]:
+                self.mean_scores.append(np.mean(self.scores))
+                self.scores = []
             for tl_id in self.network.TL_IDS:
                 if timestep % self.episode_duration[tl_id] == 0 and self.trainnn[tl_id]:
                     if tl_id == "c":
+                        self.mean_rewards.append(np.mean(self.rewards))
+                        self.rewards = []
                         plt.plot(range(len(self.mean_rewards)), self.mean_rewards)
                         plt.xlabel("Episode")
                         plt.ylabel("Mean Reward")
@@ -217,7 +225,7 @@ class IntellilightStrategy(Strategy):
             if tl_id == "c":  # debugging for single intersection
                 self.rewards.append(reward)
                 self.times.append(self.traci.simulation.getTime())
-
+            self.scores = [self.get_score(tl_id, self.last_action[tl_id]) for i, tl_id in enumerate(self.network.TLS_DETECTORS)]
         self.last_state[tl_id] = state
         self.last_action[tl_id] = action
 
@@ -326,6 +334,14 @@ class IntellilightStrategy(Strategy):
         reward = -(L + D + W + A)
         return reward
 
+    def get_score(self, tl_id, change_phase=None):
+        detectors = self._detectors(tl_id)
+        L = self.c1 * sum([self.traci.lanearea.getJamLengthVehicle(det) for det in detectors])
+        D = self.c2 * sum([1 - (self.traci.lanearea.getIntervalMeanSpeed(det) / self.traci.lane.getMaxSpeed(self.traci.lanearea.getLaneID(det))) for det in detectors])
+        W = self.c3 * sum(self.compute_waiting_time(detectors))
+        # Number of vehicles that passed intersection have to be implemented
+        # Travel time of vehicles that passed the intersection have to be implemented
+        return -(L + D + W)
 
     def update_target_model(self, tl_id):
         self.target_model[tl_id].load_state_dict(self.model[tl_id].state_dict())
