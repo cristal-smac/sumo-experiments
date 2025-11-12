@@ -62,7 +62,10 @@ class IntellilightStrategy(Strategy):
         self.nb_phases = {}
         self.nb_switch = {identifiant: 0 for identifiant in self.network.TLS_DETECTORS}
         self.next_phase = {identifiant: 0 for identifiant in self.network.TLS_DETECTORS}
-        self.period = period
+        if type(period) is dict:
+            self.period = period
+        else:
+            self.period = {identifiant: period for identifiant in network.TLS_DETECTORS}
         if type(yellow_time) is dict:
             self.yellow_time = yellow_time
         else:
@@ -303,11 +306,8 @@ class IntellilightStrategy(Strategy):
             action = int(exp[1])
             phase = int(exp[0][-1])
             memory_palaces[(action, phase)].append(exp)
-        min_palace = self.buffer_size[tl_id]
         for key in memory_palaces:
-            if len(memory_palaces[key]) < min_palace:
-                min_palace = len(memory_palaces[key])
-        for key in memory_palaces:
+            min_palace = min(len(memory_palaces[key]), self.buffer_size[tl_id]) # Handle case when memory palace is empty
             idx = [i for i in range(len(memory_palaces[key]))]
             rnd_idx = np.random.choice(idx, size=min(min_palace, m_len), replace=False)
             for i in rnd_idx:
@@ -392,9 +392,18 @@ class IntellilightStrategy(Strategy):
         self.started = True
 
         input_dim = len(self.get_state(tl_id))
-        self.model[tl_id] = QNetwork(action_space=self.action_space[tl_id], input_dim=input_dim, hidden_dim=self.hidden_layer_size[tl_id], output_dim=2).to(self.device)
-        self.target_model[tl_id] = QNetwork(action_space=self.action_space[tl_id], input_dim=input_dim, hidden_dim=self.hidden_layer_size[tl_id], output_dim=2).to(self.device)
+        if self.model[tl_id] is None: # no loaded model
+            self.model[tl_id] = QNetwork(action_space=self.action_space[tl_id], input_dim=input_dim, hidden_dim=self.hidden_layer_size[tl_id], output_dim=2).to(self.device)
+            self.target_model[tl_id] = QNetwork(action_space=self.action_space[tl_id], input_dim=input_dim, hidden_dim=self.hidden_layer_size[tl_id], output_dim=2).to(self.device)
         self.optimizer[tl_id] = optim.Adam(self.model[tl_id].parameters(), lr=self.learning_rate[tl_id])
+
+    def save_model(self, filepath):
+        torch.save(self.model, filepath)
+
+    def load_model(self, filepath):
+        torch.serialization.add_safe_globals([QNetwork, nn.Linear, nn.Sequential, nn.ReLU, nn.ModuleList, optim.Adam, dict])
+        self.model = torch.load(filepath)#, weights_only=False)
+        self.target_model = torch.load(filepath)#, weights_only=False)
 
 
 class QNetwork(nn.Module):
