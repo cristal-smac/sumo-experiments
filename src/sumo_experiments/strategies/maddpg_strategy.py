@@ -10,7 +10,7 @@ import random
 from sumo_experiments.strategies.maxpressure_strategy import MaxPressureStrategy
 from sumo_experiments.strategies import IntellilightStrategy
 import matplotlib.pyplot as plt
-
+import collections
 
 class MADDPGStrategy(IntellilightStrategy):
     """
@@ -21,7 +21,8 @@ class MADDPGStrategy(IntellilightStrategy):
     - Lowe, R., Wu, Y. I., Tamar, A., Harb, J., Pieter Abbeel, O., & Mordatch, I. (2017). Multi-agent actor-critic for mixed cooperative-competitive environments. Advances in neural information processing systems, 30.
     """
 
-    def __init__(self, network, period=10, episode_duration=300, reward_coeffs=(1, 1, 1, 1), gamma=0.99, buffer_size=10000, batch_size=32, steps_per_update=10, 
+    def __init__(self, network, period=10, episode_duration=300, reward_coeffs=(1, 1, 1, 1), gamma=0.99, buffer_size=10000, batch_size=32, 
+                 steps_per_update=10, samples_before_update=1024, 
                  learning_rate=1e-2, tau=0.01, hidden_layer_size=64, yellow_time=3):
         """
         Init of class.
@@ -85,8 +86,10 @@ class MADDPGStrategy(IntellilightStrategy):
         self.batch_size = batch_size
         self.hidden_layer_size = hidden_layer_size if isinstance(hidden_layer_size, dict) else {tl_id: hidden_layer_size for tl_id in network.TLS_DETECTORS}
         self.steps_per_update = steps_per_update# if isinstance(update_target_frequency, dict) else {tl_id: update_target_frequency for tl_id in network.TLS_DETECTORS}
+        self.samples_before_update = samples_before_update
         self.learning_rate = learning_rate if isinstance(learning_rate, dict) else {tl_id: learning_rate for tl_id in network.TLS_DETECTORS}
 
+        self.maddpg = None
         self.agents = {}
         self.loss_history = {tl_id: [] for tl_id in self.network.TLS_DETECTORS}
         self.current_phase = {tl_id: 0 for tl_id in self.network.TLS_DETECTORS}
@@ -113,10 +116,12 @@ class MADDPGStrategy(IntellilightStrategy):
             self.traci = traci
             for tl_id in self.network.TL_IDS:
                 self._start_agent(tl_id)
-            self.maddpg = MADDPG(agents=list(self.agents.values()), alg_types=['MADDPG' for _ in self.network.TLS_DETECTORS], 
-                                 gamma=self.gamma[tl_id],
-                                 discrete_action=True,
-                                 tau=self.tau)
+
+            if self.maddpg is None: # not loading a saved model
+                self.maddpg = MADDPG(agents=list(self.agents.values()), alg_types=['MADDPG' for _ in self.network.TLS_DETECTORS], 
+                                    gamma=self.gamma[tl_id],
+                                    discrete_action=True,
+                                    tau=self.tau)
             self.replay_buffer = ReplayBuffer(max_steps=self.buffer_size, num_agents=self.maddpg.nagents, obs_dims=list(self.observation_sizes.values()),
                                                ac_dims=[len(self.action_space[tl_id]) for tl_id in self.network.TLS_DETECTORS])
             self.started = True
@@ -136,7 +141,7 @@ class MADDPGStrategy(IntellilightStrategy):
                 self.states = None
                 self.action_indices = None
                 self.changed_phase = [None for _ in self.network.TLS_DETECTORS]
-                if self.network.TL_IDS[0] == "c":
+                if self.network.TL_IDS:#[0] == "c":
                     plt.plot(range(len(self.mean_scores)), self.mean_scores)
                     plt.savefig('strategy_debug.png')
             for tl_id in self.network.TL_IDS:
@@ -152,7 +157,7 @@ class MADDPGStrategy(IntellilightStrategy):
                     self.time[tl_id] += 1
             if self.time_step % self.period == 0:
                 self.switch_next_phase()
-            if (len(self.replay_buffer) >= self.batch_size) and (self.time_step % self.steps_per_update == 0):
+            if (len(self.replay_buffer) >= self.samples_before_update) and (self.time_step % self.steps_per_update == 0):
                 self.train()
             self.time_step += 1
 
@@ -193,10 +198,9 @@ class MADDPGStrategy(IntellilightStrategy):
 
         # Update buffer from previous action step
         if self.states is not None and self.action_indices is not None and not dones[0]:
-            assert rewards[0]>-(self.c4*self.DEBUG_REWARD), (rewards, self.changed_phase)
-
             self.replay_buffer.push(self.states, self.action_indices, rewards, next_states, dones=dones)
             if "c" in self.network.TL_IDS:  # debugging for single intersection
+                assert rewards[0]>-(self.c4*self.DEBUG_REWARD), (rewards, self.changed_phase)
                 self.rewards.append(rewards[0])
                 self.times.append(self.traci.simulation.getTime())
             self.scores.append(np.mean(scores))
@@ -265,6 +269,18 @@ class MADDPGStrategy(IntellilightStrategy):
                                        discrete_action=True).to(self.rollout_device)
         self.observation_sizes[tl_id] = input_dims[tl_id]
 
+    def save_model(self, filepath):
+        torch.save(self.maddpg.agents, filepath)
+
+    def load_model(self, filepath):
+        torch.serialization.add_safe_globals([DDPGAgent, DeepNN, nn.Linear, nn.functional.relu, optim.Adam, collections.defaultdict, dict])
+        if self.maddpg is None:
+            self.maddpg = MADDPG(agents=[], alg_types=['MADDPG' for _ in self.network.TLS_DETECTORS], 
+                                 gamma=list(self.gamma.values())[0], # TODO: refactor?
+                                 discrete_action=True,
+                                 tau=self.tau)
+        self.maddpg.agents = torch.load(filepath)#, weights_only=False)
+
 
 class DeepNN(nn.Module):
     def __init__(self, input_dim, out_dim, hidden_dim=64, nonlin=nn.functional.relu):
@@ -313,8 +329,6 @@ class MADDPG(object):
         """
         self.alg_types = alg_types
         self.agents: List[DDPGAgent] = agents
-        self.central_critic = self.agents[0].critic # relook and finish the code
-        self.central_target_critic = self.agents[0].target_critic # relook and finish the code
         self.gamma = gamma
         self.tau = tau
         self.discrete_action = discrete_action
@@ -487,7 +501,7 @@ class MADDPG(object):
             a.load_params(params)
         return instance
 
-class DDPGAgent(object):
+class DDPGAgent(nn.Module):
     """
     General class for DDPG agents (policy, critic, target policy, target
     critic, exploration noise)
@@ -500,6 +514,7 @@ class DDPGAgent(object):
             num_out_pol (int): number of dimensions for policy output
             num_in_critic (int): number of dimensions for critic input
         """
+        super().__init__()
         self.policy = DeepNN(num_in_pol, num_out_pol,
                                  hidden_dim=hidden_dim)
         self.critic = DeepNN(num_in_critic, 1,
