@@ -96,7 +96,7 @@ class GridNetwork(ArtificialNetwork):
         elif flow_type == 'all_directions':
             flows = self.generate_flows_all_directions(stop_generation_time, flow_frequency, distribution)
         elif flow_type == 'matrix':
-            if load_vector != None and period_time != None and coeff_matrix != None:
+            if load_vector is not None and period_time is not None and coeff_matrix is not None:
                 flows = self.generate_flows_with_matrix(period_time, load_vector, coeff_matrix)
             else:
                 raise ValueError("load_vector and coeff_matrix ad period_time must be provided when flow_type is 'matrix'.")

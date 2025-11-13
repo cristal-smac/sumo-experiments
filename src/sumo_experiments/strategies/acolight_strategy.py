@@ -49,6 +49,7 @@ class AcolightStrategy(Strategy):
 
         self.nb_switch = {identifiant: 0 for identifiant in network.TLS_DETECTORS}
         self.phases_occurences = {identifiant: {} for identifiant in network.TLS_DETECTORS}
+        self.list_phases = {identifiant: [] for identifiant in network.TLS_DETECTORS}
 
     def run_all_agents(self, traci):
         """
@@ -87,8 +88,7 @@ class AcolightStrategy(Strategy):
                             self.switch_next_phase(id_tls)
                         elif self.blocked_vehicles(id_tls) and self.time[id_tls] > 3:
                             self.switch_next_phase(id_tls)
-                    #if not self.prio[id_tls]:
-                    if len(self.priority_pile[id_tls]) == 0 and self.prio[id_tls]:
+                    if len(self.priority_pile[id_tls]) == 0:
                         self.add_prio_phases(id_tls)
                     self.time[id_tls] += 1
 
@@ -100,6 +100,7 @@ class AcolightStrategy(Strategy):
         current_phase = self.traci.trafficlight.getPhase(id_tls)
         next_phase = self.get_next_phase(id_tls)
         if next_phase != current_phase:
+            self.list_phases[id_tls].append(next_phase)
             self.next_phase[id_tls] = next_phase
             if self.traci.trafficlight.getPhase(id_tls) == self.traci.trafficlight.getPhase(id_tls) - 1:
                 self.traci.trafficlight.setPhase(id_tls, 0)
@@ -108,12 +109,16 @@ class AcolightStrategy(Strategy):
             self.time[id_tls] = 0
         else:
             #self.time[id_tls] = self.min_phase_durations[id_tls] + 1
-            phases_available = list(self.network.TLS_DETECTORS[id_tls].keys())
-            index = phases_available.index(next_phase)
-            if index == len(phases_available) - 1:
-                next_phase = 0
-            else:
-                next_phase = phases_available[index + 1]
+            # phases_available = list(self.network.TLS_DETECTORS[id_tls].keys())
+            # index = phases_available.index(next_phase)
+            # if index == len(phases_available) - 1:
+            #     next_phase = 0
+            # else:
+            #     next_phase = phases_available[index + 1]
+            index_phase = list(self.network.TLS_DETECTORS[id_tls].keys()).index(self.traci.trafficlight.getPhase(id_tls))
+            double_list = list(self.network.TLS_DETECTORS[id_tls].keys()) * 2
+            next_phase = double_list[index_phase + 1]
+            self.list_phases[id_tls].append(next_phase)
             self.next_phase[id_tls] = next_phase
             if self.traci.trafficlight.getPhase(id_tls) == self.traci.trafficlight.getPhase(id_tls) - 1:
                 self.traci.trafficlight.setPhase(id_tls, 0)
@@ -209,28 +214,24 @@ class AcolightStrategy(Strategy):
         :return: The next phase for the controller
         :rtype: int
         """
-        if self.prio[id_tls] and len(self.priority_pile[id_tls]) > 0:
-            if len(self.priority_pile[id_tls]) == 1:
-                self.prio[id_tls] = False
+        if len(self.priority_pile[id_tls]) > 0:
             return self.priority_pile[id_tls].pop(0)
         else:
             if self.is_cycle_complete(id_tls):
                 self.current_cycle[id_tls] = []
-                self.prio[id_tls] = True
-                return 0
-            else:
-                for phase in self.network.TLS_DETECTORS[id_tls]:
-                    if phase not in self.current_cycle[id_tls]:
-                        for det in self.network.TLS_DETECTORS[id_tls][phase]['boolean']:
-                            if self.traci.lanearea.getLastStepVehicleNumber(det) > 0:
-                                self.prio[id_tls] = True
-                                return phase
-                for phase in self.network.TLS_DETECTORS[id_tls]:
+            index_phase = list(self.network.TLS_DETECTORS[id_tls].keys()).index(self.traci.trafficlight.getPhase(id_tls))
+            len_list = len(self.network.TLS_DETECTORS[id_tls])
+            double_list = list(self.network.TLS_DETECTORS[id_tls].keys()) * 2
+            list_phase = [i for i in double_list[index_phase:index_phase + len_list]]
+            for phase in list_phase:
+                if phase not in self.current_cycle[id_tls]:
                     for det in self.network.TLS_DETECTORS[id_tls][phase]['boolean']:
                         if self.traci.lanearea.getLastStepVehicleNumber(det) > 0:
-                            self.prio[id_tls] = True
                             return phase
-        self.prio[id_tls] = True
+            for phase in self.network.TLS_DETECTORS[id_tls]:
+                for det in self.network.TLS_DETECTORS[id_tls][phase]['boolean']:
+                    if self.traci.lanearea.getLastStepVehicleNumber(det) > 0:
+                        return phase
         return self.traci.trafficlight.getPhase(id_tls) # Current phase
 
 

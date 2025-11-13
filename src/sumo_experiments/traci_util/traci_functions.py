@@ -53,6 +53,25 @@ def get_speed_data(traci):
     }
     return res
 
+def get_waiting_time_data(traci):
+    """
+    Return waiting time data for all running vehicles on the network.
+    :return: A dictionary with speed values
+    :rtype: dict
+    """
+    wt = []
+    vehicles = traci.vehicle.getIDList()
+    for vehicle in vehicles:
+        wt.append(1 if traci.vehicle.getSpeed(vehicle) < 0.05 else 0)
+    res = {
+        'mean_waiting_time': np.mean(wt) if len(wt) > 0 else np.nan,
+        'sum_waiting_time': np.sum(wt) if len(wt) > 0 else np.nan,
+        'max_waiting_time': np.max(wt) if len(wt) > 0 else np.nan,
+        'min_waiting_time': np.min(wt) if len(wt) > 0 else np.nan,
+        'std_dev_waiting_time': np.std(wt) if len(wt) > 0 else np.nan
+    }
+    return res
+
 
 def get_co2_emissions_data(traci):
     """
