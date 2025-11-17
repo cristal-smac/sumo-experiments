@@ -69,7 +69,7 @@ class InfrastructureBuilder:
         tree = ET.ElementTree(xml_nodes)
         tree.write(filename)
 
-    def add_edge(self, id, from_node, to_node, edge_type):
+    def add_edge(self, id, from_node, to_node, edge_type, nb_lanes=1):
         """
         Add an edge to the infrastructures.
         :param id: ID of edge
@@ -80,13 +80,15 @@ class InfrastructureBuilder:
         :type to_node: str
         :param edge_type: Type of edge
         :type edge_type: str
+        :param nb_lanes: Number of lanes
+        :type nb_lanes: int
         :raises AttributeError: if from_node or to_node refers to a non-existing node
         """
         if from_node not in self.nodes:
             raise AttributeError("The from_node attribute refers to a non-existing node.")
         elif to_node not in self.nodes:
             raise AttributeError("The to_node attribute refers to a non-existing node.")
-        edge = Edge(id, from_node, to_node, edge_type)
+        edge = Edge(id, from_node, to_node, edge_type, nb_lanes)
         self.edges[id] = edge
 
     def build_edges(self, filename):
@@ -221,7 +223,7 @@ class Edge:
     Class representing an edge of a SUMO network.
     """
 
-    def __init__(self, id, from_node, to_node, edge_type):
+    def __init__(self, id, from_node, to_node, edge_type, nb_lanes=1):
         """
         Init of class.
         :param id: ID of edge
@@ -232,11 +234,15 @@ class Edge:
         :type to_node: str
         :param edge_type: Type of edge
         :type edge_type: str
+        :param nb_lanes: Number of lanes
+        :type nb_lanes: int
         """
         self.id = id
         self.from_node = from_node
         self.to_node = to_node
         self.type = edge_type
+        self.nb_lanes = str(nb_lanes)
+
 
     def build(self, xml_edges):
         """
@@ -244,7 +250,7 @@ class Edge:
         :param xml_edges: XML object where to build the edge.
         :type xml_edges: xml.etree.ElementTree.Element
         """
-        ET.SubElement(xml_edges, 'edge', {'id': self.id, 'from': self.from_node, 'to': self.to_node, 'type': self.type})
+        ET.SubElement(xml_edges, 'edge', {'id': self.id, 'from': self.from_node, 'to': self.to_node, 'type': self.type, 'numLanes': self.nb_lanes})
 
 
 class EdgeType:
@@ -293,8 +299,8 @@ class Connection:
         """
         self.from_edge = from_edge
         self.to_edge = to_edge
-        self.from_lane = from_lane
-        self.to_lane = to_lane
+        self.from_lane = str(from_lane)
+        self.to_lane = str(to_lane)
 
     def build(self, xml_connections):
         """
