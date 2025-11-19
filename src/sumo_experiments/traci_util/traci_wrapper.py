@@ -21,7 +21,7 @@ class TraciWrapper:
     in terms of simulation time and visualization.
     """
 
-    def __init__(self, max_simulation_duration=None, data_frequency=1, graph_representation=False, print_timestep=500, vehicle_deletion_timesteps=[]):
+    def __init__(self, max_simulation_duration=None, data_frequency=1, graph_representation=False, print_timestep=500, vehicle_deletion_timesteps=[], scale_factors=None):
         """
         Init of class
         Two conditions can trigger the end of the simulation : the maximum simulation duration is reached or there are no vehicles to run.
@@ -44,6 +44,9 @@ class TraciWrapper:
         self.graph_representation = graph_representation
         self.print_timestep = print_timestep
         self.vehicles_deletion_timesteps = vehicle_deletion_timesteps
+        if scale_factors is not None:
+            assert len(scale_factors) == len(vehicle_deletion_timesteps), "Length of scale_factors must be equal to length of vehicle_deletion_timesteps"
+        self.scale_factors = scale_factors
 
     def add_stats_function(self, function):
         """
@@ -149,6 +152,10 @@ class TraciWrapper:
             if step in self.vehicles_deletion_timesteps:
                 for vehicle_id in traci.vehicle.getIDList():
                     traci.vehicle.remove(vehicle_id)
+                if self.scale_factors is not None:
+                    index = self.vehicles_deletion_timesteps.index(step)
+                    factor = self.scale_factors[index]
+                    traci.simulation.setScale(factor)
 
             # Store the current state network as a graph
             if self.graph_representation:
