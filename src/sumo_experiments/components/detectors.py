@@ -27,9 +27,10 @@ class DetectorBuilder:
         xml_additional = ET.Element('additional')
         self.build_lane_area_detectors(xml_additional)
         tree = ET.ElementTree(xml_additional)
+        ET.indent(tree, space="  ", level=0) # pretty print for debugging
         tree.write(filenames['detectors'])
 
-    def add_lane_area_detector(self, id, edge, lane, type, pos=0, end_pos=-0.1, freq=100000):
+    def add_lane_area_detector(self, id, edge, lane, type, pos=0, end_pos=-0.1, freq=100000, target_tlid=None):
         """
         Add a E2 detector to the object.
         :param id: ID of detector
@@ -46,10 +47,12 @@ class DetectorBuilder:
         :type end_pos: float
         :param freq: Detector frequency (Hertz)
         :type freq: int
+        :param target_tlid: Target traffic light to trigger aggregation interval
+        :type target_tlid: str
         :param file: The file where the detector will be saved
         :type file: str
         """
-        self.laneAreaDetectors[id] = LaneAreaDetector(id, edge, lane, type, pos, end_pos, freq, 'detectors.out')
+        self.laneAreaDetectors[id] = LaneAreaDetector(id, edge, lane, type, pos, end_pos, freq, target_tlid, 'detectors.out')
 
     def build_lane_area_detectors(self, xml):
         """
@@ -67,7 +70,7 @@ class LaneAreaDetector:
     Class defining an E2 detector to be integrated into a SUMO simulation
     """
 
-    def __init__(self, id, edge, lane, type, pos, end_pos, freq, file):
+    def __init__(self, id, edge, lane, type, pos, end_pos, freq, target_tlid, file):
         """
         Init of class.
         :param id: ID of detector
@@ -84,6 +87,8 @@ class LaneAreaDetector:
         :type end_pos: float
         :param freq: Detector frequency (Hertz)
         :type freq: int
+        :param target_tlid: Target traffic light to trigger aggregation interval
+        :type target_tlid: str
         :param file: The file where the detector will be saved
         :type file: str
         """
@@ -94,6 +99,7 @@ class LaneAreaDetector:
         self.pos = str(pos)
         self.end_pos = str(end_pos)
         self.freq = str(freq)
+        self.target_tlid = str(target_tlid)
         self.file = str(file)
 
     def build(self, xml):
@@ -102,12 +108,17 @@ class LaneAreaDetector:
         :param xml: XML object where to build the detector
         :type xml: xml.etree.ElementTree.Element
         """
+        attributes = {'id': self.id,
+                      'lane': f'{self.edge}_{self.lane}',
+                      'pos': self.pos,
+                      'endPos': self.end_pos,
+                      'friendlyPos': 'true',
+                      'file': self.file}
+        if self.target_tlid != 'None':
+            attributes.update({'tl': self.target_tlid})
+        else:
+            attributes.update({'freq': self.freq})
         ET.SubElement(xml,
                       'laneAreaDetector',
-                      {'id': self.id,
-                            'lane': f'{self.edge}_{self.lane}',
-                            'pos': self.pos,
-                            'endPos': self.end_pos,
-                            'freq': self.freq,
-                            'file': self.file}
+                      attributes
                       )

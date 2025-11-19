@@ -62,7 +62,10 @@ class IntellilightStrategy(Strategy):
         self.nb_phases = {}
         self.nb_switch = {identifiant: 0 for identifiant in self.network.TLS_DETECTORS}
         self.next_phase = {identifiant: 0 for identifiant in self.network.TLS_DETECTORS}
-        self.period = period
+        if type(period) is dict:
+            self.period = period
+        else:
+            self.period = {identifiant: period for identifiant in network.TLS_DETECTORS}
         if type(yellow_time) is dict:
             self.yellow_time = yellow_time
         else:
@@ -121,8 +124,10 @@ class IntellilightStrategy(Strategy):
         self.last_action = {identifiant: None for identifiant in self.network.TLS_DETECTORS}
 
         self.mean_rewards = []
+        self.mean_scores= []
         self.trainnn = {identifiant: True for identifiant in self.network.TLS_DETECTORS}
         self.rewards = []
+        self.scores = []
         self.times = []
 
     def run_all_agents(self, traci):
@@ -139,6 +144,10 @@ class IntellilightStrategy(Strategy):
             self.started = True
         else:
             timestep = self.traci.simulation.getTime()
+            tl_id = self.network.TL_IDS[0]
+            if timestep % self.episode_duration[tl_id] == 0 and self.trainnn[tl_id]:
+                self.mean_scores.append(np.mean(self.scores))
+                self.scores = []
             for tl_id in self.network.TL_IDS:
                 if timestep % self.episode_duration[tl_id] == 0 and self.trainnn[tl_id]:
                     if tl_id == "c":
@@ -219,7 +228,7 @@ class IntellilightStrategy(Strategy):
             if tl_id == "c":  # debugging for single intersection
                 self.rewards.append(reward)
                 self.times.append(self.traci.simulation.getTime())
-
+            self.scores = [self.get_score(tl_id, self.last_action[tl_id]) for i, tl_id in enumerate(self.network.TLS_DETECTORS)]
         self.last_state[tl_id] = state
         self.last_action[tl_id] = action
 
@@ -297,11 +306,8 @@ class IntellilightStrategy(Strategy):
             action = int(exp[1])
             phase = int(exp[0][-1])
             memory_palaces[(action, phase)].append(exp)
-        min_palace = self.buffer_size[tl_id]
         for key in memory_palaces:
-            if len(memory_palaces[key]) < min_palace:
-                min_palace = len(memory_palaces[key])
-        for key in memory_palaces:
+            min_palace = min(len(memory_palaces[key]), self.buffer_size[tl_id]) # Handle case when memory palace is empty
             idx = [i for i in range(len(memory_palaces[key]))]
             rnd_idx = np.random.choice(idx, size=min(min_palace, m_len), replace=False)
             for i in rnd_idx:
@@ -320,16 +326,22 @@ class IntellilightStrategy(Strategy):
     def get_reward(self, tl_id, change_phase=None):
         detectors = self._detectors(tl_id)
         L = self.c1 * sum([self.traci.lanearea.getJamLengthVehicle(det) for det in detectors])
-        D = self.c2 * sum([1 - (self.traci.lanearea.getLastStepMeanSpeed(det) / self.traci.lane.getMaxSpeed(self.traci.lanearea.getLaneID(det))) for det in detectors])
+        D = self.c2 * sum([1 - (self.traci.lanearea.getIntervalMeanSpeed(det) / self.traci.lane.getMaxSpeed(self.traci.lanearea.getLaneID(det))) for det in detectors])
         W = self.c3 * sum(self.compute_waiting_time(detectors))
         A = self.c4 * (self.DEBUG_REWARD if change_phase is None else change_phase)  # if change_phase is None this should not be in replay buffer
         # Number of vehicles that passed intersection have to be implemented
         # Travel time of vehicles that passed the intersection have to be implemented
         reward = -(L + D + W + A)
-        # if reward <-500:
-        #     print(f"Reward: {reward} \t {L,D,W,A}")
         return reward
 
+    def get_score(self, tl_id, change_phase=None):
+        detectors = self._detectors(tl_id)
+        L = self.c1 * sum([self.traci.lanearea.getJamLengthVehicle(det) for det in detectors])
+        D = self.c2 * sum([1 - (self.traci.lanearea.getIntervalMeanSpeed(det) / self.traci.lane.getMaxSpeed(self.traci.lanearea.getLaneID(det))) for det in detectors])
+        W = self.c3 * sum(self.compute_waiting_time(detectors))
+        # Number of vehicles that passed intersection have to be implemented
+        # Travel time of vehicles that passed the intersection have to be implemented
+        return -(L + D + W)
 
     def update_target_model(self, tl_id):
         self.target_model[tl_id].load_state_dict(self.model[tl_id].state_dict())
@@ -380,9 +392,18 @@ class IntellilightStrategy(Strategy):
         self.started = True
 
         input_dim = len(self.get_state(tl_id))
-        self.model[tl_id] = QNetwork(action_space=self.action_space[tl_id], input_dim=input_dim, hidden_dim=self.hidden_layer_size[tl_id], output_dim=2).to(self.device)
-        self.target_model[tl_id] = QNetwork(action_space=self.action_space[tl_id], input_dim=input_dim, hidden_dim=self.hidden_layer_size[tl_id], output_dim=2).to(self.device)
+        if self.model[tl_id] is None: # no loaded model
+            self.model[tl_id] = QNetwork(action_space=self.action_space[tl_id], input_dim=input_dim, hidden_dim=self.hidden_layer_size[tl_id], output_dim=2).to(self.device)
+            self.target_model[tl_id] = QNetwork(action_space=self.action_space[tl_id], input_dim=input_dim, hidden_dim=self.hidden_layer_size[tl_id], output_dim=2).to(self.device)
         self.optimizer[tl_id] = optim.Adam(self.model[tl_id].parameters(), lr=self.learning_rate[tl_id])
+
+    def save_model(self, filepath):
+        torch.save(self.model, filepath)
+
+    def load_model(self, filepath):
+        torch.serialization.add_safe_globals([QNetwork, nn.Linear, nn.Sequential, nn.ReLU, nn.ModuleList, optim.Adam, dict])
+        self.model = torch.load(filepath)#, weights_only=False)
+        self.target_model = torch.load(filepath)#, weights_only=False)
 
 
 class QNetwork(nn.Module):

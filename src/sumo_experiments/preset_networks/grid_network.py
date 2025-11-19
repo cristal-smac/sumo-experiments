@@ -103,11 +103,11 @@ class GridNetwork(ArtificialNetwork):
         else:
             raise ValueError("flow_type must be 'only_ahead' or 'all_directions' or 'matrix'.")
         # Creates detectors
-        detectors = self.generate_all_detectors(lane_length, boolean_detectors_length, saturation_detectors_length, saturation_detector_pos=default_saturation_position, random_saturation_detectors=random_saturation_position)
         if number_of_phases == 2:
             self.create_TLS_DETECTORS_2_phases()
         elif number_of_phases == 4:
             self.create_TLS_DETECTORS_4_phases()
+        detectors = self.generate_all_detectors(lane_length, boolean_detectors_length, saturation_detectors_length, saturation_detector_pos=default_saturation_position, random_saturation_detectors=random_saturation_position)
         # Building files
         infrastructures.build(self.file_names)
         flows.build(self.file_names)
@@ -450,31 +450,36 @@ class GridNetwork(ArtificialNetwork):
         """
         detectors = DetectorBuilder()
 
+        # map detector id to traffic_lights
+        mapping = self.detector2tlid()
+
         # We add the detectors
         for x in range(self.width + 2):
             for y in range(self.height + 2):
-
                 # No nodes on the corners
                 if not self._is_corner(x, y):
                     if y not in [0, self.height + 1]:
                         if x < self.width:
-                            detectors.add_lane_area_detector(id=f'n_detector_x{x}-y{y}_x{x + 1}-y{y}',
+                            id=f'n_detector_x{x}-y{y}_x{x + 1}-y{y}'
+                            detectors.add_lane_area_detector(id=id,
                                                              edge=f'edge_x{x}-y{y}_x{x + 1}-y{y}', lane=0,
-                                                             type='numerical')
+                                                             type='numerical', target_tlid=mapping[id][0])
                         if x > 1:
-                            detectors.add_lane_area_detector(id=f'n_detector_x{x}-y{y}_x{x - 1}-y{y}',
+                            id=f'n_detector_x{x}-y{y}_x{x - 1}-y{y}'
+                            detectors.add_lane_area_detector(id=id,
                                                              edge=f'edge_x{x}-y{y}_x{x - 1}-y{y}', lane=0,
-                                                             type='numerical')
+                                                             type='numerical', target_tlid=mapping[id][0])
                     if x not in [0, self.width + 1]:
                         if y < self.height:
-                            detectors.add_lane_area_detector(id=f'n_detector_x{x}-y{y}_x{x}-y{y + 1}',
+                            id=f'n_detector_x{x}-y{y}_x{x}-y{y + 1}'
+                            detectors.add_lane_area_detector(id=id,
                                                              edge=f'edge_x{x}-y{y}_x{x}-y{y + 1}', lane=0,
-                                                             type='numerical')
+                                                             type='numerical', target_tlid=mapping[id][0])
                         if y > 1:
-                            detectors.add_lane_area_detector(id=f'n_detector_x{x}-y{y}_x{x}-y{y - 1}',
+                            id=f'n_detector_x{x}-y{y}_x{x}-y{y - 1}'
+                            detectors.add_lane_area_detector(id=id,
                                                              edge=f'edge_x{x}-y{y}_x{x}-y{y - 1}', lane=0,
-                                                             type='numerical')
-
+                                                             type='numerical', target_tlid=mapping[id][0])
         return detectors
 
     def generate_boolean_detectors(self, lane_length, boolean_detector_length):

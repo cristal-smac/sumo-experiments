@@ -335,10 +335,10 @@ class IntersectionNetwork(ArtificialNetwork):
         """
         detectors = DetectorBuilder()
 
-        detectors.add_lane_area_detector(id="n_wc", edge='edge_wc', lane=0, type='numerical')
-        detectors.add_lane_area_detector(id="n_sc", edge='edge_sc', lane=0, type='numerical')
-        detectors.add_lane_area_detector(id="n_nc", edge='edge_nc', lane=0, type='numerical')
-        detectors.add_lane_area_detector(id="n_ec", edge='edge_ec', lane=0, type='numerical')
+        detectors.add_lane_area_detector(id="n_wc", edge='edge_wc', lane=0, type='numerical', target_tlid='c')
+        detectors.add_lane_area_detector(id="n_sc", edge='edge_sc', lane=0, type='numerical', target_tlid='c')
+        detectors.add_lane_area_detector(id="n_nc", edge='edge_nc', lane=0, type='numerical', target_tlid='c')
+        detectors.add_lane_area_detector(id="n_ec", edge='edge_ec', lane=0, type='numerical', target_tlid='c')
 
         return detectors
 
