@@ -31,7 +31,7 @@ class LineNetwork(ArtificialNetwork):
                  nb_lanes_main=1,
                  nb_lanes_minor=1,
                  max_speed=50,
-                 nb_phases=2,
+                 number_of_phases=2,
                  flow_type='all_directions',
                  stop_generation_time=3600,
                  flow_frequency=100,
@@ -40,7 +40,8 @@ class LineNetwork(ArtificialNetwork):
                  load_vector=None,
                  coeff_matrix=None,
                  boolean_detectors_length=20,
-                 saturation_detectors_length=20
+                 saturation_detectors_length=20,
+                 saturation_detectors_position=0
                  ):
         """
         Init of class.
@@ -85,15 +86,16 @@ class LineNetwork(ArtificialNetwork):
         if nb_lanes_main < 1:
             raise ValueError('nb_lanes_main must be 1 or more.')
         self.nb_intersections = nb_intersections
+        self.saturation_detectors_position = saturation_detectors_position
         # Create infrastructures
-        infrastructures = self.generate_infrastructures(lane_length, nb_lanes_main, nb_lanes_minor, max_speed, nb_phases)
+        infrastructures = self.generate_infrastructures(lane_length, nb_lanes_main, nb_lanes_minor, max_speed, number_of_phases)
         # Create flows
         if flow_type == 'only_ahead':
             self.generate_flows_only_ahead(stop_generation_time, flow_frequency, distribution)
         elif flow_type == 'all_directions':
             flows = self.generate_flows_all_directions(stop_generation_time, flow_frequency, distribution)
         elif flow_type == 'matrix':
-            if load_vector != None and period_time != None and coeff_matrix != None:
+            if load_vector is not None and period_time is not None and coeff_matrix is not None:
                 flows = self.generate_flows_with_matrix(period_time, load_vector, coeff_matrix)
             else:
                 raise ValueError("load_vector and coeff_matrix ad period_time must be provided when flow_type is 'matrix'.")
@@ -101,9 +103,9 @@ class LineNetwork(ArtificialNetwork):
             raise ValueError("flow_type must be 'only_ahead' or 'all_directions' or 'matrix'.")
         # Creates detectors
         detectors = self.generate_all_detectors(nb_lanes_main, nb_lanes_minor, lane_length, boolean_detectors_length, saturation_detectors_length)
-        if nb_phases == 2:
+        if number_of_phases == 2:
             self.create_TLS_DETECTORS_2_phases(nb_lanes_main, nb_lanes_minor)
-        elif nb_phases == 4:
+        elif number_of_phases == 4:
             self.create_TLS_DETECTORS_4_phases(nb_lanes_main, nb_lanes_minor)
         # Building files
         infrastructures.build(self.file_names)
@@ -436,6 +438,34 @@ class LineNetwork(ArtificialNetwork):
             detectors.add_lane_area_detector(id=f"n_ec{self.nb_intersections}_{n_lane}", edge=f"edge_ec{self.nb_intersections}", lane=n_lane, type='numerical')
         return detectors
 
+    def generate_exit_detectors(self, nb_lanes_main, nb_lanes_minor):
+        """
+        Generate a DetectorBuilder with an exit detector for each lane going to an intersection.
+        A exit detector counts and returns the number of vehicles on its scope. In SUMO, an exit
+        detector is represented with a lane area detector whose scope is the entire lane,
+        from the beginning to the end.
+        :param nb_lanes_main: The number of lanes on the main road. Must be greater than 0.
+        :type nb_lanes_main: int
+        :param nb_lanes_minor: The number of lanes on the minor roads. Must be greater than 0.
+        :type nb_lanes_minor: int
+        :return: A DetectorBuilder object.
+        :rtype: sumo_experiments.src.components.DetectorBuilder
+        """
+        detectors = DetectorBuilder()
+        for n_lane in range(nb_lanes_main):
+            detectors.add_lane_area_detector(id=f"e_c1w_{n_lane}", edge="edge_c1w", lane=n_lane, type='exit')
+        for i in range(1, self.nb_intersections + 1):
+            for n_lane in range(nb_lanes_minor):
+                detectors.add_lane_area_detector(id=f"e_c{i}s{i}_{n_lane}", edge=f"edge_c{i}s{i}", lane=n_lane, type='exit')
+                detectors.add_lane_area_detector(id=f"e_c{i}n{i}_{n_lane}", edge=f"edge_c{i}n{i}", lane=n_lane, type='exit')
+            if i != self.nb_intersections:
+                for n_lane in range(nb_lanes_main):
+                    detectors.add_lane_area_detector(id=f"e_c{i}c{i+1}_{n_lane}", edge=f"edge_c{i}c{i+1}", lane=n_lane, type='exit')
+                    detectors.add_lane_area_detector(id=f"e_c{i + 1}c{i}_{n_lane}", edge=f"edge_c{i + 1}c{i}", lane=n_lane, type='exit')
+        for n_lane in range(nb_lanes_main):
+            detectors.add_lane_area_detector(id=f"e_c{self.nb_intersections}e_{n_lane}", edge=f"edge_c{self.nb_intersections}e", lane=n_lane, type='exit')
+        return detectors
+
     def generate_boolean_detectors(self, lane_length, boolean_detector_length, nb_lanes_main, nb_lanes_minor):
         """
         Generate a DetectorBuilder with a boolean detector for each lane going to an intersection.
@@ -482,17 +512,17 @@ class LineNetwork(ArtificialNetwork):
         """
         detectors = DetectorBuilder()
         for n_lane in range(nb_lanes_main):
-            detectors.add_lane_area_detector(id=f"s_wc1_{n_lane}", edge="edge_wc1", lane=n_lane, type='saturation', pos=0, end_pos=detector_length)
+            detectors.add_lane_area_detector(id=f"s_wc1_{n_lane}", edge="edge_wc1", lane=n_lane, type='saturation', pos=self.saturation_detectors_position, end_pos=self.saturation_detectors_position+detector_length)
         for i in range(1, self.nb_intersections + 1):
             for n_lane in range(nb_lanes_minor):
-                detectors.add_lane_area_detector(id=f"s_s{i}c{i}_{n_lane}", edge=f"edge_s{i}c{i}", lane=n_lane, type='saturation', pos=0, end_pos=detector_length)
-                detectors.add_lane_area_detector(id=f"s_n{i}c{i}_{n_lane}", edge=f"edge_n{i}c{i}", lane=n_lane, type='saturation', pos=0, end_pos=detector_length)
+                detectors.add_lane_area_detector(id=f"s_s{i}c{i}_{n_lane}", edge=f"edge_s{i}c{i}", lane=n_lane, type='saturation', pos=self.saturation_detectors_position, end_pos=self.saturation_detectors_position+detector_length)
+                detectors.add_lane_area_detector(id=f"s_n{i}c{i}_{n_lane}", edge=f"edge_n{i}c{i}", lane=n_lane, type='saturation', pos=self.saturation_detectors_position, end_pos=self.saturation_detectors_position+detector_length)
             if i != self.nb_intersections:
                 for n_lane in range(nb_lanes_main):
-                    detectors.add_lane_area_detector(id=f"s_c{i + 1}c{i}_{n_lane}", edge=f"edge_c{i + 1}c{i}", lane=n_lane, type='saturation', pos=0, end_pos=detector_length)
-                    detectors.add_lane_area_detector(id=f"s_c{i}c{i + 1}_{n_lane}", edge=f"edge_c{i}c{i + 1}", lane=n_lane, type='saturation', pos=0, end_pos=detector_length)
+                    detectors.add_lane_area_detector(id=f"s_c{i + 1}c{i}_{n_lane}", edge=f"edge_c{i + 1}c{i}", lane=n_lane, type='saturation', pos=self.saturation_detectors_position, end_pos=self.saturation_detectors_position+detector_length)
+                    detectors.add_lane_area_detector(id=f"s_c{i}c{i + 1}_{n_lane}", edge=f"edge_c{i}c{i + 1}", lane=n_lane, type='saturation', pos=self.saturation_detectors_position, end_pos=self.saturation_detectors_position+detector_length)
         for n_lane in range(nb_lanes_main):
-            detectors.add_lane_area_detector(id=f"s_ec{self.nb_intersections}_{n_lane}", edge=f"edge_ec{self.nb_intersections}", lane=n_lane, type='saturation', pos=0, end_pos=detector_length)
+            detectors.add_lane_area_detector(id=f"s_ec{self.nb_intersections}_{n_lane}", edge=f"edge_ec{self.nb_intersections}", lane=n_lane, type='saturation', pos=self.saturation_detectors_position, end_pos=self.saturation_detectors_position+detector_length)
         return detectors
 
     def generate_all_detectors(self, nb_lanes_main, nb_lanes_minor, lane_length, boolean_detector_length, saturation_detector_length):
@@ -521,6 +551,7 @@ class LineNetwork(ArtificialNetwork):
         detectors.laneAreaDetectors.update(self.generate_boolean_detectors(lane_length, boolean_detector_length, nb_lanes_main, nb_lanes_minor).laneAreaDetectors)
         detectors.laneAreaDetectors.update(self.generate_numerical_detectors(nb_lanes_main, nb_lanes_minor).laneAreaDetectors)
         detectors.laneAreaDetectors.update(self.generate_saturation_detectors(saturation_detector_length, nb_lanes_main, nb_lanes_minor).laneAreaDetectors)
+        detectors.laneAreaDetectors.update(self.generate_exit_detectors(nb_lanes_main, nb_lanes_minor).laneAreaDetectors)
         return detectors
 
 
@@ -541,13 +572,13 @@ class LineNetwork(ArtificialNetwork):
                 'boolean': [f'b_wc1_{n_lane}' for n_lane in range(nb_lanes_main)] + [f'b_c2c1_{n_lane}' for n_lane in range(nb_lanes_main)],
                 'saturation': [f's_wc1_{n_lane}' for n_lane in range(nb_lanes_main)] + [f's_c2c1_{n_lane}' for n_lane in range(nb_lanes_main)],
                 'numerical': [f'n_wc1_{n_lane}' for n_lane in range(nb_lanes_main)] + [f'n_c2c1_{n_lane}' for n_lane in range(nb_lanes_main)],
-                'exit': []
+                'exit': [f'e_c1w_{n_lane}' for n_lane in range(nb_lanes_main)] + [f'e_c1c2_{n_lane}' for n_lane in range(nb_lanes_main)] + [f'e_c1n1_{n_lane}' for n_lane in range(nb_lanes_minor)] + [f'e_c1s1_{n_lane}' for n_lane in range(nb_lanes_minor)]
             },
             2: {
                 'boolean': [f'b_n1c1_{n_lane}' for n_lane in range(nb_lanes_minor)] + [f'b_s1c1_{n_lane}' for n_lane in range(nb_lanes_minor)],
                 'saturation': [f's_n1c1_{n_lane}' for n_lane in range(nb_lanes_minor)] + [f's_s1c1_{n_lane}' for n_lane in range(nb_lanes_minor)],
                 'numerical': [f'n_n1c1_{n_lane}' for n_lane in range(nb_lanes_minor)] + [f'n_s1c1_{n_lane}' for n_lane in range(nb_lanes_minor)],
-                'exit': []
+                'exit': [f'e_c1n1_{n_lane}' for n_lane in range(nb_lanes_minor)] + [f'e_c1s1_{n_lane}' for n_lane in range(nb_lanes_minor)] + [f'e_c1w_{n_lane}' for n_lane in range(nb_lanes_main)] + [f'e_c1c2_{n_lane}' for n_lane in range(nb_lanes_main)]
             },
         }
         self.TLS_DETECTORS['c1'] = detectors
@@ -556,15 +587,15 @@ class LineNetwork(ArtificialNetwork):
             detectors = {
                 0: {
                     'boolean': [f'b_c{i-1}c{i}_{n_lane}' for n_lane in range(nb_lanes_main)] + [f'b_c{i+1}c{i}_{n_lane}' for n_lane in range(nb_lanes_main)],
-                    'saturation': [f'b_c{i-1}c{i}_{n_lane}' for n_lane in range(nb_lanes_main)] + [f'b_c{i+1}c{i}_{n_lane}' for n_lane in range(nb_lanes_main)],
-                    'numerical': [f'b_c{i-1}c{i}_{n_lane}' for n_lane in range(nb_lanes_main)] + [f'b_c{i+1}c{i}_{n_lane}' for n_lane in range(nb_lanes_main)],
-                    'exit': []
+                    'saturation': [f's_c{i-1}c{i}_{n_lane}' for n_lane in range(nb_lanes_main)] + [f's_c{i+1}c{i}_{n_lane}' for n_lane in range(nb_lanes_main)],
+                    'numerical': [f'n_c{i-1}c{i}_{n_lane}' for n_lane in range(nb_lanes_main)] + [f'n_c{i+1}c{i}_{n_lane}' for n_lane in range(nb_lanes_main)],
+                    'exit': [f'e_c{i}c{i-1}_{n_lane}' for n_lane in range(nb_lanes_main)] + [f'e_c{i}c{i+1}_{n_lane}' for n_lane in range(nb_lanes_main)] + [f'e_n{i}c{i}_{n_lane}' for n_lane in range(nb_lanes_minor)] + [f'e_s{i}c{i}_{n_lane}' for n_lane in range(nb_lanes_minor)]
                 },
                 2: {
                     'boolean': [f'b_n{i}c{i}_{n_lane}' for n_lane in range(nb_lanes_minor)] + [f'b_s{i}c{i}_{n_lane}' for n_lane in range(nb_lanes_minor)],
                     'saturation': [f's_n{i}c{i}_{n_lane}' for n_lane in range(nb_lanes_minor)] + [f's_s{i}c{i}_{n_lane}' for n_lane in range(nb_lanes_minor)],
-                    'numerical': [f'n_n{i}c{i}_{n_lane}' for n_lane in range(nb_lanes_minor)] + [f'n_s{i}c{i}_{n_lane}' for n_lane in range(nb_lanes_minor)],
-                    'exit': []
+                    'numerical': [f'n_c{i}n{i}_{n_lane}' for n_lane in range(nb_lanes_minor)] + [f'n_c{i}s{i}_{n_lane}' for n_lane in range(nb_lanes_minor)],
+                    'exit': [f'e_n{i}c{i}_{n_lane}' for n_lane in range(nb_lanes_minor)] + [f'e_s{i}c{i}_{n_lane}' for n_lane in range(nb_lanes_minor)] + [f'e_c{i}c{i-1}_{n_lane}' for n_lane in range(nb_lanes_main)] + [f'e_c{i}c{i+1}_{n_lane}' for n_lane in range(nb_lanes_main)]
                 },
             }
             self.TLS_DETECTORS[f'c{i}'] = detectors
@@ -574,13 +605,13 @@ class LineNetwork(ArtificialNetwork):
                 'boolean': [f'b_c{self.nb_intersections - 1}c{self.nb_intersections}_{n_lane}' for n_lane in range(nb_lanes_main)] + [f'b_ec{self.nb_intersections}_{n_lane}' for n_lane in range(nb_lanes_main)],
                 'saturation': [f's_c{self.nb_intersections - 1}c{self.nb_intersections}_{n_lane}' for n_lane in range(nb_lanes_main)] + [f's_ec{self.nb_intersections}_{n_lane}' for n_lane in range(nb_lanes_main)],
                 'numerical': [f'n_c{self.nb_intersections - 1}c{self.nb_intersections}_{n_lane}' for n_lane in range(nb_lanes_main)] + [f'n_ec{self.nb_intersections}_{n_lane}' for n_lane in range(nb_lanes_main)],
-                'exit': []
+                'exit': [f'e_c{self.nb_intersections}c{self.nb_intersections - 1}_{n_lane}' for n_lane in range(nb_lanes_main)] + [f'e_c{self.nb_intersections}e_{n_lane}' for n_lane in range(nb_lanes_main)] + [f'e_c{self.nb_intersections}n{self.nb_intersections}_{n_lane}' for n_lane in range(nb_lanes_minor)] + [f'e_c{self.nb_intersections}s{self.nb_intersections}_{n_lane}' for n_lane in range(nb_lanes_minor)]
             },
             2: {
                 'boolean': [f'b_n{self.nb_intersections}c{self.nb_intersections}_{n_lane}' for n_lane in range(nb_lanes_minor)] + [f'b_s{self.nb_intersections}c{self.nb_intersections}_{n_lane}' for n_lane in range(nb_lanes_minor)],
                 'saturation': [f's_n{self.nb_intersections}c{self.nb_intersections}_{n_lane}' for n_lane in range(nb_lanes_minor)] + [f's_s{self.nb_intersections}c{self.nb_intersections}_{n_lane}' for n_lane in range(nb_lanes_minor)],
                 'numerical': [f'n_n{self.nb_intersections}c{self.nb_intersections}_{n_lane}' for n_lane in range(nb_lanes_minor)] + [f'n_s{self.nb_intersections}c{self.nb_intersections}_{n_lane}' for n_lane in range(nb_lanes_minor)],
-                'exit': []
+                'exit': [f'e_c{self.nb_intersections}n{self.nb_intersections}_{n_lane}' for n_lane in range(nb_lanes_minor)] + [f'e_c{self.nb_intersections}s{self.nb_intersections}_{n_lane}' for n_lane in range(nb_lanes_minor)] + [f'e_c{self.nb_intersections}c{self.nb_intersections - 1}_{n_lane}' for n_lane in range(nb_lanes_main)] + [f'e_c{self.nb_intersections}e_{n_lane}' for n_lane in range(nb_lanes_main)]
             },
         }
         self.TLS_DETECTORS[f'c{self.nb_intersections}'] = detectors
@@ -604,25 +635,25 @@ class LineNetwork(ArtificialNetwork):
                 'boolean': [f'b_n1c1_{n_lane}' for n_lane in range(nb_lanes_minor)],
                 'saturation': [f's_n1c1_{n_lane}' for n_lane in range(nb_lanes_minor)],
                 'numerical': [f'n_n1c1_{n_lane}' for n_lane in range(nb_lanes_minor)],
-                'exit': []
+                'exit': [f'e_c1c2_{n_lane}' for n_lane in range(nb_lanes_main)] + [f'e_c1s1_{n_lane}' for n_lane in range(nb_lanes_minor)] + [f'e_c1w_{n_lane}' for n_lane in range(nb_lanes_main)]
             },
             2: {
                 'boolean':[f'b_c2c1_{n_lane}' for n_lane in range(nb_lanes_main)],
                 'saturation':[f's_c2c1_{n_lane}' for n_lane in range(nb_lanes_main)],
                 'numerical':[f'n_c2c1_{n_lane}' for n_lane in range(nb_lanes_main)],
-                'exit': []
+                'exit': [f'e_c1n1_{n_lane}' for n_lane in range(nb_lanes_minor)] + [f'e_c1s1_{n_lane}' for n_lane in range(nb_lanes_minor)] + [f'e_c1w_{n_lane}' for n_lane in range(nb_lanes_main)]
             },
             4: {
                 'boolean':[f'b_s1c1_{n_lane}' for n_lane in range(nb_lanes_minor)],
                 'saturation':[f's_s1c1_{n_lane}' for n_lane in range(nb_lanes_minor)],
                 'numerical':[f'n_s1c1_{n_lane}' for n_lane in range(nb_lanes_minor)],
-                'exit': []
+                'exit': [f'e_c1n1_{n_lane}' for n_lane in range(nb_lanes_minor)] + [f'e_c1c2_{n_lane}' for n_lane in range(nb_lanes_main)] + [f'e_c1w_{n_lane}' for n_lane in range(nb_lanes_main)]
             },
             6: {
                 'boolean': [f'b_wc1_{n_lane}' for n_lane in range(nb_lanes_main)],
                 'saturation': [f's_wc1_{n_lane}' for n_lane in range(nb_lanes_main)],
                 'numerical': [f'n_wc1_{n_lane}' for n_lane in range(nb_lanes_main)],
-                'exit': []
+                'exit': [f'e_c1n1_{n_lane}' for n_lane in range(nb_lanes_minor)] + [f'e_c1c2_{n_lane}' for n_lane in range(nb_lanes_main)] + [f'e_c1s1_{n_lane}' for n_lane in range(nb_lanes_minor)]
             },
         }
         self.TLS_DETECTORS['c1'] = detectors
@@ -633,25 +664,25 @@ class LineNetwork(ArtificialNetwork):
                     'boolean': [f'b_n{i}c{i}_{n_lane}' for n_lane in range(nb_lanes_minor)],
                     'saturation': [f's_n{i}c{i}_{n_lane}' for n_lane in range(nb_lanes_minor)],
                     'numerical': [f'n_n{i}c{i}_{n_lane}' for n_lane in range(nb_lanes_minor)],
-                    'exit': []
+                    'exit': [f'e_c{i}c{i + 1}_{n_lane}' for n_lane in range(nb_lanes_main)] + [f'e_c{i}s{i}_{n_lane}' for n_lane in range(nb_lanes_minor)] + [f'e_c{i}c{i - 1}_{n_lane}' for n_lane in range(nb_lanes_main)]
                 },
                 2: {
                     'boolean': [f'b_c{i + 1}c{i}_{n_lane}' for n_lane in range(nb_lanes_main)],
-                    'saturation': [f'b_c{i + 1}c{i}_{n_lane}' for n_lane in range(nb_lanes_main)],
-                    'numerical': [f'b_c{i + 1}c{i}_{n_lane}' for n_lane in range(nb_lanes_main)],
-                    'exit': []
+                    'saturation': [f's_c{i + 1}c{i}_{n_lane}' for n_lane in range(nb_lanes_main)],
+                    'numerical': [f'n_c{i + 1}c{i}_{n_lane}' for n_lane in range(nb_lanes_main)],
+                    'exit': [f'e_c{i}n{i}_{n_lane}' for n_lane in range(nb_lanes_minor)] + [f'e_c{i}s{i}_{n_lane}' for n_lane in range(nb_lanes_minor)] + [f'e_c{i}c{i - 1}_{n_lane}' for n_lane in range(nb_lanes_main)]
                 },
                 4: {
                     'boolean': [f'b_s{i}c{i}_{n_lane}' for n_lane in range(nb_lanes_minor)],
                     'saturation': [f's_s{i}c{i}_{n_lane}' for n_lane in range(nb_lanes_minor)],
                     'numerical': [f'n_s{i}c{i}_{n_lane}' for n_lane in range(nb_lanes_minor)],
-                    'exit': []
+                    'exit': [f'e_c{i}n{i}_{n_lane}' for n_lane in range(nb_lanes_minor)] + [f'e_c{i}c{i + 1}_{n_lane}' for n_lane in range(nb_lanes_main)] + [f'e_c{i}c{i - 1}_{n_lane}' for n_lane in range(nb_lanes_main)]
                 },
                 6: {
                     'boolean': [f'b_c{i - 1}c{i}_{n_lane}' for n_lane in range(nb_lanes_main)],
-                    'saturation': [f'b_c{i - 1}c{i}_{n_lane}' for n_lane in range(nb_lanes_main)],
-                    'numerical': [f'b_c{i - 1}c{i}_{n_lane}' for n_lane in range(nb_lanes_main)],
-                    'exit': []
+                    'saturation': [f's_c{i - 1}c{i}_{n_lane}' for n_lane in range(nb_lanes_main)],
+                    'numerical': [f'n_c{i - 1}c{i}_{n_lane}' for n_lane in range(nb_lanes_main)],
+                    'exit': [f'e_c{i}n{i}_{n_lane}' for n_lane in range(nb_lanes_minor)] + [f'e_c{i}c{i + 1}_{n_lane}' for n_lane in range(nb_lanes_main)] + [f'e_c{i}s{i}_{n_lane}' for n_lane in range(nb_lanes_minor)]
                 },
             }
             self.TLS_DETECTORS[f'c{i}'] = detectors
@@ -661,25 +692,25 @@ class LineNetwork(ArtificialNetwork):
                 'boolean': [f'b_n{self.nb_intersections}c{self.nb_intersections}_{n_lane}' for n_lane in range(nb_lanes_minor)],
                 'saturation': [f's_n{self.nb_intersections}c{self.nb_intersections}_{n_lane}' for n_lane in range(nb_lanes_minor)],
                 'numerical': [f'n_n{self.nb_intersections}c{self.nb_intersections}_{n_lane}' for n_lane in range(nb_lanes_minor)],
-                'exit': []
+                'exit':  [f'e_c{self.nb_intersections}e_{n_lane}' for n_lane in range(nb_lanes_main)] + [f'e_c{self.nb_intersections}s{self.nb_intersections}_{n_lane}' for n_lane in range(nb_lanes_minor)] + [f'e_c{self.nb_intersections}c{self.nb_intersections - 1}_{n_lane}' for n_lane in range(nb_lanes_main)]
             },
             2: {
                 'boolean': [f'b_ec{self.nb_intersections}_{n_lane}' for n_lane in range(nb_lanes_main)],
                 'saturation': [f's_ec{self.nb_intersections}_{n_lane}' for n_lane in range(nb_lanes_main)],
                 'numerical': [f'n_ec{self.nb_intersections}_{n_lane}' for n_lane in range(nb_lanes_main)],
-                'exit': []
+                'exit':  [f'e_c{self.nb_intersections}n{self.nb_intersections}_{n_lane}' for n_lane in range(nb_lanes_minor)] + [f'e_c{self.nb_intersections}s{self.nb_intersections}_{n_lane}' for n_lane in range(nb_lanes_minor)] + [f'e_c{self.nb_intersections}c{self.nb_intersections - 1}_{n_lane}' for n_lane in range(nb_lanes_main)]
             },
             4: {
                 'boolean': [f'b_s{self.nb_intersections}c{self.nb_intersections}_{n_lane}' for n_lane in range(nb_lanes_minor)],
                 'saturation': [f's_s{self.nb_intersections}c{self.nb_intersections}_{n_lane}' for n_lane in range(nb_lanes_minor)],
                 'numerical': [f'n_s{self.nb_intersections}c{self.nb_intersections}_{n_lane}' for n_lane in range(nb_lanes_minor)],
-                'exit': []
+                'exit':  [f'e_c{self.nb_intersections}n{self.nb_intersections}_{n_lane}' for n_lane in range(nb_lanes_minor)] + [f'e_c{self.nb_intersections}e_{n_lane}' for n_lane in range(nb_lanes_main)] + [f'e_c{self.nb_intersections}c{self.nb_intersections - 1}_{n_lane}' for n_lane in range(nb_lanes_main)]
             },
             6: {
                 'boolean': [f'b_c{self.nb_intersections - 1}c{self.nb_intersections}_{n_lane}' for n_lane in range(nb_lanes_main)],
                 'saturation': [f's_c{self.nb_intersections - 1}c{self.nb_intersections}_{n_lane}' for n_lane in range(nb_lanes_main)],
                 'numerical': [f'n_c{self.nb_intersections - 1}c{self.nb_intersections}_{n_lane}' for n_lane in range(nb_lanes_main)],
-                'exit': []
+                'exit': [f'e_c{self.nb_intersections}n{self.nb_intersections}_{n_lane}' for n_lane in range(nb_lanes_minor)] + [f'e_c{self.nb_intersections}e_{n_lane}' for n_lane in range(nb_lanes_main)] + [f'e_c{self.nb_intersections}s{self.nb_intersections}_{n_lane}' for n_lane in range(nb_lanes_minor)]
             },
         }
         self.TLS_DETECTORS[f'c{self.nb_intersections}'] = detectors

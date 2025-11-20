@@ -482,6 +482,48 @@ class GridNetwork(ArtificialNetwork):
                                                              type='numerical', target_tlid=mapping[id][0])
         return detectors
 
+
+    def generate_exit_detectors(self):
+        """
+        Generate a DetectorBuilder with an exit detector for each lane going from an intersection.
+        An exit detector counts and returns the number of vehicles on its scope. In SUMO, an exit
+        detector is represented with a lane area detector whose scope is the entire lane,
+        from the beginning to the end.
+
+        :return: A DetectorBuilder object.
+        :rtype: sumo_experiments.src.components.DetectorBuilder
+        """
+        detectors = DetectorBuilder()
+
+        # We add the detectors
+        for x in range(self.width + 2):
+            for y in range(self.height + 2):
+
+                # No nodes on the corners
+                if not self._is_corner(x, y):
+                    if y not in [0, self.height + 1]:
+                        if x < self.width:
+                            detectors.add_lane_area_detector(id=f'e_detector_x{x + 1}-y{y}_x{x}-y{y}',
+                                                             edge=f'edge_x{x + 1}-y{y}_x{x}-y{y}', lane=0,
+                                                             type='exit')
+                        if x > 1:
+                            detectors.add_lane_area_detector(id=f'e_detector_x{x - 1}-y{y}_x{x}-y{y}',
+                                                             edge=f'edge_x{x - 1}-y{y}_x{x}-y{y}', lane=0,
+                                                             type='exit')
+                    if x not in [0, self.width + 1]:
+                        if y < self.height:
+                            detectors.add_lane_area_detector(id=f'e_detector_x{x}-y{y + 1}_x{x}-y{y}',
+                                                             edge=f'edge_x{x}-y{y + 1}_x{x}-y{y}', lane=0,
+                                                             type='exit')
+                        if y > 1:
+                            detectors.add_lane_area_detector(id=f'e_detector_x{x}-y{y - 1}_x{x}-y{y}',
+                                                             edge=f'edge_x{x}-y{y - 1}_x{x}-y{y}', lane=0,
+                                                             type='exit')
+
+        return detectors
+
+
+
     def generate_boolean_detectors(self, lane_length, boolean_detector_length):
         """
         Generate a DetectorBuilder with a boolean detector for each lane going to an intersection.
@@ -686,6 +728,7 @@ class GridNetwork(ArtificialNetwork):
         detectors = DetectorBuilder()
         detectors.laneAreaDetectors.update(self.generate_boolean_detectors(lane_length, boolean_detector_length).laneAreaDetectors)
         detectors.laneAreaDetectors.update(self.generate_numerical_detectors().laneAreaDetectors)
+        detectors.laneAreaDetectors.update(self.generate_exit_detectors().laneAreaDetectors)
         if random_saturation_detectors:
             detectors.laneAreaDetectors.update(self.generate_saturation_detectors(saturation_detector_length).laneAreaDetectors)
         else:
@@ -724,13 +767,13 @@ class GridNetwork(ArtificialNetwork):
                         'boolean': [f'b_detector_x{x-1}-y{y}_x{x}-y{y}', f'b_detector_x{x+1}-y{y}_x{x}-y{y}'],
                         'saturation': [f's_detector_x{x-1}-y{y}_x{x}-y{y}', f's_detector_x{x+1}-y{y}_x{x}-y{y}'],
                         'numerical': [f'n_detector_x{x-1}-y{y}_x{x}-y{y}', f'n_detector_x{x+1}-y{y}_x{x}-y{y}'],
-                        'exit': []
+                        'exit': [f'e_detector_x{x}-y{y}_x{x-1}-y{y}', f'e_detector_x{x}-y{y}_x{x+1}-y{y}'] + [f'e_detector_x{x}-y{y}_x{x}-y{y-1}', f'e_detector_x{x}-y{y}_x{x}-y{y+1}']
                     },
                     2: {
                         'boolean': [f'b_detector_x{x}-y{y-1}_x{x}-y{y}', f'b_detector_x{x}-y{y+1}_x{x}-y{y}'],
                         'saturation': [f's_detector_x{x}-y{y-1}_x{x}-y{y}', f's_detector_x{x}-y{y+1}_x{x}-y{y}'],
                         'numerical': [f'n_detector_x{x}-y{y-1}_x{x}-y{y}', f'n_detector_x{x}-y{y+1}_x{x}-y{y}'],
-                        'exit': []
+                        'exit': [f'e_detector_x{x}-y{y}_x{x}-y{y-1}', f'e_detector_x{x}-y{y}_x{x}-y{y+1}'] + [f'e_detector_x{x}-y{y}_x{x-1}-y{y}', f'e_detector_x{x}-y{y}_x{x+1}-y{y}']
                     },
                 }
                 self.TLS_DETECTORS[f'x{x}-y{y}'] = detectors
@@ -752,25 +795,25 @@ class GridNetwork(ArtificialNetwork):
                         'boolean': [f'b_detector_x{x}-y{y + 1}_x{x}-y{y}'],
                         'saturation': [f's_detector_x{x}-y{y + 1}_x{x}-y{y}'],
                         'numerical': [f'n_detector_x{x}-y{y + 1}_x{x}-y{y}'],
-                        'exit': []
+                        'exit': [f'e_detector_x{x}-y{y}_x{x+1}-y{y}'] + [f'e_detector_x{x}-y{y}_x{x}-y{y - 1}'] + [f'e_detector_x{x}-y{y}_x{x - 1}-y{y}']
                     },
                     2: {
                         'boolean': [f'b_detector_x{x+1}-y{y}_x{x}-y{y}'],
                         'saturation': [f's_detector_x{x+1}-y{y}_x{x}-y{y}'],
                         'numerical': [f'n_detector_x{x+1}-y{y}_x{x}-y{y}'],
-                        'exit': []
+                        'exit': [f'e_detector_x{x}-y{y}_x{x}-y{y + 1}'] + [f'e_detector_x{x}-y{y}_x{x}-y{y - 1}'] + [f'e_detector_x{x}-y{y}_x{x - 1}-y{y}']
                     },
                     4: {
                         'boolean': [f'b_detector_x{x}-y{y - 1}_x{x}-y{y}'],
                         'saturation': [f's_detector_x{x}-y{y - 1}_x{x}-y{y}'],
                         'numerical': [f'n_detector_x{x}-y{y - 1}_x{x}-y{y}'],
-                        'exit': []
+                        'exit': [f'e_detector_x{x}-y{y}_x{x}-y{y + 1}'] + [f'e_detector_x{x}-y{y}_x{x+1}-y{y}'] + [f'e_detector_x{x}-y{y}_x{x - 1}-y{y}']
                     },
                     6: {
                         'boolean': [f'b_detector_x{x - 1}-y{y}_x{x}-y{y}'],
                         'saturation': [f's_detector_x{x - 1}-y{y}_x{x}-y{y}'],
                         'numerical': [f'n_detector_x{x - 1}-y{y}_x{x}-y{y}'],
-                        'exit': []
+                        'exit': [f'e_detector_x{x}-y{y}_x{x}-y{y + 1}'] + [f'e_detector_x{x}-y{y}_x{x+1}-y{y}'] + [f'e_detector_x{x}-y{y}_x{x}-y{y - 1}']
                     },
                 }
                 self.TLS_DETECTORS[f'x{x}-y{y}'] = detectors
