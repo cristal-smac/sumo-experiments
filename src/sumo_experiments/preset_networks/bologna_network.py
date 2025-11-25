@@ -17,7 +17,7 @@ class BolognaNetwork(Network):
 
     THIS_FILE_PATH = os.path.abspath(os.path.dirname(__file__))
 
-    def __init__(self, intensity):
+    def __init__(self, intensity, generation_duration=None):
         """
         Init of class
         :param intensity: The multiplier of the number of generated vehicles.
@@ -32,7 +32,7 @@ class BolognaNetwork(Network):
         self.CONFIG_FILE = os.path.join(self.THIS_FILE_PATH, f"bologna/acosta/run.sumocfg")
         self.NEW_CONFIG_FILE = os.path.join(self.THIS_FILE_PATH, f"bologna/acosta/run_{self.exp_name}.sumocfg")
         self.generate_config_file()
-        self.generate_flows(intensity)
+        self.generate_flows(intensity, generation_duration)
         self.TLS_DETECTORS = {
             '209': self.DETECTORS_209,
             '210': self.DETECTORS_210,
@@ -61,25 +61,25 @@ class BolognaNetwork(Network):
         :param time_to_teleport: The time for a vehicle to teleport when the network is blocked
         :type time_to_teleport: int
         """
-        try:
-            if seed is not None:
-                seed_text = f'--seed {seed} '
-            else:
-                seed_text = '--random '
-            threads_text = f'--threads {nb_threads} '
-            no_warnings_text = ''
-            if no_warnings:
-                no_warnings_text = '--no-warnings '
-            if gui:
-                traci.start((self.FULL_LINE_COMMAND_GUI + f' --time-to-teleport {time_to_teleport} ' + threads_text + seed_text + no_warnings_text).split())
-            else:
-                traci.start((self.FULL_LINE_COMMAND + f' --time-to-teleport {time_to_teleport} ' + threads_text + seed_text + no_warnings_text).split())
-            res = traci_function(traci)
-            traci.close()
-        except Exception as err:
-            print("Error during simulation :", sys.exc_info()[0])
-            print("OS error: {0}".format(err))
-            res = None
+        #try:
+        if seed is not None:
+            seed_text = f'--seed {seed} '
+        else:
+            seed_text = '--random '
+        threads_text = f'--threads {nb_threads} '
+        no_warnings_text = ''
+        if no_warnings:
+            no_warnings_text = '--no-warnings '
+        if gui:
+            traci.start((self.FULL_LINE_COMMAND_GUI + f' --time-to-teleport {time_to_teleport} ' + threads_text + seed_text + no_warnings_text).split())
+        else:
+            traci.start((self.FULL_LINE_COMMAND + f' --time-to-teleport {time_to_teleport} ' + threads_text + seed_text + no_warnings_text).split())
+        res = traci_function(traci)
+        traci.close()
+        # except Exception as err:
+        #     print("Error during simulation :", sys.exc_info()[0])
+        #     print("OS error: {0}".format(err))
+        #     res = None
         self.clean_files()
         return res
 
@@ -144,36 +144,48 @@ class BolognaNetwork(Network):
                                      to_lane=int(conn.get('toLane')))
         return infra
 
-    def generate_flows(self, coeff):
+    def generate_flows(self, coeff, generation_duration):
         """
         Generate a flow file for the bologna network, based on FLOW_FILE.
         The coeff parameter is used to multiply the number of generated vehicles. Can be superior to 1.
         :param coeff: The multiplier of the number of generated vehicles.
         :type coeff: float
+        :param generation_duration: The time during vehicles are generated
+        :type generation_duration: int
         :return: Nothing
         """
         if os.path.isfile(self.NEW_FLOW_FILE):
             os.remove(self.NEW_FLOW_FILE)
-        with open(self.FLOW_FILE, 'r') as flow_file:
-            with open(self.NEW_FLOW_FILE, 'a') as new_flow_file:
-                entete = flow_file.readline()
-                new_flow_file.write(entete)
-                next_vehicle = flow_file.readline()
-                while next_vehicle != "</routes>":
-                    curr_coeff = deepcopy(coeff)
-                    while curr_coeff >= 1:
-                        splitted = next_vehicle.split('"')
-                        splitted[11] += f'_x{int(curr_coeff * 10)}'
-                        next_vehicle = '"'.join(splitted)
-                        new_flow_file.write(next_vehicle)
-                        curr_coeff -= 1
-                    if random.random() < curr_coeff:
-                        splitted = next_vehicle.split('"')
-                        splitted[11] += f'_x{int(curr_coeff * 10)}'
-                        next_vehicle = '"'.join(splitted)
-                        new_flow_file.write(next_vehicle)
+        time = 0
+        while time < generation_duration:
+            with open(self.FLOW_FILE, 'r') as flow_file:
+                with open(self.NEW_FLOW_FILE, 'a') as new_flow_file:
+                    entete = flow_file.readline()
+                    if time == 0:
+                        new_flow_file.write(entete)
                     next_vehicle = flow_file.readline()
-                new_flow_file.write(next_vehicle)
+                    while next_vehicle != "</routes>":
+                        vehicle_time = int(next_vehicle.split('"')[1])
+                        if vehicle_time + time < generation_duration:
+                            curr_coeff = deepcopy(coeff)
+                            while curr_coeff >= 1:
+                                splitted = next_vehicle.split('"')
+                                splitted[1] = str(vehicle_time + time)
+                                splitted[11] += f'_x{int(curr_coeff * 10 + vehicle_time + time)}'
+                                new_vehicle = '"'.join(splitted)
+                                new_flow_file.write(new_vehicle)
+                                curr_coeff -= 1
+                            if random.random() < curr_coeff:
+                                splitted = next_vehicle.split('"')
+                                splitted[1] = str(vehicle_time + time)
+                                splitted[11] += f'_x{int(curr_coeff * 10 + vehicle_time + time)}'
+                                new_vehicle = '"'.join(splitted)
+                                new_flow_file.write(new_vehicle)
+                        next_vehicle = flow_file.readline()
+            time += 3600
+        with open(self.NEW_FLOW_FILE, 'a') as new_flow_file:
+            new_flow_file.write(next_vehicle)
+
 
 
 

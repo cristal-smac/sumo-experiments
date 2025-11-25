@@ -402,8 +402,8 @@ class IntellilightStrategy(Strategy):
 
     def load_model(self, filepath):
         torch.serialization.add_safe_globals([QNetwork, nn.Linear, nn.Sequential, nn.ReLU, nn.ModuleList, optim.Adam, dict])
-        self.model = torch.load(filepath)#, weights_only=False)
-        self.target_model = torch.load(filepath)#, weights_only=False)
+        self.model = torch.load(filepath, weights_only=False)
+        self.target_model = torch.load(filepath, weights_only=False)
 
 
 class QNetwork(nn.Module):
