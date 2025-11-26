@@ -196,7 +196,7 @@ class BolognaNetwork(Network):
         :rtype: DetectorBuilder
         """
         det = DetectorBuilder()
-        # Intersection 34
+        # Intersection 34-27
         det.add_lane_area_detector(id='34_1', edge='43[0]', lane=2, end_pos=20, type='boolean')
         det.add_lane_area_detector(id='34_2', edge='117', lane=0, pos=108, end_pos=128, type='boolean')
         det.add_lane_area_detector(id='34_3', edge='113', lane=0, pos=60, end_pos=80, type='boolean')
@@ -212,7 +212,10 @@ class BolognaNetwork(Network):
         det.add_lane_area_detector(id='34_13', edge='113', lane=0, end_pos=-1, type='numerical')
         det.add_lane_area_detector(id='34_14', edge='113', lane=1, end_pos=-1, type='numerical')
         det.add_lane_area_detector(id='34_15', edge='113', lane=2, end_pos=-1, type='numerical')
-        # Intersection 27
+        det.add_lane_area_detector(id='34_16', edge='118', lane=0, end_pos=-1, type='exit')
+        det.add_lane_area_detector(id='34_17', edge='209', lane=0, end_pos=200, type='exit')
+        det.add_lane_area_detector(id='34_18', edge='209', lane=1, end_pos=200, type='exit')
+        det.add_lane_area_detector(id='34_19', edge='209', lane=2, end_pos=200, type='exit')
         det.add_lane_area_detector(id='27_1', edge='43[1]', lane=0, pos=60, end_pos=80, type='boolean')
         det.add_lane_area_detector(id='27_2', edge='43[1]', lane=1, pos=60, end_pos=80, type='boolean')
         det.add_lane_area_detector(id='27_3', edge='43[1]', lane=2, pos=60, end_pos=80, type='boolean')
@@ -250,6 +253,15 @@ class BolognaNetwork(Network):
         det.add_lane_area_detector(id='27_35', edge='46', lane=1, end_pos=-1, type='numerical')
         det.add_lane_area_detector(id='27_36', edge='46', lane=2, end_pos=-1, type='numerical')
         det.add_lane_area_detector(id='27_37', edge='116', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='27_38', edge='201', lane=0, end_pos=200, type='exit')
+        det.add_lane_area_detector(id='27_39', edge='201', lane=1, end_pos=200, type='exit')
+        det.add_lane_area_detector(id='27_40', edge='201', lane=2, end_pos=200, type='exit')
+        det.add_lane_area_detector(id='27_41', edge='115', lane=0, end_pos=-1, type='exit')
+        det.add_lane_area_detector(id='27_42', edge='113', lane=0, end_pos=-1, type='exit')
+        det.add_lane_area_detector(id='27_43', edge='113', lane=1, end_pos=-1, type='exit')
+        det.add_lane_area_detector(id='27_44', edge='113', lane=2, end_pos=-1, type='exit')
+        det.add_lane_area_detector(id='27_45', edge='134', lane=0, end_pos=-1, type='exit')
+        det.add_lane_area_detector(id='27_46', edge='134b', lane=0, end_pos=-1, type='exit')
         # Intersections 1-1b-1c-3
         det.add_lane_area_detector(id='1_1', edge='201', lane=0, pos=211.3, end_pos=231.3, type='boolean')
         det.add_lane_area_detector(id='1_2', edge='201', lane=1, pos=211.3, end_pos=231.3, type='boolean')
@@ -287,6 +299,13 @@ class BolognaNetwork(Network):
         det.add_lane_area_detector(id='1_34', edge='122', lane=0, end_pos=-1, type='numerical')
         det.add_lane_area_detector(id='1_35', edge='122', lane=1, end_pos=-1, type='numerical')
         det.add_lane_area_detector(id='1_36', edge='122', lane=2, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='1_37', edge='204a[0]', lane=0, end_pos=-1, type='exit')
+        det.add_lane_area_detector(id='1_38', edge='204a[0]', lane=1, end_pos=-1, type='exit')
+        det.add_lane_area_detector(id='1_39', edge='204a[0]', lane=2, end_pos=-1, type='exit')
+        det.add_lane_area_detector(id='1_40', edge='202', lane=0, end_pos=-1, type='exit')
+        det.add_lane_area_detector(id='1_41', edge='202', lane=1, end_pos=-1, type='exit')
+        det.add_lane_area_detector(id='1_42', edge='202', lane=2, end_pos=-1, type='exit')
+        det.add_lane_area_detector(id='1_43', edge='4c', lane=0, end_pos=-1, type='exit')
         # Intersection 78-44-43-204c
         det.add_lane_area_detector(id='78_1', edge='203[0]', lane=0, pos=381.1, end_pos=401.1, type='boolean')
         det.add_lane_area_detector(id='78_2', edge='203[0]', lane=1, pos=381.1, end_pos=401.1, type='boolean')
@@ -307,7 +326,18 @@ class BolognaNetwork(Network):
         det.add_lane_area_detector(id='78_17', edge='204a[0]', lane=0, end_pos=-1, type='numerical')
         det.add_lane_area_detector(id='78_18', edge='204a[0]', lane=1, end_pos=-1, type='numerical')
         det.add_lane_area_detector(id='78_19', edge='204a[0]', lane=2, end_pos=-1, type='numerical')
-        # Intersection 52
+        det.add_lane_area_detector(id='78_20', edge='204[1][1]', lane=0, end_pos=200, type='exit')
+        det.add_lane_area_detector(id='78_21', edge='204[1][1]', lane=1, end_pos=200, type='exit')
+        det.add_lane_area_detector(id='78_22', edge='204[1][1]', lane=2, end_pos=200, type='exit')
+        det.add_lane_area_detector(id='78_23', edge='114', lane=0, end_pos=200, type='exit')
+        det.add_lane_area_detector(id='78_24', edge='114', lane=1, end_pos=200, type='exit')
+        det.add_lane_area_detector(id='78_25', edge='114', lane=2, end_pos=200, type='exit')
+        det.add_lane_area_detector(id='78_26', edge='203[1]', lane=0, end_pos=200, type='exit')
+        det.add_lane_area_detector(id='78_27', edge='203[1]', lane=1, end_pos=200, type='exit')
+        det.add_lane_area_detector(id='78_28', edge='203[1]', lane=2, end_pos=200, type='exit')
+        det.add_lane_area_detector(id='78_29', edge='54', lane=0, end_pos=200, type='exit')
+        det.add_lane_area_detector(id='78_30', edge='54', lane=1, end_pos=200, type='exit')
+        # Intersection 52-15
         det.add_lane_area_detector(id='52_1', edge='69', lane=0, pos=116, end_pos=136, type='boolean')
         det.add_lane_area_detector(id='52_2', edge='69', lane=1, pos=116, end_pos=136, type='boolean')
         det.add_lane_area_detector(id='52_3', edge='171', lane=0, pos=153.8, end_pos=173.8, type='boolean')
@@ -317,7 +347,12 @@ class BolognaNetwork(Network):
         det.add_lane_area_detector(id='52_7', edge='69', lane=0, end_pos=-1, type='numerical')
         det.add_lane_area_detector(id='52_8', edge='69', lane=1, end_pos=-1, type='numerical')
         det.add_lane_area_detector(id='52_9', edge='171', lane=0, end_pos=-1, type='numerical')
-        # Intersection 15
+        det.add_lane_area_detector(id='52_10', edge='17', lane=0, end_pos=-1, type='exit')
+        det.add_lane_area_detector(id='52_11', edge='17', lane=1, end_pos=-1, type='exit')
+        det.add_lane_area_detector(id='52_12', edge='69', lane=0, end_pos=-1, type='exit')
+        det.add_lane_area_detector(id='52_13', edge='69', lane=1, end_pos=-1, type='exit')
+        det.add_lane_area_detector(id='52_14', edge='69', lane=0, end_pos=-1, type='exit')
+        det.add_lane_area_detector(id='52_15', edge='69', lane=1, end_pos=-1, type='exit')
         det.add_lane_area_detector(id='15_1', edge='72[1]', lane=0, end_pos=-1, type='boolean')
         det.add_lane_area_detector(id='15_2', edge='72[1]', lane=1, end_pos=-1, type='boolean')
         det.add_lane_area_detector(id='15_3', edge='191', lane=0, pos=148, end_pos=168, type='boolean')
@@ -379,6 +414,15 @@ class BolognaNetwork(Network):
         det.add_lane_area_detector(id='9_32', edge='85', lane=0, pos=133.1, end_pos=333.1, type='numerical')
         det.add_lane_area_detector(id='9_33', edge='85', lane=1, pos=133.1, end_pos=333.1, type='numerical')
         det.add_lane_area_detector(id='9_34', edge='85', lane=2, pos=133.1, end_pos=333.1, type='numerical')
+        det.add_lane_area_detector(id='9_35', edge='84', lane=0, end_pos=-1, type='exit')
+        det.add_lane_area_detector(id='9_36', edge='86', lane=0, end_pos=200, type='exit')
+        det.add_lane_area_detector(id='9_37', edge='86', lane=1, end_pos=200, type='exit')
+        det.add_lane_area_detector(id='9_38', edge='86', lane=2, end_pos=200, type='exit')
+        det.add_lane_area_detector(id='9_39', edge='67', lane=0, end_pos=-1, type='exit')
+        det.add_lane_area_detector(id='9_40', edge='67', lane=1, end_pos=-1, type='exit')
+        det.add_lane_area_detector(id='9_41', edge='72[0]', lane=0, end_pos=-1, type='exit')
+        det.add_lane_area_detector(id='9_42', edge='72[0]', lane=1, end_pos=-1, type='exit')
+        det.add_lane_area_detector(id='9_43', edge='72[0]', lane=2, end_pos=-1, type='exit')
         # Intersection 12
         det.add_lane_area_detector(id='12_1', edge='104', lane=0, pos=17.8, end_pos=37.8, type='boolean')
         det.add_lane_area_detector(id='12_2', edge='104', lane=1, pos=17.8, end_pos=37.8, type='boolean')
@@ -395,7 +439,11 @@ class BolognaNetwork(Network):
         det.add_lane_area_detector(id='12_13', edge='103', lane=0, end_pos=-1, type='numerical')
         det.add_lane_area_detector(id='12_14', edge='103', lane=1, end_pos=-1, type='numerical')
         det.add_lane_area_detector(id='12_15', edge='13', lane=0, end_pos=-1, type='numerical')
-        # Intersection 63
+        det.add_lane_area_detector(id='12_16', edge='24', lane=0, end_pos=-1, type='exit')
+        det.add_lane_area_detector(id='12_17', edge='49', lane=0, end_pos=-1, type='exit')
+        det.add_lane_area_detector(id='12_18', edge='14', lane=0, end_pos=-1, type='exit')
+        det.add_lane_area_detector(id='12_19', edge='16', lane=0, end_pos=-1, type='exit')
+        # Intersection 63-82
         det.add_lane_area_detector(id='63_1', edge='188', lane=0, pos=64.3, end_pos=84.3, type='boolean')
         det.add_lane_area_detector(id='63_2', edge='153', lane=0, pos=376, end_pos=396, type='boolean')
         det.add_lane_area_detector(id='63_3', edge='88', lane=0, pos=30.8, end_pos=50.8, type='boolean')
@@ -403,9 +451,12 @@ class BolognaNetwork(Network):
         det.add_lane_area_detector(id='63_5', edge='153', lane=0, end_pos=20, type='saturation')
         det.add_lane_area_detector(id='63_6', edge='88', lane=0, end_pos=20, type='saturation')
         det.add_lane_area_detector(id='63_7', edge='188', lane=0, end_pos=-1, type='numerical')
-        det.add_lane_area_detector(id='63_8', edge='153', lane=196, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='63_8', edge='153', lane=0, pos=196, end_pos=-1, type='numerical')
         det.add_lane_area_detector(id='63_9', edge='88', lane=0, end_pos=-1, type='numerical')
-        # Intersection 82
+        det.add_lane_area_detector(id='63_10', edge='187', lane=0, end_pos=-1, type='exit')
+        det.add_lane_area_detector(id='63_11', edge='87[0]', lane=0, end_pos=-1, type='exit')
+        det.add_lane_area_detector(id='63_12', edge='20001+87[1][0]', lane=0, end_pos=-1, type='exit')
+        det.add_lane_area_detector(id='63_13', edge='m90', lane=0, end_pos=-1, type='exit')
         det.add_lane_area_detector(id='82_1', edge='189[1][1]', lane=0, pos=151.55, end_pos=171.55, type='boolean')
         det.add_lane_area_detector(id='82_2', edge='187', lane=0, pos=64.3, end_pos=84.3, type='boolean')
         det.add_lane_area_detector(id='82_3', edge='189[1][1]', lane=0, end_pos=20, type='saturation')
@@ -419,19 +470,19 @@ class BolognaNetwork(Network):
             'boolean': ['34_3', '34_4', '34_5', '27_1', '27_2', '27_3', '27_7', '27_8'],
             'saturation': ['34_7', '34_8', '34_9', '27_16', '27_17'],  # '27_13', '27_14', '27_15',,
             'numerical': ['34_13', '34_14', '34_15', '27_20', '27_21', '27_22', '27_28', '27_29', '27_31', '27_32'],
-            'exit': ['1_21', '1_22', '1_23']
+            'exit': ['34_16', '34_17', '34_18', '34_19', '27_38', '27_39', '27_40', '27_42', '27_43', '27_45', '27_46']
         },
         2: {
             'boolean': ['34_1', '34_2', '27_9', '27_3'],
             'saturation': ['27_18'],
             'numerical': ['34_10', '34_11', '34_12', '27_22', '27_30', '27_30'],
-            'exit': ['1_21', '1_22', '1_23']
+            'exit': ['34_16', '34_17', '27_41', '27_45', '27_46']
         },
         4: {
             'boolean': ['34_1', '34_2', '27_4', '27_5', '27_6', '27_10', '27_11', '27_12'],
             'saturation': [],
             'numerical': ['34_10', '34_11', '34_12', '27_34', '27_35', '27_36', '27_37', '27_23', '27_24', '27_25', '27_26', '27_27'],
-            'exit': ['1_21', '1_22', '1_23']
+            'exit': ['34_16', '34_17', '27_38', '27_41', '27_42', '27_44', '27_45', '27_46']
         },
     }
 
@@ -440,13 +491,13 @@ class BolognaNetwork(Network):
             'boolean': ['1_1', '1_2', '1_3', '1_4', '1_5', '1_6'],
             'saturation': ['1_12', '1_13', '1_14', '1_15', '1_16', '1_17'],
             'numerical': ['1_21', '1_22', '1_23', '1_24', '1_25', '1_26'],
-            'exit': ['78_17', '78_18', '78_19', '27_31', '27_32', '27_33']
+            'exit': ['1_37', '1_38', '1_39', '1_40', '1_41', '1_42', '1_43']
         },
         3: {
             'boolean': ['1_7', '1_8', '1_9', '1_10', '1_11'],
             'saturation': ['1_18', '1_19', '1_20'],
             'numerical': ['1_27', '1_28', '1_29', '1_30', '1_31', '1_32', '1_33', '1_34', '1_35', '1_36'],
-            'exit': ['78_17', '78_18', '27_31', '27_32', '27_33']
+            'exit': ['1_37', '1_38', '1_40', '1_41', '1_42', '1_43']
         }
     }
 
@@ -455,25 +506,25 @@ class BolognaNetwork(Network):
             'boolean': ['78_4', '78_5', '78_6'],
             'saturation': ['78_11', '78_12', '78_13'],
             'numerical': ['78_17', '78_18', '78_19'],
-            'exit': []
+            'exit': ['78_20', '78_21', '78_22', '78_23', '78_24']
         },
         2: {
             'boolean': ['78_7', '78_8', '78_9'],
             'saturation': [],
             'numerical': [],
-            'exit': []
+            'exit': ['78_20', '78_21', '78_22', '78_23', '78_24']
         },
         4: {
             'boolean': ['78_1', '78_2', '78_3'],
             'saturation': [],
             'numerical': ['78_14', '78_15', '78_16'],
-            'exit': ['1_24', '1_25', '1_26']
+            'exit': ['78_23', '78_26', '78_27', '78_28']
         },
         6: {
             'boolean': ['78_10'],
             'saturation': [],
             'numerical': [],
-            'exit': []
+            'exit': ['78_26', '78_29', '78_30']
         },
     }
 
@@ -482,13 +533,13 @@ class BolognaNetwork(Network):
             'boolean': ['15_3', '15_4', '15_5', '52_3'],
             'saturation': ['15_12', '15_10', '15_11', '52_6'],
             'numerical': ['15_23', '15_18', '15_19', '15_20', '15_21', '15_22', '52_9'],
-            'exit': ['9_22', '9_23', '9_24', '9_25', '9_26']
+            'exit': ['52_10', '52_11', '52_12', '52_13', '52_14']
         },
         2: {
             'boolean': ['15_1', '15_2', '52_1', '52_2', '15_24', '15_25', '15_26'],
             'saturation': ['15_6', '15_7', '15_8', '15_9', '52_4', '52_5'],
             'numerical': ['15_13', '15_14', '15_15', '15_16', '15_17', '15_18', '52_7', '52_8'],
-            'exit': ['52_7', '52_8']
+            'exit': ['52_12', '52_13', '52_14', '52_15']
         }
     }
 
@@ -497,7 +548,7 @@ class BolognaNetwork(Network):
             'boolean': ['9_7', '9_8', '9_9', '9_1', '9_2', '9_3'],
             'saturation': ['9_16', '9_21'],
             'numerical': ['9_27', '9_30', '9_18', '9_19', '9_20', '9_21'],
-            'exit': ['15_16', '15_13', '15_14']
+            'exit': ['9_35', '9_36', '9_37', '9_38', '9_39', '9_40', '9_41']
         },
         # 2: {
         #     'boolean': ['9_7', '9_8', '9_9'],
@@ -509,13 +560,13 @@ class BolognaNetwork(Network):
             'boolean': ['9_4', '9_5', '9_10', '9_11'],
             'saturation': ['9_14'],
             'numerical': ['9_22', '9_23', '9_25', '9_32', '9_33'],
-            'exit': ['15_13', '15_14', '15_15', '15_16', '15_17']
+            'exit': ['9_35', '9_36', '9_37', '9_39', '9_40', '9_41', '9_42', '9_43']
         },
         4: {
             'boolean': ['9_6', '9_12'],
             'saturation': ['9_15'],
             'numerical': ['9_24', '9_26', '9_34'],
-            'exit': []
+            'exit': ['9_35', '9_40']
         }
     }
 
@@ -524,19 +575,19 @@ class BolognaNetwork(Network):
             'boolean': ['12_4', '12_1', '12_2'],
             'saturation': ['12_9', '12_6'],
             'numerical': ['12_10', '12_11', '12_15', '12_13'],
-            'exit': []
+            'exit': ['12_16', '12_17', '12_18', '12_19']
         },
         2: {
             'boolean': ['12_2', '12_5'],
             'saturation': ['12_9', '12_7'],
             'numerical': ['12_14', '12_11', '12_15'],
-            'exit': []
+            'exit': ['12_17', '12_19']
         },
         4: {
             'boolean': ['12_3'],
             'saturation': ['12_8'],
             'numerical': ['12_12'],
-            'exit': []
+            'exit': ['12_16', '12_17', '12_18', '12_19']
         },
     }
 
@@ -545,21 +596,18 @@ class BolognaNetwork(Network):
             'boolean': ['63_1'],
             'saturation': ['63_4'],
             'numerical': ['63_7'],
-            'exit': []
+            'exit': ['63_10', '63_11', '63_12', '63_13']
         },
         2: {
             'boolean': ['63_2'],
             'saturation': ['63_5'],
             'numerical': ['63_8'],
-            'exit': []
+            'exit': ['63_10', '63_11', '63_12', '63_13']
         }
     }
 
 if __name__ == '__main__':
-    bologna = BolognaNetwork()
-    # det = bologna.generate_detectors()
-    # det.build({'detectors': 'acosta_detectors.add.xml'})
-    bologna.generate_config_file()
-    bologna.generate_flows(1)
-    bologna.clean_files()
+    bologna = BolognaNetwork(0.000001, 3600)
+    det = bologna.generate_detectors()
+    det.build({'detectors': 'acosta_detectors.add.xml'})
 

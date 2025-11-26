@@ -1674,6 +1674,7 @@
         <phase duration="1000"  state="rrrrryyryyyyy"/>
     </tlLogic>
     <tlLogic id="221" type="static" programID="0">
+        <phase duration="1000"  state="GGGrrrrGGGGGGGrrrrrGGG"/>
         <phase duration="1000"  state="GGGrrrryyyyyyyrrrrrGGG"/>
         <phase duration="1000"  state="yyyrrrrrrrrrrrrrrrryyy"/>
         <phase duration="1000" state="rrrGGGGrrrrrrrGGGGGrrr"/>
