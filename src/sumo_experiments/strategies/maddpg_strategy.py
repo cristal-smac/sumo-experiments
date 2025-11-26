@@ -12,6 +12,8 @@ from sumo_experiments.strategies import IntellilightStrategy
 import matplotlib.pyplot as plt
 import collections
 
+
+
 class MADDPGStrategy(IntellilightStrategy):
     """
     Implements an MADDPG system.
@@ -279,7 +281,7 @@ class MADDPGStrategy(IntellilightStrategy):
                                  gamma=list(self.gamma.values())[0], # TODO: refactor?
                                  discrete_action=True,
                                  tau=self.tau)
-        self.maddpg.agents = torch.load(filepath)#, weights_only=False)
+        self.maddpg.agents = torch.load(filepath, weights_only=False)
 
 
 class DeepNN(nn.Module):

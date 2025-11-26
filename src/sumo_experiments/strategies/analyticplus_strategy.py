@@ -236,7 +236,7 @@ class AnalyticPlusAgent():
             chosen_phase = self.sumo_phases[self.action_phases[action]]
             if False:  # chosen_phase == self.clearing_phase: # shouldn't happen
                 raise ValueError('Chosen phase is clearing phase')
-                green_time = self.clearing_time
+                green_time = self.clearing_time[self.ID]
             else:
                 green_time = phases_priority[action]['green_time']
 
@@ -258,9 +258,9 @@ class AnalyticPlusAgent():
             phase_green = max(phase_green, move.green_time)
             phase_saturations += move.max_saturation
             # penalties += 0 if move_id in self.current_sumo_phase['movement_ids'] else self.clearing_time
-        penalties = self.clearing_time * self.current_sumo_phase['id'] != phase['id']
+        penalties = self.clearing_time[self.ID] * self.current_sumo_phase['id'] != phase['id']
         nhat = phase_saturations * phase_green
-        priority = nhat / (penalties + phase_green + self.clearing_time)
+        priority = nhat / (penalties + phase_green + self.clearing_time[self.ID])
         return priority, phase_green
 
     def stabilise(self, time, ghat, mode='phase'):
@@ -272,7 +272,7 @@ class AnalyticPlusAgent():
         T_max = 180  # seconds
         # max_arr_rate = max([x.arr_rate for x in self.movements.values()])
         sum_Qphase = sum([stats['ave_arr_rate'] / self.phase_saturations[action_idx] for action_idx, stats in self.phase_stats.items()])
-        T_res = T * (1 - sum_Qphase) - self.clearing_time * len(self.action_phases)
+        T_res = T * (1 - sum_Qphase) - self.clearing_time[self.ID] * len(self.action_phases)
 
         phase_priority_list: list[tuple[sumoPhase, float]] = []
 
@@ -293,7 +293,7 @@ class AnalyticPlusAgent():
 
             phase_green = max([self.movements[id].green_time for id in phase["movement_ids"]])
             assert phase_green == self.phase_stats[action_id]['green_time'], (self.phase_stats[action_id]['green_time'], phase_green)
-            z = waiting_time + self.clearing_time + ghat
+            z = waiting_time + self.clearing_time[self.ID] + ghat
             n_crit = Q_ave * T * ((T_max - z) / (T_max - T))
             # n_crit = max(n_crit, 0) # n_crit can be negative when z>T_max, which should ideally never happen
             # assert waiting_time <= T_max*1.5
@@ -631,7 +631,7 @@ class Movement:
         self.capacity_vph = calc_capacity(self.max_speed) * 0.7  # add 10% buffer
         # print(self.capacity_vph) *0.7 == 1636 vph
         self.max_saturation = self.capacity_vph / 3600  # 2000 vehs/hour -> vehicles/sec/lane
-        self.clearing_time = intersection.clearing_time  # all red time
+        self.clearing_time = intersection.clearing_time[intersection.ID]  # all red time
         self.pass_time = (self.in_length / self.max_speed)
 
         self.reset()
