@@ -21,15 +21,17 @@ class AnalyticPlusStrategy(Strategy):
     Lämmer, S., & Helbing, D. (2008). Self-control of traffic lights and vehicle flows in urban road networks. Journal of Statistical Mechanics: Theory and Experiment, 2008(04), P04019.
     """
 
-    def __init__(self, network, min_phase_duration, max_phase_duration, yellow_time=3):
+    def __init__(self, network, min_phase_duration=3, T=150, T_max=180, yellow_time=3):
         """
         Init of class
         :param network: The network to deploy the strategy
         :type network: src.sumo_experiments.Network
         :param min_phase_duration: The minimum phase durations
         :type min_phase_duration: int
-        :param max_phase_duration: The maximum phase durations
-        :type max_phase_duration: int
+        :param T: Target service interval
+        :type T: int
+        :param T_max: Maximum allowable service interval for stabilization
+        :type T_max: int
         :param yellow_time: Yellow phases duration for all intersections
         :type yellow_time: int
         """
@@ -40,10 +42,6 @@ class AnalyticPlusStrategy(Strategy):
             self.min_phase_durations = min_phase_duration
         else:
             self.min_phase_durations = {identifiant: min_phase_duration for identifiant in network.TLS_DETECTORS}
-        if type(max_phase_duration) is dict:
-            self.max_phase_durations = max_phase_duration
-        else:
-            self.max_phase_durations = {identifiant: max_phase_duration for identifiant in network.TLS_DETECTORS}
         if type(yellow_time) is dict:
             self.yellow_time = yellow_time
         else:
@@ -61,7 +59,7 @@ class AnalyticPlusStrategy(Strategy):
         self.nb_switch = {k: 0 for k in self.network.TL_IDS}
         self.nb_phases = {k: 0 for k in self.network.TL_IDS}
         self.phases_occurences = {k: {} for k in self.network.TL_IDS}
-        self.agents = {k: AnalyticPlusAgent(self, id_tls_program=k,
+        self.agents = {k: AnalyticPlusAgent(self, id_tls_program=k, T=T, T_max=T_max,
                                             yellow_time=self.yellow_time) for k in self.network.TL_IDS}
 
     def switch_yellow(self, agent):
@@ -191,14 +189,14 @@ class AnalyticPlusAgent():
     def __init__(self,
                  env,  # strategy environment
                  id_tls_program,
-                 #  id_tls_program,
-                 #  intersection_relations,
-                 #  max_phases_durations,
+                 T=150,
+                 T_max=180,
                  yellow_time=None):
         self.ID = id_tls_program
         self.env = env
         self.step_length = 1
-
+        self.T = T
+        self.T_max = T_max
         self.current_sumo_phase: sumoPhase
         self.phase_stats: dict[actionID, dict[str, float]]
 
@@ -206,11 +204,8 @@ class AnalyticPlusAgent():
         self.next_act_time: float = 0
         self.last_act_time: float = -1
         self.clearing_time: float = yellow_time
-        self.action_interval: float = 5
         self.interval_length = 600
         # assert self.action_interval % self.env.step_length == 0
-
-        # self.action_type = "act"
 
     def choose_action(self, time) -> tuple[actionID, float]:
         """Returns the `action_phase_id` of the next action."""
@@ -258,7 +253,7 @@ class AnalyticPlusAgent():
             phase_green = max(phase_green, move.green_time)
             phase_saturations += move.max_saturation
             # penalties += 0 if move_id in self.current_sumo_phase['movement_ids'] else self.clearing_time
-        penalties = self.clearing_time[self.ID] * self.current_sumo_phase['id'] != phase['id']
+        penalties = self.clearing_time[self.ID] * (self.current_sumo_phase['id'] != phase['id'])
         nhat = phase_saturations * phase_green
         priority = nhat / (penalties + phase_green + self.clearing_time[self.ID])
         return priority, phase_green
@@ -267,9 +262,8 @@ class AnalyticPlusAgent():
         """
         Implements the stabilisation mechanism of the algorithm, updates the action queue with phases that need to be prioritized
         """
-
-        T = 150  # seconds
-        T_max = 180  # seconds
+        T = self.T  # seconds
+        T_max = self.T_max  # seconds
         # max_arr_rate = max([x.arr_rate for x in self.movements.values()])
         sum_Qphase = sum([stats['ave_arr_rate'] / self.phase_saturations[action_idx] for action_idx, stats in self.phase_stats.items()])
         T_res = T * (1 - sum_Qphase) - self.clearing_time[self.ID] * len(self.action_phases)
@@ -277,8 +271,6 @@ class AnalyticPlusAgent():
         phase_priority_list: list[tuple[sumoPhase, float]] = []
 
         for action_id, sumo_phase_id in self.action_phases.items():
-            if action_id in [i[0] for i in self.action_queue]:
-                continue
             phase = self.sumo_phases[sumo_phase_id]
             Q = self.phase_stats[action_id]['arr_rate']
             Q_ave = self.phase_stats[action_id]['ave_arr_rate']
@@ -319,6 +311,11 @@ class AnalyticPlusAgent():
             if (action_phase_id not in [k for k, v in self.action_queue]):
                 assert green_time > 0
                 self.action_queue.append((action_phase_id, green_time))
+            else: # update needs 
+                idx = [i[0] for i in self.action_queue].index(action_phase_id)
+                self.action_queue[idx] = (action_phase_id, green_time)
+            # if action_id in [i[0] for i in self.action_queue]:
+            #     continue
                 # return
 
     def _start_agent(self):
@@ -409,18 +406,6 @@ class AnalyticPlusAgent():
             phase_idx += 1
             prev_ohe = str(ohe)
 
-        # assert len(self.sumo_phases)%2==0, (self.ID, self.sumo_phases) # relax this phase
-        # add clearing phase # TODO: SUMO can generate an all red phase, currently not handled
-        # self.sumo_phases[-1] = {'sumo_movement_idxs': [],
-        #                         'isYellow': False,
-        #                         'greenPhase': None,
-        #                         'yellowPhase': None,
-        #                         'yellowDuration': None,
-        #                         'id': -1,
-        #                         'movement_ids': set(),
-        #                         'last_on_time': -2
-        #                         }
-        # self.clearing_phase = self.sumo_phases[-1]
 
     def set_phase(self, sumo_phase_id: int, duration: float = 1e6):
         """
@@ -628,7 +613,7 @@ class Movement:
         MIN_GAP = 2.5
         calc_capacity = lambda x: 3600 / ((VEH_LENGTH + MIN_GAP) / x + self._step_length)
         self.max_speed = max_speed
-        self.capacity_vph = calc_capacity(self.max_speed) * 0.7  # add 10% buffer
+        self.capacity_vph = calc_capacity(self.max_speed)# * 0.7  # add 10% buffer
         # print(self.capacity_vph) *0.7 == 1636 vph
         self.max_saturation = self.capacity_vph / 3600  # 2000 vehs/hour -> vehicles/sec/lane
         self.clearing_time = intersection.clearing_time[intersection.ID]  # all red time
@@ -637,14 +622,18 @@ class Movement:
         self.reset()
 
     def reset(self):
-        self.interval_window: float = 300  #
+        self.interval_window: float = 150  # seconds
         self.interval_length: int = int(self.interval_window / self._step_length)
         self._min_interval_length: int = ceil(self.pass_time / self._step_length)  # ceil handles cases of short roads
         self.interval_length = max(self.interval_length, self._min_interval_length)
+        self.ave_interval_length = self.interval_length * 10
+
         self.interval_window = self.interval_length * self._step_length
+        self.ave_interval_window = self.ave_interval_length * self._step_length
         self.prev_vehs = set()
         # initialize to small arrival rates
         self.arr_vehs_num: deque[int] = deque([0 for i in range(self.interval_length)], maxlen=self.interval_length)  # type: ignore
+        self.ave_arr_vehs_num: deque[int] = deque([0 for i in range(self.ave_interval_length)], maxlen=self.ave_interval_length)  # type: ignore
         # self.dep_vehs_num: deque[int] = deque([0 for i in range(len(self.interval_length))], maxlen=self.interval_length) # type: ignore
         self.total_dep = 0
         self.total_delayed_arr = 0  # FIXME: unused for now
@@ -673,16 +662,14 @@ class Movement:
         http://dx.doi.org/10.1088/1742-5468/2008/04/P04019
         """
         if len(self.arr_vehs_num) >= self.interval_length:
-            # arrivals = list(self.arr_vehs_num)[-self.interval_length:]
             arrivals = self.arr_vehs_num
             interval_window = self.interval_window
-        # else: #not enough data in buffer
-        #     interval_window = self._step_length*len(self.arr_vehs_num)
+
 
         with np.errstate(divide='ignore', invalid='ignore'):
-            self.arr_rate = (np.nan_to_num(np.divide(sum(arrivals),
-                                                     interval_window), nan=0))  # /
+            self.arr_rate = (np.nan_to_num(np.divide(sum(arrivals), interval_window), nan=0))
             self.ave_arr_rate = np.nan_to_num(np.divide(self.total_arr, time), nan=0)
+            # self.ave_arr_rate = np.nan_to_num(np.divide(sum(self.ave_arr_vehs_num), self.ave_interval_window), nan=0)
             # len(self.in_lanes))
             assert self.arr_rate < self.max_saturation, (self.arr_rate, self.max_saturation)
         # self.arr_rate = np.nan_to_num(np.divide(self.total_arr,
@@ -697,7 +684,6 @@ class Movement:
         green_time = (self.arr_rate * clearing_time + arr - dep) / (self.max_saturation - self.arr_rate)
         if (self.max_saturation - self.arr_rate) == 0:
             print(f'WARNING: unhandled possible infinite green_time: {green_time, self._intersection.env.sumoCMD}')
-        # green_time = (self.arr_rate*(time + clearing_time - self.pass_time) - dep)/(self.max_saturation - self.arr_rate)
 
         # assert green_time >= 0, f'green time calculated is {green_time}'
 
@@ -722,6 +708,7 @@ class Movement:
         dep_vehs = len(self.prev_vehs - current_vehs)
         arr_vehs = len(current_vehs - self.prev_vehs)
         self.arr_vehs_num.append(arr_vehs)
+        self.ave_arr_vehs_num.append(arr_vehs)
         if len(self.arr_vehs_num) >= self._min_interval_length:
             # self.total_delayed_arr += self.arr_vehs_num[-self._min_interval_length]
             self.total_delayed_arr += self.arr_vehs_num[-self._min_interval_length]
