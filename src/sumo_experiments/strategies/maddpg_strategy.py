@@ -98,7 +98,6 @@ class MADDPGStrategy(IntellilightStrategy):
 
         self.number_of_trainings = {tl_id: 0 for tl_id in self.network.TLS_DETECTORS}
         self.mean_scores = []
-        self.mean_scores = []
 
         self.val_losses = []
         self.pol_losses = []
@@ -180,6 +179,22 @@ class MADDPGStrategy(IntellilightStrategy):
                     self.traci.trafficlight.setPhase(tl_id, int(self.current_phase[tl_id] + 1))
         self.time[tl_id] = 0
 
+    def ohe_state(self, tl_id):
+        phases = list(self.network.TLS_DETECTORS[tl_id].keys())
+        num_phases = len(phases)
+        idx = phases.index(self.current_phase[tl_id])
+        one_hot = np.zeros(num_phases, dtype=np.bool_)
+        one_hot[idx] = 1
+        return one_hot
+    
+    def get_state(self, tl_id):
+        detectors = self._detectors(tl_id)
+        L = [self.traci.lanearea.getJamLengthVehicle(det) / 10 for det in detectors]
+        W = [x / 20 for x in self.compute_waiting_time(detectors)]
+        V = [x / 10 for x in self.compute_number_of_vehicles(tl_id)]
+        P = self.ohe_state(tl_id).tolist()
+        return np.array(L + W + V + P, dtype=np.float32)  # concatenate all values into a single array
+    
     def get_next_phases(self, train=True):
         """
         Get the next phase for the controller using MADDPG.
@@ -285,16 +300,58 @@ class MADDPGStrategy(IntellilightStrategy):
 
 
 class DeepNN(nn.Module):
-    def __init__(self, input_dim, out_dim, hidden_dim=64, nonlin=nn.functional.relu):
+    def __init__(self, input_dim, out_dim, hidden_dim=64, nonlin=nn.functional.relu, recurrent=False):
         super().__init__()
-        self.fc1 = nn.Linear(input_dim, hidden_dim)
+        self.recurrent = recurrent
+        self.hidden_dim = hidden_dim
+        self.device = None
+        if not recurrent:
+            self.fc1 = nn.Linear(input_dim, hidden_dim)
+        else:
+            self.fc1 = nn.LSTM(input_size=input_dim, hidden_size=hidden_dim, batch_first=True)
         self.fc2 = nn.Linear(hidden_dim, hidden_dim)
         self.fc3 = nn.Linear(hidden_dim, out_dim)
         self.nonlin = nonlin
+        
+        # Persistent hidden state for recurrent networks (maintained across timesteps in rollouts)
+        self.h_n = None
+        self.c_n = None
 
+    def reset_hidden_state(self, batch_size=1):
+        """Reset LSTM hidden state. Call this at episode start or when needed."""
+        if self.recurrent:
+            device = next(self.parameters()).device
+            self.h_n = torch.zeros(1, batch_size, self.hidden_dim, device=device)
+            self.c_n = torch.zeros(1, batch_size, self.hidden_dim, device=device)
 
-    def forward(self, X):
-        h = self.nonlin(self.fc1(X))
+    def forward(self, X, use_hidden_state=True):
+        """
+        Forward pass.
+        
+        Args:
+            X: Input tensor, shape (batch_size, input_dim) or (batch_size, seq_len, input_dim)
+            use_hidden_state: If True and recurrent, use persistent hidden state (for rollouts).
+                             If False, use fresh hidden state (for replay buffer training).
+        """
+        if self.recurrent:
+            # Ensure X has sequence dimension
+            if X.dim() == 2:
+                X = X.unsqueeze(1)  # (batch_size, input_dim) -> (batch_size, 1, input_dim)
+            
+            if use_hidden_state and self.h_n is not None:
+                # Use persistent hidden state from previous timestep
+                lstm_out, (self.h_n, self.c_n) = self.fc1(X, (self.h_n, self.c_n))
+            else:
+                # Fresh hidden state (for training on replay buffer)
+                lstm_out, (self.h_n, self.c_n) = self.fc1(X)
+            
+            h = self.nonlin(lstm_out[:, -1])  # take last timestep
+        else: # not used as of now.
+            # Remove sequence dimension if present for linear networks
+            if X.dim() == 3:
+                X = X.squeeze(1)
+            h = self.nonlin(self.fc1(X))
+        
         h = self.nonlin(self.fc2(h))
         out = self.fc3(h)
         return out
