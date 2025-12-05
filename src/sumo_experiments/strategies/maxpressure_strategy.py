@@ -33,6 +33,7 @@ class MaxPressureStrategy(Strategy):
         self.countdowns = {identifiant: 0 for identifiant in self.network.TLS_DETECTORS}
         self.to_switch = {identifiant: None for identifiant in self.network.TLS_DETECTORS}
         self.current_yellow_time = {identifiant: 0 for identifiant in self.network.TLS_DETECTORS}
+        self.phases_occurences = {identifiant: {} for identifiant in network.TLS_DETECTORS}
 
     def run_all_agents(self, traci):
         """
@@ -57,6 +58,12 @@ class MaxPressureStrategy(Strategy):
                     else:
                         self.current_yellow_time[id_tls] += 1
                 else:
+                    # Counting phase occurences
+                    if current_phase not in self.phases_occurences[id_tls]:
+                        self.phases_occurences[id_tls][current_phase] = 1
+                    else:
+                        self.phases_occurences[id_tls][current_phase] += 1
+                    # Individual behaviour
                     if current_phase in self.network.TLS_DETECTORS[id_tls] and self.to_switch[id_tls] is not None:
                         self.traci.trafficlight.setPhase(id_tls, self.to_switch[id_tls])
                         self.to_switch[id_tls] = None

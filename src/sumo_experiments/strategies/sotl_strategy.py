@@ -44,6 +44,7 @@ class SotlStrategy(Strategy):
             self.yellow_time = yellow_time
         else:
             self.yellow_time = {identifiant: yellow_time for identifiant in network.TLS_DETECTORS}
+        self.phases_occurences = {identifiant: {} for identifiant in network.TLS_DETECTORS}
 
     def run_all_agents(self, traci):
         """
@@ -69,6 +70,12 @@ class SotlStrategy(Strategy):
                     else:
                         self.current_yellow_time[id_tls] += 1
                 elif current_phase in self.network.TLS_DETECTORS[id_tls]:
+                    # Counting phase occurences
+                    if current_phase not in self.phases_occurences[id_tls]:
+                        self.phases_occurences[id_tls][current_phase] = 1
+                    else:
+                        self.phases_occurences[id_tls][current_phase] += 1
+                    # Individual behaviour
                     if self.time[id_tls] >= self.min_phase_durations[id_tls]:
                         if self.countdowns[id_tls] >= self.thresholds_switch[id_tls]:
                             if not self.are_vehicles_passing(id_tls) or self.time[id_tls] >= self.thresholds_force[id_tls]:
