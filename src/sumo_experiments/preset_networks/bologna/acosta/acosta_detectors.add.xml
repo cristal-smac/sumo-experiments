@@ -126,6 +126,11 @@
   <laneAreaDetector id="78_17" lane="204a[0]_0" pos="0" endPos="-1" friendlyPos="true" file="detectors.out" freq="100000" />
   <laneAreaDetector id="78_18" lane="204a[0]_1" pos="0" endPos="-1" friendlyPos="true" file="detectors.out" freq="100000" />
   <laneAreaDetector id="78_19" lane="204a[0]_2" pos="0" endPos="-1" friendlyPos="true" file="detectors.out" freq="100000" />
+  <laneAreaDetector id="78_19_b" lane="121_0" pos="493.6" endPos="693.6" friendlyPos="true" file="detectors.out" freq="100000" />
+  <laneAreaDetector id="78_19_c" lane="55b_0" pos="0" endPos="-1" friendlyPos="true" file="detectors.out" freq="100000" />
+  <laneAreaDetector id="78_19_d" lane="55b_1" pos="0" endPos="-1" friendlyPos="true" file="detectors.out" freq="100000" />
+  <laneAreaDetector id="78_19_e" lane="55b_2" pos="0" endPos="-1" friendlyPos="true" file="detectors.out" freq="100000" />
+  <laneAreaDetector id="78_19_f" lane="55_0" pos="100" endPos="-1" friendlyPos="true" file="detectors.out" freq="100000" />
   <laneAreaDetector id="78_20" lane="204[1][1]_0" pos="0" endPos="200" friendlyPos="true" file="detectors.out" freq="100000" />
   <laneAreaDetector id="78_21" lane="204[1][1]_1" pos="0" endPos="200" friendlyPos="true" file="detectors.out" freq="100000" />
   <laneAreaDetector id="78_22" lane="204[1][1]_2" pos="0" endPos="200" friendlyPos="true" file="detectors.out" freq="100000" />

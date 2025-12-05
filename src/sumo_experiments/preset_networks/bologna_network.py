@@ -17,7 +17,7 @@ class BolognaNetwork(Network):
 
     THIS_FILE_PATH = os.path.abspath(os.path.dirname(__file__))
 
-    def __init__(self, intensity, generation_duration=None):
+    def __init__(self, intensity, generation_duration=3600):
         """
         Init of class
         :param intensity: The multiplier of the number of generated vehicles.
@@ -326,6 +326,11 @@ class BolognaNetwork(Network):
         det.add_lane_area_detector(id='78_17', edge='204a[0]', lane=0, end_pos=-1, type='numerical')
         det.add_lane_area_detector(id='78_18', edge='204a[0]', lane=1, end_pos=-1, type='numerical')
         det.add_lane_area_detector(id='78_19', edge='204a[0]', lane=2, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='78_19_b', edge='121', lane=0, pos=493.6, end_pos=693.6, type='numerical')
+        det.add_lane_area_detector(id='78_19_c', edge='55b', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='78_19_d', edge='55b', lane=1, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='78_19_e', edge='55b', lane=2, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='78_19_f', edge='55', lane=0, pos=100, end_pos=-1, type='numerical')
         det.add_lane_area_detector(id='78_20', edge='204[1][1]', lane=0, end_pos=200, type='exit')
         det.add_lane_area_detector(id='78_21', edge='204[1][1]', lane=1, end_pos=200, type='exit')
         det.add_lane_area_detector(id='78_22', edge='204[1][1]', lane=2, end_pos=200, type='exit')
@@ -511,7 +516,7 @@ class BolognaNetwork(Network):
         2: {
             'boolean': ['78_7', '78_8', '78_9'],
             'saturation': [],
-            'numerical': [],
+            'numerical': ['78_19_c', '78_19_d', '78_19_e', '78_19_f'],
             'exit': ['78_20', '78_21', '78_22', '78_23', '78_24']
         },
         4: {
@@ -523,7 +528,7 @@ class BolognaNetwork(Network):
         6: {
             'boolean': ['78_10'],
             'saturation': [],
-            'numerical': [],
+            'numerical': ['78_19_b'],
             'exit': ['78_26', '78_29', '78_30']
         },
     }
