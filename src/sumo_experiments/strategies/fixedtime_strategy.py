@@ -30,6 +30,7 @@ class FixedTimeStrategy(Strategy):
         self.next_phase = {identifiant: 0 for identifiant in self.network.TLS_DETECTORS}
         self.current_phase = {identifiant: 0 for identifiant in self.network.TLS_DETECTORS}
         self.nb_phases = {}
+        self.phases_occurences = {identifiant: {} for identifiant in network.TLS_DETECTORS}
 
     def run_all_agents(self, traci):
         """
@@ -51,6 +52,11 @@ class FixedTimeStrategy(Strategy):
                     else:
                         self.current_yellow_time[tl_id] += 1
                 else:
+                    # Counting phase occurences
+                    if current_phase not in self.phases_occurences[tl_id]:
+                        self.phases_occurences[tl_id][current_phase] = 1
+                    else:
+                        self.phases_occurences[tl_id][current_phase] += 1
                     index_phase = list(self.network.TLS_DETECTORS[tl_id].keys()).index(current_phase)
                     if self.time[tl_id] > self.phase_times[tl_id][index_phase]:
                         self.switch_next_phase(tl_id)

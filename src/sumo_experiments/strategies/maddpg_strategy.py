@@ -105,6 +105,7 @@ class MADDPGStrategy(IntellilightStrategy):
         self.rewards = []
         self.scores = []
         self.times = []
+        self.phases_occurences = {identifiant: {} for identifiant in network.TLS_DETECTORS}
 
 
     def run_all_agents(self, traci):
@@ -156,6 +157,12 @@ class MADDPGStrategy(IntellilightStrategy):
                     else:
                         self.current_yellow_time[tl_id] += 1
                 else:
+                    current_phase = self.traci.trafficlight.getPhase(tl_id)
+                    # Counting phase occurences
+                    if current_phase not in self.phases_occurences[tl_id]:
+                        self.phases_occurences[tl_id][current_phase] = 1
+                    else:
+                        self.phases_occurences[tl_id][current_phase] += 1
                     self.time[tl_id] += 1
             if self.time_step % self.period == 0:
                 self.switch_next_phase()
