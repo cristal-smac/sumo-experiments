@@ -31,6 +31,8 @@ class FixedTimeStrategy(Strategy):
         self.current_phase = {identifiant: 0 for identifiant in self.network.TLS_DETECTORS}
         self.nb_phases = {}
         self.phases_occurences = {identifiant: {} for identifiant in network.TLS_DETECTORS}
+        self.phases_durations = {identifiant: [] for identifiant in network.TLS_DETECTORS}
+        self.current_phase_duration = {identifiant: 0 for identifiant in network.TLS_DETECTORS}
 
     def run_all_agents(self, traci):
         """
@@ -62,6 +64,7 @@ class FixedTimeStrategy(Strategy):
                         self.switch_next_phase(tl_id)
                     else:
                         self.time[tl_id] += 1
+                    self.current_phase_duration[tl_id] += 1
 
 
     def _start_agents(self, tl_id):
@@ -93,6 +96,8 @@ class FixedTimeStrategy(Strategy):
         else:
             self.traci.trafficlight.setPhase(tl_id, self.current_phase[tl_id] + 1)
         self.time[tl_id] = 0
+        self.phases_durations[tl_id].append(self.current_phase_duration[tl_id])
+        self.current_phase_duration[tl_id] = 0
 
 
     def get_next_phase(self, tl_id):

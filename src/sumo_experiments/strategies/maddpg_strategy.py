@@ -105,6 +105,8 @@ class MADDPGStrategy(IntellilightStrategy):
         self.scores = []
         self.times = []
         self.phases_occurences = {identifiant: {} for identifiant in network.TLS_DETECTORS}
+        self.phases_durations = {identifiant: [] for identifiant in network.TLS_DETECTORS}
+        self.current_phase_duration = {identifiant: 0 for identifiant in network.TLS_DETECTORS}
 
 
     def run_all_agents(self, traci):
@@ -163,6 +165,7 @@ class MADDPGStrategy(IntellilightStrategy):
                     else:
                         self.phases_occurences[tl_id][current_phase] += 1
                     self.time[tl_id] += 1
+                    self.current_phase_duration[tl_id] += 1
             if self.time_step % self.period == 0:
                 self.switch_next_phase()
             if (len(self.replay_buffer) >= self.samples_before_update) and (self.time_step % self.steps_per_update == 0):
@@ -184,7 +187,9 @@ class MADDPGStrategy(IntellilightStrategy):
                     self.traci.trafficlight.setPhase(tl_id, 0)
                 else:
                     self.traci.trafficlight.setPhase(tl_id, int(self.current_phase[tl_id] + 1))
-        self.time[tl_id] = 0
+            self.time[tl_id] = 0
+            self.phases_durations[tl_id].append(self.current_phase_duration[tl_id])
+            self.current_phase_duration[tl_id] = 0
 
     def ohe_state(self, tl_id):
         phases = list(self.network.TLS_DETECTORS[tl_id].keys())

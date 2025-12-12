@@ -34,6 +34,8 @@ class MaxPressureStrategy(Strategy):
         self.to_switch = {identifiant: None for identifiant in self.network.TLS_DETECTORS}
         self.current_yellow_time = {identifiant: 0 for identifiant in self.network.TLS_DETECTORS}
         self.phases_occurences = {identifiant: {} for identifiant in network.TLS_DETECTORS}
+        self.phases_durations = {identifiant: [] for identifiant in network.TLS_DETECTORS}
+        self.current_phase_duration = {identifiant: 0 for identifiant in network.TLS_DETECTORS}
 
     def run_all_agents(self, traci):
         """
@@ -50,10 +52,11 @@ class MaxPressureStrategy(Strategy):
                 current_state = self.traci.trafficlight.getRedYellowGreenState(id_tls)
                 if 'y' in current_state:
                     if self.current_yellow_time[id_tls] >= self.yellow_time[id_tls]:
-                        if current_phase + 1 != len(self.traci.trafficlight.getAllProgramLogics(id_tls)[0].phases):
+                        if current_phase + 1 != len(self.traci.trafficlight.getAllProgramLogics(id_tls)[0].phases) and current_phase + 1 not in self.network.TLS_DETECTORS[id_tls].keys():
                             self.traci.trafficlight.setPhase(id_tls, current_phase + 1)
                         else:
-                            self.traci.trafficlight.setPhase(id_tls, 0)
+                            self.traci.trafficlight.setPhase(id_tls, int(self.to_switch[id_tls]))
+                            self.to_switch[id_tls] = None
                         self.current_yellow_time[id_tls] = 0
                     else:
                         self.current_yellow_time[id_tls] += 1
@@ -64,22 +67,30 @@ class MaxPressureStrategy(Strategy):
                     else:
                         self.phases_occurences[id_tls][current_phase] += 1
                     # Individual behaviour
-                    if current_phase in self.network.TLS_DETECTORS[id_tls] and self.to_switch[id_tls] is not None:
-                        self.traci.trafficlight.setPhase(id_tls, self.to_switch[id_tls])
-                        self.to_switch[id_tls] = None
-                        self.countdowns[id_tls] = 0
+                    # if current_phase in self.network.TLS_DETECTORS[id_tls] and self.to_switch[id_tls] is not None:
+                    #     self.traci.trafficlight.setPhase(id_tls, self.to_switch[id_tls])
+                    #     self.to_switch[id_tls] = None
+                    #     self.countdowns[id_tls] = 0
+                    #     print("ici " + str(id_tls))
                     if self.countdowns[id_tls] >= self.period_times[id_tls]:
                         if current_phase in self.network.TLS_DETECTORS[id_tls]:
                             pressures = self._compute_pressure(self.network.TLS_DETECTORS[id_tls])
                             phase_max_pressure = max(pressures.items(), key=operator.itemgetter(1))[0]
                             if phase_max_pressure != current_phase:
+                                self.phases_durations[id_tls].append(self.current_phase_duration[id_tls])
+                                self.current_phase_duration[id_tls] = 0
                                 self.to_switch[id_tls] = phase_max_pressure
                                 self.traci.trafficlight.setPhase(id_tls, current_phase + 1)
                                 self.countdowns[id_tls] = 0
+                            else:
+                                self.countdowns[id_tls] = 1
+                                self.current_phase_duration[id_tls] += 1
                         else:
                             self.countdowns[id_tls] += 1
+                            self.current_phase_duration[id_tls] += 1
                     else:
                         self.countdowns[id_tls] += 1
+                        self.current_phase_duration[id_tls] += 1
 
 
     def _compute_pressure(self, detectors):
@@ -123,11 +134,11 @@ class MaxPressureStrategy(Strategy):
             nb_phase = 0
             for phase in tl_logic.phases:
                 #if nb_phase in self.TLS_DETECTORS[tl]:
-                phase.duration = 1000
-                phase.maxDur = 1000
-                phase.minDur = 1000
+                phase.duration = 1000000
+                phase.maxDur = 1000000
+                phase.minDur = 1000000
                 nb_phase += 1
             self.traci.trafficlight.setProgramLogic(tl, tl_logic)
             self.traci.trafficlight.setPhase(tl, 0)
-            self.traci.trafficlight.setPhaseDuration(tl, 10000)
+            self.traci.trafficlight.setPhaseDuration(tl, 100000)
         self.started = True

@@ -50,6 +50,8 @@ class AcolightStrategy(Strategy):
         self.nb_switch = {identifiant: 0 for identifiant in network.TLS_DETECTORS}
         self.phases_occurences = {identifiant: {} for identifiant in network.TLS_DETECTORS}
         self.list_phases = {identifiant: [] for identifiant in network.TLS_DETECTORS}
+        self.phases_durations = {identifiant: [] for identifiant in network.TLS_DETECTORS}
+        self.current_phase_duration = {identifiant: 0 for identifiant in network.TLS_DETECTORS}
 
     def run_all_agents(self, traci):
         """
@@ -91,6 +93,7 @@ class AcolightStrategy(Strategy):
                     if len(self.priority_pile[id_tls]) == 0:
                         self.add_prio_phases(id_tls)
                     self.time[id_tls] += 1
+                    self.current_phase_duration[id_tls] += 1
 
     def switch_next_phase(self, id_tls):
         """
@@ -99,32 +102,20 @@ class AcolightStrategy(Strategy):
         self.nb_switch[id_tls] += 1
         current_phase = self.traci.trafficlight.getPhase(id_tls)
         next_phase = self.get_next_phase(id_tls)
-        if next_phase != current_phase:
-            self.list_phases[id_tls].append(next_phase)
-            self.next_phase[id_tls] = next_phase
-            if self.traci.trafficlight.getPhase(id_tls) == self.traci.trafficlight.getPhase(id_tls) - 1:
-                self.traci.trafficlight.setPhase(id_tls, 0)
-            else:
-                self.traci.trafficlight.setPhase(id_tls, self.traci.trafficlight.getPhase(id_tls) + 1)
-            self.time[id_tls] = 0
-        else:
-            #self.time[id_tls] = self.min_phase_durations[id_tls] + 1
-            # phases_available = list(self.network.TLS_DETECTORS[id_tls].keys())
-            # index = phases_available.index(next_phase)
-            # if index == len(phases_available) - 1:
-            #     next_phase = 0
-            # else:
-            #     next_phase = phases_available[index + 1]
+        if next_phase == current_phase:
             index_phase = list(self.network.TLS_DETECTORS[id_tls].keys()).index(self.traci.trafficlight.getPhase(id_tls))
             double_list = list(self.network.TLS_DETECTORS[id_tls].keys()) * 2
             next_phase = double_list[index_phase + 1]
-            self.list_phases[id_tls].append(next_phase)
-            self.next_phase[id_tls] = next_phase
-            if self.traci.trafficlight.getPhase(id_tls) == self.traci.trafficlight.getPhase(id_tls) - 1:
-                self.traci.trafficlight.setPhase(id_tls, 0)
-            else:
-                self.traci.trafficlight.setPhase(id_tls, self.traci.trafficlight.getPhase(id_tls) + 1)
-            self.time[id_tls] = 0
+        self.list_phases[id_tls].append(next_phase)
+        self.next_phase[id_tls] = next_phase
+        if self.traci.trafficlight.getPhase(id_tls) == self.traci.trafficlight.getPhase(id_tls) - 1:
+            self.traci.trafficlight.setPhase(id_tls, 0)
+        else:
+            self.traci.trafficlight.setPhase(id_tls, self.traci.trafficlight.getPhase(id_tls) + 1)
+        self.time[id_tls] = 0
+        if self.current_phase_duration[id_tls] > 2:
+            self.phases_durations[id_tls].append(self.current_phase_duration[id_tls])
+        self.current_phase_duration[id_tls] = 0
 
 
     def add_prio_phases(self, id_tls):

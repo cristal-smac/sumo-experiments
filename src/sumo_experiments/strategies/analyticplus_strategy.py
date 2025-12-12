@@ -61,6 +61,8 @@ class AnalyticPlusStrategy(Strategy):
         self.phases_occurences = {k: {} for k in self.network.TL_IDS}
         self.agents = {k: AnalyticPlusAgent(self, id_tls_program=k, T=T, T_max=T_max,
                                             yellow_time=self.yellow_time) for k in self.network.TL_IDS}
+        self.phases_durations = {identifiant: [] for identifiant in network.TLS_DETECTORS}
+        self.current_phase_duration = {identifiant: 0 for identifiant in network.TLS_DETECTORS}
 
     def switch_yellow(self, agent):
         """
@@ -120,6 +122,7 @@ class AnalyticPlusStrategy(Strategy):
                     #     self.add_prio_phases(id_tls)
                     # if self.agents[id_tls].current_sumo_phase['id'] == current_phase:
                     self.time[id_tls] += 1
+                    self.current_phase_duration[id_tls] += 1
 
     def analyticplus_logic(self, id_tls):
         agent = self.agents[id_tls]
@@ -147,6 +150,9 @@ class AnalyticPlusStrategy(Strategy):
             self.switch_yellow(agent)
             assert agent.sumo_phases[self.traci.trafficlight.getPhase(id_tls)]['isYellow']
             self.time[id_tls] = 0
+            if self.current_phase_duration[id_tls] > 2:
+                self.phases_durations[id_tls].append(self.current_phase_duration[id_tls])
+            self.current_phase_duration[id_tls] = 0
 
     def _start_agents(self):
         """
