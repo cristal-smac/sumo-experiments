@@ -1,62 +1,62 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <add>
     <tlLogic id="209" type="static" programID="utopia" offset="0">
-        <phase duration="1000" state="GrGGGGg"/>
-        <phase duration="1000" state="yryGGGg"/>
-        <phase duration="1000" state="GGrGGGg"/>
-        <phase duration="1000" state="yyrGGGg"/>
+        <phase duration="100000" state="GrGGGGg"/>
+        <phase duration="100000" state="yryGGGg"/>
+        <phase duration="100000" state="GGrGGGg"/>
+        <phase duration="100000" state="yyrGGGg"/>
     </tlLogic>
     <tlLogic id="210" type="static" programID="utopia" offset="0">
-        <phase duration="1000" state="rrrGGGGrrrrGGrrrGGGG"/>
-        <phase duration="1000"  state="rrryyyyrrrryyrrryyyy"/>
-        <phase duration="1000" state="rrrrrrrGrrrrrGGGrrrr"/>
-        <phase duration="1000"  state="rrrrrrryrrrrryyyrrrr"/>
-        <phase duration="1000" state="GGgrrrrrGGgrrrGGrrrr"/>
-        <phase duration="1000"  state="yyyrrrrryyyrrryyrrrr"/>
+        <phase duration="100000" state="rrrGGGGrrrrGGrrrGGGG"/>
+        <phase duration="100000"  state="rrryyyyrrrryyrrryyyy"/>
+        <phase duration="100000" state="rrrrrrrGrrrrrGGGrrrr"/>
+        <phase duration="100000"  state="rrrrrrryrrrrryyyrrrr"/>
+        <phase duration="100000" state="GGgrrrrrGGgrrrGGrrrr"/>
+        <phase duration="100000"  state="yyyrrrrryyyrrryyrrrr"/>
     </tlLogic>
     <tlLogic id="219" type="static" programID="utopia" offset="0">
-        <phase duration="1000" state="GGGrrrrGGggrrrrr"/>
-        <phase duration="1000"  state="yyyrrrryyyyrrrrr"/>
+        <phase duration="100000" state="GGGrrrrGGggrrrrr"/>
+        <phase duration="100000"  state="yyyrrrryyyyrrrrr"/>
         <!--<phase duration="6"  state="rrrrrrrGGGGrrrrr"/>-->
         <!--<phase duration="3"  state="rrrrrrryyyyrrrrr"/>-->
-        <phase duration="1000" state="rrrGGGgrrrrGGGGg"/>
-        <phase duration="1000"  state="rrryyygrrrryyyyg"/>
-        <phase duration="1000" state="rrrrrrGrrrrrrrrG"/>
-        <phase duration="1000"  state="rrrrrryrrrrrrrry"/>
+        <phase duration="100000" state="rrrGGGgrrrrGGGGg"/>
+        <phase duration="100000"  state="rrryyygrrrryyyyg"/>
+        <phase duration="100000" state="rrrrrrGrrrrrrrrG"/>
+        <phase duration="100000"  state="rrrrrryrrrrrrrry"/>
     </tlLogic>
     <tlLogic id="220" type="static" programID="utopia" offset="0">
-        <phase duration="1000" state="GgGGGrrGrrrrr"/>
-        <phase duration="1000"  state="yyyyyrryrrrrr"/>
-        <phase duration="1000" state="rrrrrGGrGGGGG"/>
-        <phase duration="1000"  state="rrrrryyryyyyy"/>
+        <phase duration="100000" state="GgGGGrrGrrrrr"/>
+        <phase duration="100000"  state="yyyyyrryrrrrr"/>
+        <phase duration="100000" state="rrrrrGGrGGGGG"/>
+        <phase duration="100000"  state="rrrrryyryyyyy"/>
     </tlLogic>
     <tlLogic id="221" type="static" programID="utopia" offset="0">
-        <phase duration="1000" state="GGGrrrrGGGGGGGrrrrrGGG"/>
-        <phase duration="1000"  state="GGGrrrryyyyyyyrrrrrGGG"/>
-        <phase duration="1000"  state="yyyrrrrrrrrrrrrrrrryyy"/>
-        <phase duration="1000" state="rrrGGGGrrrrrrrGGGGGrrr"/>
-        <phase duration="1000"  state="rrrGGyyrrrrrrrGyyyyrrr"/>
-        <phase duration="1000"  state="rrryyrrrrrrrrryrrrrrrr"/>
+        <phase duration="100000" state="GGGrrrrGGGGGGGrrrrrGGG"/>
+        <phase duration="100000"  state="GGGrrrryyyyyyyrrrrrGGG"/>
+        <phase duration="100000"  state="yyyrrrrrrrrrrrrrrrryyy"/>
+        <phase duration="100000" state="rrrGGGGrrrrrrrGGGGGrrr"/>
+        <phase duration="100000"  state="rrrGGyyrrrrrrrGyyyyrrr"/>
+        <phase duration="100000"  state="rrryyrrrrrrrrryrrrrrrr"/>
     </tlLogic>
     <tlLogic id="235" type="static" programID="utopia" offset="45">
-        <phase duration="1000" state="GGGGGrrrrrGGGGrrrrGGGGrrr"/>
-        <phase duration="1000"  state="yyyyyrrrrrGGGGrrrrGGGGrrr"/>
+        <phase duration="100000" state="GGGGGrrrrrGGGGrrrrGGGGrrr"/>
+        <phase duration="100000"  state="yyyyyrrrrrGGGGrrrrGGGGrrr"/>
         <!-- <phase duration="1"  state="rrrrrrrrrrGGGGrrrrGGGGrrr"/>
         <phase duration="1000"  state="rrrrrrrrrryyyyrrrrGGyyrrr"/> -->
-        <phase duration="1000" state="rrrrrGGGGGrrrrrrrrGGrrrrr"/>
-        <phase duration="1000"  state="rrrrryyyyyrrrrrrrryyrrrrr"/>
-        <phase duration="1000" state="rrrrrrrrrrrrrrGGGGrrrrrrr"/>
-        <phase duration="1000"  state="rrrrrrrrrrrrrryyyyrrrrrrr"/>
-        <phase duration="1000" state="rrrrrrrrrrrrrrrrrrrrrrGGG"/>
-        <phase duration="1000"  state="rrrrrrrrrrrrrrrrrrrrrryyy"/>
+        <phase duration="100000" state="rrrrrGGGGGrrrrrrrrGGrrrrr"/>
+        <phase duration="100000"  state="rrrrryyyyyrrrrrrrryyrrrrr"/>
+        <phase duration="100000" state="rrrrrrrrrrrrrrGGGGrrrrrrr"/>
+        <phase duration="100000"  state="rrrrrrrrrrrrrryyyyrrrrrrr"/>
+        <phase duration="100000" state="rrrrrrrrrrrrrrrrrrrrrrGGG"/>
+        <phase duration="100000"  state="rrrrrrrrrrrrrrrrrrrrrryyy"/>
     </tlLogic>
     <tlLogic id="273" type="static" programID="utopia" offset="0">
-        <phase duration="1000" state="GGgrrrGGg"/>
-        <phase duration="1000"  state="yygrrryyg"/>
-        <phase duration="1000"  state="rrGrrrrrG"/>
-        <phase duration="1000"  state="rryrrrrry"/>
-        <phase duration="1000" state="rrrGGGGrr"/>
-        <phase duration="1000"  state="rrryyyyrr"/>
+        <phase duration="100000" state="GGgrrrGGg"/>
+        <phase duration="100000"  state="yygrrryyg"/>
+        <phase duration="100000"  state="rrGrrrrrG"/>
+        <phase duration="100000"  state="rryrrrrry"/>
+        <phase duration="100000" state="rrrGGGGrr"/>
+        <phase duration="100000"  state="rrryyyyrr"/>
     </tlLogic>
 </add>
 
