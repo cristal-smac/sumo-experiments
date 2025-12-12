@@ -45,6 +45,8 @@ class SotlStrategy(Strategy):
         else:
             self.yellow_time = {identifiant: yellow_time for identifiant in network.TLS_DETECTORS}
         self.phases_occurences = {identifiant: {} for identifiant in network.TLS_DETECTORS}
+        self.phases_durations = {identifiant: [] for identifiant in network.TLS_DETECTORS}
+        self.current_phase_duration = {identifiant: 0 for identifiant in network.TLS_DETECTORS}
 
     def run_all_agents(self, traci):
         """
@@ -82,15 +84,20 @@ class SotlStrategy(Strategy):
                                 self.traci.trafficlight.setPhase(id_tls, current_phase + 1)
                                 self.countdowns[id_tls] = 0
                                 self.time[id_tls] = 0
+                                self.phases_durations[id_tls].append(self.current_phase_duration[id_tls])
+                                self.current_phase_duration[id_tls] = 0
                             else:
                                 self.countdowns[id_tls] += sum_vehicles
                                 self.time[id_tls] += 1
+                                self.current_phase_duration[id_tls] += 1
                         else:
                             self.countdowns[id_tls] += sum_vehicles
                             self.time[id_tls] += 1
+                            self.current_phase_duration[id_tls] += 1
                     else:
                         self.countdowns[id_tls] += sum_vehicles
                         self.time[id_tls] += 1
+                        self.current_phase_duration[id_tls] += 1
 
     def compute_vehicles_red_lanes(self, id_tls):
         """

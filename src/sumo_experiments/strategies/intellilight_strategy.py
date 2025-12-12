@@ -130,6 +130,8 @@ class IntellilightStrategy(Strategy):
         self.scores = []
         self.times = []
         self.phases_occurences = {identifiant: {} for identifiant in network.TLS_DETECTORS}
+        self.phases_durations = {identifiant: [] for identifiant in network.TLS_DETECTORS}
+        self.current_phase_duration = {identifiant: 0 for identifiant in network.TLS_DETECTORS}
 
     def run_all_agents(self, traci):
         """
@@ -179,6 +181,7 @@ class IntellilightStrategy(Strategy):
                         self.switch_next_phase(tl_id)
                     else:
                         self.time[tl_id] += 1
+                    self.current_phase_duration[tl_id] += 1
                 if len(self.replay_buffer[tl_id]) >= self.batch_size[tl_id] and (timestep % (self.update_target_frequency[tl_id] * self.period[tl_id]) == 0):
                     self.train(tl_id)
 
@@ -205,6 +208,8 @@ class IntellilightStrategy(Strategy):
                 self.traci.trafficlight.setPhase(tl_id, 0)
             else:
                 self.traci.trafficlight.setPhase(tl_id, int(self.current_phase[tl_id] + 1))
+            self.phases_durations[tl_id].append(self.current_phase_duration[tl_id])
+            self.current_phase_duration[tl_id] = 0
         self.time[tl_id] = 0
 
     def get_next_action(self, tl_id, train=True):
