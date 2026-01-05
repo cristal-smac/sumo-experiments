@@ -3,7 +3,7 @@ import numpy as np
 import networkx as nx
 import xml.etree.ElementTree as ET
 import matplotlib.pyplot as plt
-
+import pyRAPL
 
 class TraciWrapper:
     """
@@ -21,7 +21,7 @@ class TraciWrapper:
     in terms of simulation time and visualization.
     """
 
-    def __init__(self, max_simulation_duration=None, data_frequency=1, graph_representation=False, print_timestep=500, vehicle_deletion_timesteps=[], scale_factors=None):
+    def __init__(self, max_simulation_duration=None, data_frequency=1, graph_representation=False, print_timestep=500, vehicle_deletion_timesteps=[], scale_factors=None, consumption_csv_output='consumption_data.csv'):
         """
         Init of class
         Two conditions can trigger the end of the simulation : the maximum simulation duration is reached or there are no vehicles to run.
@@ -35,6 +35,8 @@ class TraciWrapper:
         :type print_timestep: int
         :param vehicle_deletion_timesteps: A list of timesteps at which the TraciWrapper will delete all the vehicles in simulation.
         :type vehicle_deletion_timesteps: list
+        :param consumption_csv_output: Filename to save consumption data of the strategy
+        :type consumption_csv_output: str
         """
         self.stats_functions = []
         self.behavioural_functions = []
@@ -47,6 +49,7 @@ class TraciWrapper:
         if scale_factors is not None:
             assert len(scale_factors) == len(vehicle_deletion_timesteps), "Length of scale_factors must be equal to length of vehicle_deletion_timesteps"
         self.scale_factors = scale_factors
+        self.consumption_csv_output = consumption_csv_output
 
     def add_stats_function(self, function):
         """
@@ -138,6 +141,10 @@ class TraciWrapper:
         current_phase = {tls: traci.trafficlight.getPhase(tls) for tls in traci.trafficlight.getIDList()}
         current_phase_durations = {tls: 0 for tls in traci.trafficlight.getIDList()}
         phase_durations = []
+
+        pyRAPL.setup()
+
+        csv_output = pyRAPL.outputs.CSVOutput(self.consumption_csv_output)
 
         if self.graph_representation:
             G, pos = self.net_to_graph(traci)
@@ -233,8 +240,12 @@ class TraciWrapper:
                             self.data[key] = [res[key]]
 
                 # Behavioural functions
+                meter = pyRAPL.Measurement('bar')
+                meter.begin()
                 for behavioural_function in self.behavioural_functions:
                     behavioural_function(traci)
+                meter.end()
+                meter.export(csv_output)
 
                 self.data['simulation_step'].append(step + 1)
                 filter = [False if i == 0 else True for i in current_exiting_vehicles]
@@ -256,6 +267,7 @@ class TraciWrapper:
             else:
                 resume = (step < self.simulation_duration) and (traci.simulation.getMinExpectedNumber()>0)
 
+        csv_output.save()
         return pd.DataFrame.from_dict(self.data)
 
 
