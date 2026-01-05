@@ -177,9 +177,9 @@ class MADDPGStrategy(IntellilightStrategy):
         """
         Queue switch of the traffic light id_tls to the next, set up the yellow phase if needed.
         """
-        #current_phase = self.traci.trafficlight.getPhase(id_tls)
         next_phases = self.get_next_phases()
         for tl_id in self.network.TL_IDS:
+            current_phase = self.traci.trafficlight.getPhase(tl_id)
             if next_phases[tl_id] != self.current_phase[tl_id]:
                 self.nb_switch[tl_id] += 1
                 self.next_phase[tl_id] = next_phases[tl_id]
@@ -188,7 +188,7 @@ class MADDPGStrategy(IntellilightStrategy):
                 else:
                     self.traci.trafficlight.setPhase(tl_id, int(self.current_phase[tl_id] + 1))
             self.time[tl_id] = 0
-            self.phases_durations[tl_id].append(self.current_phase_duration[tl_id])
+            self.phases_durations[tl_id].append((current_phase, self.current_phase_duration[tl_id]))
             self.current_phase_duration[tl_id] = 0
 
     def ohe_state(self, tl_id):
@@ -312,7 +312,7 @@ class MADDPGStrategy(IntellilightStrategy):
 
 
 class DeepNN(nn.Module):
-    def __init__(self, input_dim, out_dim, hidden_dim=64, nonlin=nn.functional.relu, recurrent=False):
+    def __init__(self, input_dim, out_dim, hidden_dim=64, nonlin=nn.functional.relu, recurrent=True):
         super().__init__()
         self.recurrent = recurrent
         self.hidden_dim = hidden_dim
@@ -336,7 +336,7 @@ class DeepNN(nn.Module):
             self.h_n = torch.zeros(1, batch_size, self.hidden_dim, device=device)
             self.c_n = torch.zeros(1, batch_size, self.hidden_dim, device=device)
 
-    def forward(self, X, use_hidden_state=True):
+    def forward(self, X, use_hidden_state=False):
         """
         Forward pass.
         

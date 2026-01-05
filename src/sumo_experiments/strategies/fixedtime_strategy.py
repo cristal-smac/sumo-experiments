@@ -96,7 +96,7 @@ class FixedTimeStrategy(Strategy):
         else:
             self.traci.trafficlight.setPhase(tl_id, self.current_phase[tl_id] + 1)
         self.time[tl_id] = 0
-        self.phases_durations[tl_id].append(self.current_phase_duration[tl_id])
+        self.phases_durations[tl_id].append((current_phase, self.current_phase_duration[tl_id]))
         self.current_phase_duration[tl_id] = 0
 
 

@@ -151,7 +151,7 @@ class AnalyticPlusStrategy(Strategy):
             assert agent.sumo_phases[self.traci.trafficlight.getPhase(id_tls)]['isYellow']
             self.time[id_tls] = 0
             if self.current_phase_duration[id_tls] > 2:
-                self.phases_durations[id_tls].append(self.current_phase_duration[id_tls])
+                self.phases_durations[id_tls].append((current_phase, self.current_phase_duration[id_tls]))
             self.current_phase_duration[id_tls] = 0
 
     def _start_agents(self):

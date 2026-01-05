@@ -1,6 +1,7 @@
 from sumo_experiments.strategies import Strategy
 
 
+
 class AcolightStrategy(Strategy):
     """
     Implement an Acolight agent for all intersections of the Bologna network.
@@ -52,6 +53,7 @@ class AcolightStrategy(Strategy):
         self.list_phases = {identifiant: [] for identifiant in network.TLS_DETECTORS}
         self.phases_durations = {identifiant: [] for identifiant in network.TLS_DETECTORS}
         self.current_phase_duration = {identifiant: 0 for identifiant in network.TLS_DETECTORS}
+
 
     def run_all_agents(self, traci):
         """
@@ -114,7 +116,7 @@ class AcolightStrategy(Strategy):
             self.traci.trafficlight.setPhase(id_tls, self.traci.trafficlight.getPhase(id_tls) + 1)
         self.time[id_tls] = 0
         if self.current_phase_duration[id_tls] > 2:
-            self.phases_durations[id_tls].append(self.current_phase_duration[id_tls])
+            self.phases_durations[id_tls].append((current_phase, self.current_phase_duration[id_tls]))
         self.current_phase_duration[id_tls] = 0
 
 

@@ -84,7 +84,7 @@ class SotlStrategy(Strategy):
                                 self.traci.trafficlight.setPhase(id_tls, current_phase + 1)
                                 self.countdowns[id_tls] = 0
                                 self.time[id_tls] = 0
-                                self.phases_durations[id_tls].append(self.current_phase_duration[id_tls])
+                                self.phases_durations[id_tls].append((current_phase, self.current_phase_duration[id_tls]))
                                 self.current_phase_duration[id_tls] = 0
                             else:
                                 self.countdowns[id_tls] += sum_vehicles

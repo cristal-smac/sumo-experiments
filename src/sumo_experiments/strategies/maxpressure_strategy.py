@@ -77,7 +77,7 @@ class MaxPressureStrategy(Strategy):
                             pressures = self._compute_pressure(self.network.TLS_DETECTORS[id_tls])
                             phase_max_pressure = max(pressures.items(), key=operator.itemgetter(1))[0]
                             if phase_max_pressure != current_phase:
-                                self.phases_durations[id_tls].append(self.current_phase_duration[id_tls])
+                                self.phases_durations[id_tls].append((current_phase, self.current_phase_duration[id_tls]))
                                 self.current_phase_duration[id_tls] = 0
                                 self.to_switch[id_tls] = phase_max_pressure
                                 self.traci.trafficlight.setPhase(id_tls, current_phase + 1)
