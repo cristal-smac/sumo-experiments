@@ -3,7 +3,6 @@ import numpy as np
 import networkx as nx
 import xml.etree.ElementTree as ET
 import matplotlib.pyplot as plt
-import pyRAPL
 
 class TraciWrapper:
     """
@@ -21,7 +20,7 @@ class TraciWrapper:
     in terms of simulation time and visualization.
     """
 
-    def __init__(self, max_simulation_duration=None, data_frequency=1, graph_representation=False, print_timestep=500, vehicle_deletion_timesteps=[], scale_factors=None, consumption_csv_output='consumption_data.csv'):
+    def __init__(self, max_simulation_duration=None, data_frequency=1, graph_representation=False, print_timestep=500, vehicle_deletion_timesteps=[], scale_factors=None, save_phases=False, phases_file='phases.csv'):
         """
         Init of class
         Two conditions can trigger the end of the simulation : the maximum simulation duration is reached or there are no vehicles to run.
@@ -35,8 +34,10 @@ class TraciWrapper:
         :type print_timestep: int
         :param vehicle_deletion_timesteps: A list of timesteps at which the TraciWrapper will delete all the vehicles in simulation.
         :type vehicle_deletion_timesteps: list
-        :param consumption_csv_output: Filename to save consumption data of the strategy
-        :type consumption_csv_output: str
+        :param save_phases: If True, collect the current phase of each traffic light intersection at each simulation step
+        :type save_phases: bool
+        :param phases_file: Name of the file to store the current phase of each traffic light. Used only if save_phases is set to True.
+        :type phases_file: str
         """
         self.stats_functions = []
         self.behavioural_functions = []
@@ -49,7 +50,9 @@ class TraciWrapper:
         if scale_factors is not None:
             assert len(scale_factors) == len(vehicle_deletion_timesteps), "Length of scale_factors must be equal to length of vehicle_deletion_timesteps"
         self.scale_factors = scale_factors
-        self.consumption_csv_output = consumption_csv_output
+        self.tl_phases = {}
+        self.save_phases = save_phases
+        self.phases_file = phases_file
 
     def add_stats_function(self, function):
         """
@@ -142,12 +145,12 @@ class TraciWrapper:
         current_phase_durations = {tls: 0 for tls in traci.trafficlight.getIDList()}
         phase_durations = []
 
-        pyRAPL.setup()
-
-        csv_output = pyRAPL.outputs.CSVOutput(self.consumption_csv_output)
-
         if self.graph_representation:
             G, pos = self.net_to_graph(traci)
+
+        if self.save_phases:
+            for tl in traci.trafficlight.getIDList():
+                self.tl_phases[tl] = []
 
         if self.simulation_duration is None:
             resume = traci.simulation.getMinExpectedNumber() > 0
@@ -220,6 +223,7 @@ class TraciWrapper:
             current_exiting_vehicles.append(len(travel_times))
 
             # We store the phase time if the phase switches
+            # NOT USED ?????
             for tls in traci.trafficlight.getIDList():
                 if 'y' in traci.trafficlight.getRedYellowGreenState(tls) and current_phase_durations[tls] != 0:
                     current_phase[tls] = traci.trafficlight.getPhase(tls)
@@ -239,14 +243,6 @@ class TraciWrapper:
                         else:
                             self.data[key] = [res[key]]
 
-                # Behavioural functions
-                meter = pyRAPL.Measurement('bar')
-                meter.begin()
-                for behavioural_function in self.behavioural_functions:
-                    behavioural_function(traci)
-                meter.end()
-                meter.export(csv_output)
-
                 self.data['simulation_step'].append(step + 1)
                 filter = [False if i == 0 else True for i in current_exiting_vehicles]
                 current_travel_times = np.array(current_travel_times)
@@ -260,6 +256,15 @@ class TraciWrapper:
                 current_co2_travel = []
                 current_exiting_vehicles = []
                 phase_durations = []
+
+            # Behavioural functions
+            for behavioural_function in self.behavioural_functions:
+                behavioural_function(traci)
+
+            if self.save_phases:
+                for tl in traci.trafficlight.getIDList():
+                    self.tl_phases[tl].append(traci.trafficlight.getPhase(tl))
+
             step += 1
 
             if self.simulation_duration is None:
@@ -267,7 +272,8 @@ class TraciWrapper:
             else:
                 resume = (step < self.simulation_duration) and (traci.simulation.getMinExpectedNumber()>0)
 
-        csv_output.save()
+        if self.save_phases:
+            pd.DataFrame(self.tl_phases).to_csv(self.phases_file)
         return pd.DataFrame.from_dict(self.data)
 
 
