@@ -1,4 +1,5 @@
 from sumo_experiments.strategies import Strategy
+from zeus.monitor import ZeusMonitor
 
 
 class SotlStrategy(Strategy):
@@ -47,6 +48,9 @@ class SotlStrategy(Strategy):
         self.phases_occurences = {identifiant: {} for identifiant in network.TLS_DETECTORS}
         self.phases_durations = {identifiant: [] for identifiant in network.TLS_DETECTORS}
         self.current_phase_duration = {identifiant: 0 for identifiant in network.TLS_DETECTORS}
+        # Zeus for energy consumption
+        self.zeus_monitor = ZeusMonitor()
+        self.energy_consumption = 0
 
     def run_all_agents(self, traci):
         """
@@ -58,6 +62,7 @@ class SotlStrategy(Strategy):
             self._start_agents()
             return True
         else:
+            self.zeus_monitor.begin_window("all_agents")
             for id_tls in self.network.TL_IDS:
                 sum_vehicles = self.compute_vehicles_red_lanes(id_tls)
                 current_phase = self.traci.trafficlight.getPhase(id_tls)
@@ -98,6 +103,8 @@ class SotlStrategy(Strategy):
                         self.countdowns[id_tls] += sum_vehicles
                         self.time[id_tls] += 1
                         self.current_phase_duration[id_tls] += 1
+            results = self.zeus_monitor.end_window("all_agents")
+            self.energy_consumption += self.get_energy_consumption(results)
 
     def compute_vehicles_red_lanes(self, id_tls):
         """
@@ -131,6 +138,16 @@ class SotlStrategy(Strategy):
                 return True
         return False
 
+    def get_energy_consumption(self, measurements):
+        """
+        Get the total energy consumption of a measurement window
+        """
+        gpu_energy = sum([measurements.gpu_energy[key] for key in measurements.gpu_energy]) if measurements.gpu_energy is not None else 0
+        cpu_energy = sum([measurements.cpu_energy[key] for key in measurements.cpu_energy]) if measurements.cpu_energy is not None else 0
+        dram_energy = sum([measurements.dram_energy[key] for key in measurements.dram_energy]) if measurements.dram_energy is not None else 0
+        soc_energy = sum([measurements.soc_energy[key] for key in measurements.soc_energy]) if measurements.soc_energy is not None else 0
+        return sum([gpu_energy, cpu_energy, dram_energy, soc_energy])
+
     def _start_agents(self):
         """
         Start an agent at the beginning of the simulation.
@@ -148,3 +165,4 @@ class SotlStrategy(Strategy):
             self.traci.trafficlight.setPhase(tl, 0)
             self.traci.trafficlight.setPhaseDuration(tl, 10000)
         self.started = True
+

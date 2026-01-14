@@ -1,4 +1,5 @@
 # from sumo.tools.emissions.findMinDiffModel import model
+from zeus.monitor import ZeusMonitor
 
 from sumo_experiments.strategies import Strategy
 import numpy as np
@@ -132,6 +133,9 @@ class IntellilightStrategy(Strategy):
         self.phases_occurences = {identifiant: {} for identifiant in network.TLS_DETECTORS}
         self.phases_durations = {identifiant: [] for identifiant in network.TLS_DETECTORS}
         self.current_phase_duration = {identifiant: 0 for identifiant in network.TLS_DETECTORS}
+        # Zeus for energy consumption
+        self.zeus_monitor = ZeusMonitor()
+        self.energy_consumption = 0
 
     def run_all_agents(self, traci):
         """
@@ -146,6 +150,7 @@ class IntellilightStrategy(Strategy):
                 self._start_agent(tl_id)
             self.started = True
         else:
+            self.zeus_monitor.begin_window("all_agents")
             timestep = self.traci.simulation.getTime()
             tl_id = self.network.TL_IDS[0]
             if timestep % self.episode_duration[tl_id] == 0 and self.trainnn[tl_id]:
@@ -184,6 +189,8 @@ class IntellilightStrategy(Strategy):
                     self.current_phase_duration[tl_id] += 1
                 if len(self.replay_buffer[tl_id]) >= self.batch_size[tl_id] and (timestep % (self.update_target_frequency[tl_id] * self.period[tl_id]) == 0):
                     self.train(tl_id)
+            results = self.zeus_monitor.end_window("all_agents")
+            self.energy_consumption += self.get_energy_consumption(results)
 
     def get_phase_onehot(self, tl_id):
         keys = list(self.network.TLS_DETECTORS[tl_id].keys())
@@ -384,6 +391,16 @@ class IntellilightStrategy(Strategy):
                 if det not in detectors:
                     detectors.append(det)
         return detectors
+
+    def get_energy_consumption(self, measurements):
+        """
+        Get the total energy consumption of a measurement window
+        """
+        gpu_energy = sum([measurements.gpu_energy[key] for key in measurements.gpu_energy]) if measurements.gpu_energy is not None else 0
+        cpu_energy = sum([measurements.cpu_energy[key] for key in measurements.cpu_energy]) if measurements.cpu_energy is not None else 0
+        dram_energy = sum([measurements.dram_energy[key] for key in measurements.dram_energy]) if measurements.dram_energy is not None else 0
+        soc_energy = sum([measurements.soc_energy[key] for key in measurements.soc_energy]) if measurements.soc_energy is not None else 0
+        return sum([gpu_energy, cpu_energy, dram_energy, soc_energy])
 
     def _start_agent(self, tl_id):
         """

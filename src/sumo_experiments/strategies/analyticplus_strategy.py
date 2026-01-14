@@ -5,6 +5,7 @@ import re
 from collections import deque
 from typing import TypedDict, Optional, Union, TypeAlias
 from math import ceil
+from zeus.monitor import ZeusMonitor
 
 
 from sumo_experiments.strategies import Strategy
@@ -63,6 +64,9 @@ class AnalyticPlusStrategy(Strategy):
                                             yellow_time=self.yellow_time) for k in self.network.TL_IDS}
         self.phases_durations = {identifiant: [] for identifiant in network.TLS_DETECTORS}
         self.current_phase_duration = {identifiant: 0 for identifiant in network.TLS_DETECTORS}
+        # Zeus for energy consumption
+        self.zeus_monitor = ZeusMonitor()
+        self.energy_consumption = 0
 
     def switch_yellow(self, agent):
         """
@@ -88,9 +92,13 @@ class AnalyticPlusStrategy(Strategy):
             return True
         else:
             lane_data = self.traci.lane.getAllSubscriptionResults()
+            self.zeus_monitor.begin_window("all_agents")
             for id_tls in self.network.TL_IDS:
                 agent = self.agents[id_tls]
+                results = self.zeus_monitor.end_window("all_agents")
+                self.energy_consumption += self.get_energy_consumption(results)
                 agent.update(lane_data)
+                self.zeus_monitor.begin_window("all_agents")
                 current_phase = self.traci.trafficlight.getPhase(id_tls)
                 current_state = self.traci.trafficlight.getRedYellowGreenState(id_tls)
                 # if current_phase not in self.TLS_DETECTORS[id_tls]: # Handle the yellow phases
@@ -117,12 +125,10 @@ class AnalyticPlusStrategy(Strategy):
                         # start logic here
                         self.analyticplus_logic(id_tls)
 
-                    # if not self.prio[id_tls]:
-                    # if len(self.priority_pile[id_tls]) == 0 and self.prio[id_tls]:
-                    #     self.add_prio_phases(id_tls)
-                    # if self.agents[id_tls].current_sumo_phase['id'] == current_phase:
                     self.time[id_tls] += 1
                     self.current_phase_duration[id_tls] += 1
+            results = self.zeus_monitor.end_window("all_agents")
+            self.energy_consumption += self.get_energy_consumption(results)
 
     def analyticplus_logic(self, id_tls):
         agent = self.agents[id_tls]
@@ -153,6 +159,17 @@ class AnalyticPlusStrategy(Strategy):
             if self.current_phase_duration[id_tls] > 2:
                 self.phases_durations[id_tls].append((current_phase, self.current_phase_duration[id_tls]))
             self.current_phase_duration[id_tls] = 0
+
+
+    def get_energy_consumption(self, measurements):
+        """
+        Get the total energy consumption of a measurement window
+        """
+        gpu_energy = sum([measurements.gpu_energy[key] for key in measurements.gpu_energy]) if measurements.gpu_energy is not None else 0
+        cpu_energy = sum([measurements.cpu_energy[key] for key in measurements.cpu_energy]) if measurements.cpu_energy is not None else 0
+        dram_energy = sum([measurements.dram_energy[key] for key in measurements.dram_energy]) if measurements.dram_energy is not None else 0
+        soc_energy = sum([measurements.soc_energy[key] for key in measurements.soc_energy]) if measurements.soc_energy is not None else 0
+        return sum([gpu_energy, cpu_energy, dram_energy, soc_energy])
 
     def _start_agents(self):
         """
