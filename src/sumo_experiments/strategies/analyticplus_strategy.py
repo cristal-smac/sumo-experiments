@@ -67,6 +67,7 @@ class AnalyticPlusStrategy(Strategy):
         # Zeus for energy consumption
         self.zeus_monitor = ZeusMonitor()
         self.energy_consumption = 0
+        self.exclude_consumption = 0
 
     def switch_yellow(self, agent):
         """
@@ -91,7 +92,10 @@ class AnalyticPlusStrategy(Strategy):
                 self.traci.lane.subscribe(lane_id, varIDs=varIDs_lane)
             return True
         else:
+            self.zeus_monitor.begin_window('traci_call')
             lane_data = self.traci.lane.getAllSubscriptionResults()
+            traci_energy = self.zeus_monitor.end_window('traci_call')
+            self.exclude_consumption += self.get_energy_consumption(traci_energy)
             self.zeus_monitor.begin_window("all_agents")
             for id_tls in self.network.TL_IDS:
                 agent = self.agents[id_tls]
@@ -124,7 +128,6 @@ class AnalyticPlusStrategy(Strategy):
                     if self.time[id_tls] >= self.min_phase_durations[id_tls]:
                         # start logic here
                         self.analyticplus_logic(id_tls)
-
                     self.time[id_tls] += 1
                     self.current_phase_duration[id_tls] += 1
             results = self.zeus_monitor.end_window("all_agents")
@@ -334,7 +337,7 @@ class AnalyticPlusAgent():
             if (action_phase_id not in [k for k, v in self.action_queue]):
                 assert green_time > 0
                 self.action_queue.append((action_phase_id, green_time))
-            else: # update needs 
+            else: # update needs
                 idx = [i[0] for i in self.action_queue].index(action_phase_id)
                 self.action_queue[idx] = (action_phase_id, green_time)
             # if action_id in [i[0] for i in self.action_queue]:
@@ -742,4 +745,3 @@ class Movement:
 
         # b = self.total_delayed_arr + sum(list(self.arr_vehs_num)[-self._min_interval_length:])
         # assert self.total_arr == b, (self.total_arr, b)
-
