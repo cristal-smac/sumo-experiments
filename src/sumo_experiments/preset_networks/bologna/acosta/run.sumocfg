@@ -5,7 +5,7 @@
     <input>
         <net-file value="acosta_buslanes.net.xml"/>
         <route-files value="acosta_NEW.rou.xml,acosta_busses.rou.xml"/>
-        <additional-files value="acosta_tls.add.xml,acosta_vtypes.add.xml,acosta_detectors.add.xml,acosta_bus_stops.add.xml"/>
+        <additional-files value="acosta_vtypes.add.xml,acosta_detectors.add.xml,acosta_bus_stops.add.xml"/>
     </input>
 
     <output>
