@@ -9,7 +9,7 @@ class SotlStrategy(Strategy):
     Gershenson, C. (2004). Self-organizing traffic lights. arXiv preprint nlin/0411066.
     """
 
-    def __init__(self, network, threshold_switch=600, threshold_force=30, min_phase_duration=5, yellow_time=3):
+    def __init__(self, network, threshold_switch=600, threshold_force=30, min_phase_duration=5, yellow_time=3, intelligent_intersections=None):
         """
         Init of class
         :param network: The network to deploy the strategy
@@ -45,6 +45,12 @@ class SotlStrategy(Strategy):
             self.yellow_time = yellow_time
         else:
             self.yellow_time = {identifiant: yellow_time for identifiant in network.TLS_DETECTORS}
+
+        if intelligent_intersections is None:
+            self.intelligent_intersections = network.TL_IDS
+        else:
+            self.intelligent_intersections = intelligent_intersections
+
         self.phases_occurences = {identifiant: {} for identifiant in network.TLS_DETECTORS}
         self.phases_durations = {identifiant: [] for identifiant in network.TLS_DETECTORS}
         self.current_phase_duration = {identifiant: 0 for identifiant in network.TLS_DETECTORS}
@@ -63,7 +69,7 @@ class SotlStrategy(Strategy):
             return True
         else:
             self.zeus_monitor.begin_window("all_agents")
-            for id_tls in self.network.TL_IDS:
+            for id_tls in self.intelligent_intersections:
                 sum_vehicles = self.compute_vehicles_red_lanes(id_tls)
                 current_phase = self.traci.trafficlight.getPhase(id_tls)
                 current_state = self.traci.trafficlight.getRedYellowGreenState(id_tls)
@@ -152,7 +158,7 @@ class SotlStrategy(Strategy):
         """
         Start an agent at the beginning of the simulation.
         """
-        for tl in self.network.TL_IDS:
+        for tl in self.intelligent_intersections:
             tl_logic = self.traci.trafficlight.getAllProgramLogics(tl)[0]
             nb_phase = 0
             for phase in tl_logic.phases:

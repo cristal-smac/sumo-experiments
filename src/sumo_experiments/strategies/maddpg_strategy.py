@@ -26,7 +26,7 @@ class MADDPGStrategy(IntellilightStrategy):
 
     def __init__(self, network, period=10, episode_duration=300, reward_coeffs=(1, 1, 1, 1), gamma=0.99, buffer_size=10000, batch_size=32, 
                  steps_per_update=10, samples_before_update=1024, 
-                 learning_rate=1e-2, tau=0.01, hidden_layer_size=64, yellow_time=3):
+                 learning_rate=1e-2, tau=0.01, hidden_layer_size=64, yellow_time=3, intelligent_intersections=None):
         """
         Init of class.
         :param network: The network to deploy the strategy
@@ -100,6 +100,11 @@ class MADDPGStrategy(IntellilightStrategy):
         self.number_of_trainings = {tl_id: 0 for tl_id in self.network.TLS_DETECTORS}
         self.mean_scores = []
 
+        if intelligent_intersections is None:
+            self.intelligent_intersections = network.TL_IDS
+        else:
+            self.intelligent_intersections = intelligent_intersections
+
         self.val_losses = []
         self.pol_losses = []
         self.rewards = []
@@ -122,23 +127,23 @@ class MADDPGStrategy(IntellilightStrategy):
         """
         if not self.started:
             self.traci = traci
-            for tl_id in self.network.TL_IDS:
+            for tl_id in self.intelligent_intersections:
                 self._start_agent(tl_id)
 
             if self.maddpg is None: # not loading a saved model
-                self.maddpg = MADDPG(agents=list(self.agents.values()), alg_types=['MADDPG' for _ in self.network.TLS_DETECTORS], 
+                self.maddpg = MADDPG(agents=list(self.agents.values()), alg_types=['MADDPG' for _ in self.intelligent_intersections],
                                     gamma=self.gamma[tl_id],
                                     discrete_action=True,
                                     tau=self.tau)
             self.replay_buffer = ReplayBuffer(max_steps=self.buffer_size, num_agents=self.maddpg.nagents, obs_dims=list(self.observation_sizes.values()),
-                                               ac_dims=[len(self.action_space[tl_id]) for tl_id in self.network.TLS_DETECTORS])
+                                               ac_dims=[len(self.action_space[tl_id]) for tl_id in self.intelligent_intersections])
             self.started = True
 
             # self.states = [self.get_state(tl_id) for tl_id in self.network.TL_IDS]
             # self.action_indices = [np.zeros_like(self.action_space[tl_id]) for tl_id in self.network.TL_IDS] # TODO: one hot encode current phase
             self.states = None
             self.action_indices = None
-            self.changed_phase = [None for _ in self.network.TLS_DETECTORS]
+            self.changed_phase = [None for _ in self.intelligent_intersections]
 
             self.time_step = 1
         else:
@@ -153,7 +158,7 @@ class MADDPGStrategy(IntellilightStrategy):
                 if self.network.TL_IDS:#[0] == "c":
                     plt.plot(range(len(self.mean_scores)), self.mean_scores)
                     plt.savefig('strategy_debug.png')
-            for tl_id in self.network.TL_IDS:
+            for tl_id in self.intelligent_intersections:
                 # assert self.time_step == self.traci.simulation.getTime(), print(self.time_step, self.traci.simulation.getTime())
                 if 'y' in self.traci.trafficlight.getRedYellowGreenState(tl_id):
                     if self.current_yellow_time[tl_id] >= self.yellow_time[tl_id]:
@@ -185,7 +190,7 @@ class MADDPGStrategy(IntellilightStrategy):
         Queue switch of the traffic light id_tls to the next, set up the yellow phase if needed.
         """
         next_phases = self.get_next_phases()
-        for tl_id in self.network.TL_IDS:
+        for tl_id in self.intelligent_intersections:
             current_phase = self.traci.trafficlight.getPhase(tl_id)
             if next_phases[tl_id] != self.current_phase[tl_id]:
                 self.nb_switch[tl_id] += 1
@@ -220,9 +225,9 @@ class MADDPGStrategy(IntellilightStrategy):
         """
         # Store experience in replay buffer
         next_states = [self.get_state(tl_id) for tl_id in self.network.TLS_DETECTORS]
-        rewards = [self.get_reward(tl_id, self.changed_phase[i]) for i, tl_id in enumerate(self.network.TLS_DETECTORS)]
-        dones = [(self.traci.simulation.getTime()%self.episode_duration)==0 for _ in self.network.TLS_DETECTORS]
-        scores = [self.get_score(tl_id, self.changed_phase[i]) for i, tl_id in enumerate(self.network.TLS_DETECTORS)]
+        rewards = [self.get_reward(tl_id, self.changed_phase[i]) for i, tl_id in enumerate(self.intelligent_intersections)]
+        dones = [(self.traci.simulation.getTime()%self.episode_duration)==0 for _ in self.intelligent_intersections]
+        scores = [self.get_score(tl_id, self.changed_phase[i]) for i, tl_id in enumerate(self.intelligent_intersections)]
         # if dones[0]:
         #     print(f"Rewards at time {self.traci.simulation.getTime()}: {rewards}")
         # if self.states is not None and self.action_indices is not None:
@@ -249,18 +254,18 @@ class MADDPGStrategy(IntellilightStrategy):
             # action_indices = [np.array([1,0])[::s]]
 
         if self.action_indices is None:
-            self.changed_phase = [False for _ in self.network.TLS_DETECTORS]
+            self.changed_phase = [False for _ in self.intelligent_intersections]
         else:
-            self.changed_phase = [np.argmax(action_indices[i]) != np.argmax(self.action_indices[i]) for i, tl_id in enumerate(self.network.TLS_DETECTORS)]
+            self.changed_phase = [np.argmax(action_indices[i]) != np.argmax(self.action_indices[i]) for i, tl_id in enumerate(self.intelligent_intersections)]
         self.states = next_states
         self.action_indices = action_indices     
 
-        return {tl_id: self.action_space[tl_id][action_indices[i].argmax()] for i, tl_id in enumerate(self.network.TLS_DETECTORS)}
+        return {tl_id: self.action_space[tl_id][action_indices[i].argmax()] for i, tl_id in enumerate(self.intelligent_intersections)}
 
     def train(self):
         # Train the MADDPG model once buffer reaches minimum size
         self.maddpg.prep_training(device=self.device)
-        for tl_id in self.network.TL_IDS:
+        for tl_id in self.intelligent_intersections:
             self.number_of_trainings[tl_id] += 1
         for a_i in range(self.maddpg.nagents):
             sample = self.replay_buffer.sample(self.batch_size,
@@ -304,9 +309,9 @@ class MADDPGStrategy(IntellilightStrategy):
         self.traci.trafficlight.setPhaseDuration(tl_id, 10000)
 
         # DEFER INITIALIZATION OF DDPG AGENTS TO HERE
-        input_dims = {tl_id: len(self.get_state(tl_id)) for tl_id in self.network.TL_IDS}
+        input_dims = {tl_id: len(self.get_state(tl_id)) for tl_id in self.intelligent_intersections}
         critic_dim = sum(input_dims.values())
-        critic_dim += sum(len(self.action_space[tl_id]) for tl_id in self.network.TL_IDS)
+        critic_dim += sum(len(self.action_space[tl_id]) for tl_id in self.intelligent_intersections)
         self.agents[tl_id] = DDPGAgent(num_out_pol=len(self.action_space[tl_id]), 
                                        num_in_pol=input_dims[tl_id], 
                                        num_in_critic=critic_dim, 
@@ -321,7 +326,7 @@ class MADDPGStrategy(IntellilightStrategy):
     def load_model(self, filepath):
         torch.serialization.add_safe_globals([DDPGAgent, DeepNN, nn.Linear, nn.functional.relu, optim.Adam, collections.defaultdict, dict])
         if self.maddpg is None:
-            self.maddpg = MADDPG(agents=[], alg_types=['MADDPG' for _ in self.network.TLS_DETECTORS], 
+            self.maddpg = MADDPG(agents=[], alg_types=['MADDPG' for _ in self.intelligent_intersections],
                                  gamma=list(self.gamma.values())[0], # TODO: refactor?
                                  discrete_action=True,
                                  tau=self.tau)

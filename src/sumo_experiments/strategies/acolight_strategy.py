@@ -11,7 +11,7 @@ class AcolightStrategy(Strategy):
     Bompard, J., Mathieu, P., & Nongaillard, A. (2025). Optimizing road intersections using phase scheduling. 23rd International Conference of Practical applications on Agents and Multi-agent Systems.
     """
 
-    def __init__(self, network, min_phase_duration=1, max_phase_duration=90, yellow_time=3, supervisor=True):
+    def __init__(self, network, min_phase_duration=1, max_phase_duration=90, yellow_time=3, supervisor=True, intelligent_intersections=None):
         """
         Init of class
         :param network: The network to deploy the strategy
@@ -50,6 +50,11 @@ class AcolightStrategy(Strategy):
         else:
             self.yellow_time = {identifiant: yellow_time for identifiant in network.TLS_DETECTORS}
 
+        if intelligent_intersections is None:
+            self.intelligent_intersections = network.TL_IDS
+        else:
+            self.intelligent_intersections = intelligent_intersections
+
         self.nb_switch = {identifiant: 0 for identifiant in network.TLS_DETECTORS}
         self.phases_occurences = {identifiant: {} for identifiant in network.TLS_DETECTORS}
         self.list_phases = {identifiant: [] for identifiant in network.TLS_DETECTORS}
@@ -71,7 +76,7 @@ class AcolightStrategy(Strategy):
             return True
         else:
             self.zeus_monitor.begin_window("all_agents")
-            for id_tls in self.network.TL_IDS:
+            for id_tls in self.intelligent_intersections:
                 current_phase = self.traci.trafficlight.getPhase(id_tls)
                 current_state = self.traci.trafficlight.getRedYellowGreenState(id_tls)
                 # If yellow phase
@@ -251,7 +256,7 @@ class AcolightStrategy(Strategy):
         """
         Start an agent at the beginning of the simulation.
         """
-        for tl in self.network.TL_IDS:
+        for tl in self.intelligent_intersections:
             tl_logic = self.traci.trafficlight.getAllProgramLogics(tl)[0]
             nb_phase = 0
             for phase in tl_logic.phases:

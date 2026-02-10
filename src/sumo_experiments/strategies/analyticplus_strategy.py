@@ -22,7 +22,7 @@ class AnalyticPlusStrategy(Strategy):
     Lämmer, S., & Helbing, D. (2008). Self-control of traffic lights and vehicle flows in urban road networks. Journal of Statistical Mechanics: Theory and Experiment, 2008(04), P04019.
     """
 
-    def __init__(self, network, min_phase_duration=3, T=150, T_max=180, yellow_time=3):
+    def __init__(self, network, min_phase_duration=3, T=150, T_max=180, yellow_time=3, intelligent_intersections=None):
         """
         Init of class
         :param network: The network to deploy the strategy
@@ -64,6 +64,10 @@ class AnalyticPlusStrategy(Strategy):
                                             yellow_time=self.yellow_time) for k in self.network.TL_IDS}
         self.phases_durations = {identifiant: [] for identifiant in network.TLS_DETECTORS}
         self.current_phase_duration = {identifiant: 0 for identifiant in network.TLS_DETECTORS}
+        if intelligent_intersections is None:
+            self.intelligent_intersections = network.TL_IDS
+        else:
+            self.intelligent_intersections = intelligent_intersections
         # Zeus for energy consumption
         self.zeus_monitor = ZeusMonitor()
         self.energy_consumption = 0
@@ -97,7 +101,7 @@ class AnalyticPlusStrategy(Strategy):
             traci_energy = self.zeus_monitor.end_window('traci_call')
             self.exclude_consumption += self.get_energy_consumption(traci_energy)
             self.zeus_monitor.begin_window("all_agents")
-            for id_tls in self.network.TL_IDS:
+            for id_tls in self.intelligent_intersections:
                 agent = self.agents[id_tls]
                 results = self.zeus_monitor.end_window("all_agents")
                 self.energy_consumption += self.get_energy_consumption(results)
@@ -178,7 +182,7 @@ class AnalyticPlusStrategy(Strategy):
         """
         Start an agent at the beginning of the simulation.
         """
-        for tl in self.network.TL_IDS:
+        for id_tls in self.intelligent_intersections:
             tl_logic = self.traci.trafficlight.getAllProgramLogics(tl)[-1]
             nb_phase = 0
             for phase in tl_logic.phases:

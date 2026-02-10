@@ -23,7 +23,7 @@ class IntellilightStrategy(Strategy):
     """
     DEBUG_REWARD = 10000  # ridiculously large value for debugging
 
-    def __init__(self, network, period=10, reward_coeffs=(1, 1, 1, 1), gamma=0.99, episode_duration=300, batch_size=64, buffer_size=1000, update_target_frequency=10, learning_rate=1 * 10 ** -2, exploration_prob=1, cooling_rate=10 ** -3, hidden_layer_size=64, yellow_time=3):
+    def __init__(self, network, period=10, reward_coeffs=(1, 1, 1, 1), gamma=0.99, episode_duration=300, batch_size=64, buffer_size=1000, update_target_frequency=10, learning_rate=1 * 10 ** -2, exploration_prob=1, cooling_rate=10 ** -3, hidden_layer_size=64, yellow_time=3, intelligent_intersections=None):
         """
         Init of class.
         :param network: The network to deploy the strategy
@@ -124,6 +124,11 @@ class IntellilightStrategy(Strategy):
         self.last_state = {identifiant: None for identifiant in self.network.TLS_DETECTORS}
         self.last_action = {identifiant: None for identifiant in self.network.TLS_DETECTORS}
 
+        if intelligent_intersections is None:
+            self.intelligent_intersections = network.TL_IDS
+        else:
+            self.intelligent_intersections = intelligent_intersections
+
         self.mean_rewards = []
         self.mean_scores= []
         self.trainnn = {identifiant: True for identifiant in self.network.TLS_DETECTORS}
@@ -146,7 +151,7 @@ class IntellilightStrategy(Strategy):
         """
         if not self.started:
             self.traci = traci
-            for tl_id in self.network.TL_IDS:
+            for tl_id in self.intelligent_intersections:
                 self._start_agent(tl_id)
             self.started = True
         else:
@@ -156,7 +161,7 @@ class IntellilightStrategy(Strategy):
             if timestep % self.episode_duration[tl_id] == 0 and self.trainnn[tl_id]:
                 self.mean_scores.append(np.mean(self.scores))
                 self.scores = []
-            for tl_id in self.network.TL_IDS:
+            for tl_id in self.intelligent_intersections:
                 if timestep % self.episode_duration[tl_id] == 0 and self.trainnn[tl_id]:
                     if tl_id == "c":
                         self.mean_rewards.append(np.mean(self.rewards))

@@ -9,7 +9,7 @@ class MaxPressureStrategy(Strategy):
     Varaiya, P. (2013). Max pressure control of a network of signalized intersections. Transportation Research Part C: Emerging Technologies, 36, 177-195.
     """
 
-    def __init__(self, network, period=30, yellow_time=3):
+    def __init__(self, network, period=30, yellow_time=3, intelligent_intersections=None):
         """
         Init of class
         :param network: The network to deploy the strategy
@@ -36,6 +36,12 @@ class MaxPressureStrategy(Strategy):
         self.phases_occurences = {identifiant: {} for identifiant in network.TLS_DETECTORS}
         self.phases_durations = {identifiant: [] for identifiant in network.TLS_DETECTORS}
         self.current_phase_duration = {identifiant: 0 for identifiant in network.TLS_DETECTORS}
+
+        if intelligent_intersections is None:
+            self.intelligent_intersections = network.TL_IDS
+        else:
+            self.intelligent_intersections = intelligent_intersections
+
         # Zeus for energy consumption
         self.zeus_monitor = ZeusMonitor()
         self.energy_consumption = 0
@@ -51,7 +57,7 @@ class MaxPressureStrategy(Strategy):
             return True
         else:
             self.zeus_monitor.begin_window("all_agents")
-            for id_tls in self.network.TL_IDS:
+            for id_tls in self.intelligent_intersections:
                 current_phase = self.traci.trafficlight.getPhase(id_tls)
                 current_state = self.traci.trafficlight.getRedYellowGreenState(id_tls)
                 if 'y' in current_state:
@@ -135,7 +141,7 @@ class MaxPressureStrategy(Strategy):
         """
         Start an agent at the beginning of the simulation.
         """
-        for tl in self.network.TL_IDS:
+        for tl in self.intelligent_intersections:
             tl_logic = self.traci.trafficlight.getAllProgramLogics(tl)[0]
             nb_phase = 0
             for phase in tl_logic.phases:
