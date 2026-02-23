@@ -79,14 +79,28 @@ class LilleNetwork(Network):
               'GS_cluster_507288390_508056193', 'cluster_485133449_485133452', 'GS_cluster_485133387_485133391', 'cluster1638086122_cluster_251058778_32828632',
               'GS_cluster_1635760230_1635775294_3706468062', '6267747172', 'GS_cluster_1650597986_1650597989_1652594655', 'GS_cluster_1648564005_1648564008', 'cluster1647146953_1647146957',
               'joinedS_4', 'J11', 'cluster1436583672_1713998722_4401347167_4401347179_#2more', 'GS_cluster_426634816_6316128557_6316128558_801903207_801903212', 'GS_cluster_243072211_250894314',
-              'GS_cluster_1800186885_1800186886_243072210_3404227323_494986739', 'GS_cluster_1302128733_423805246', 'GS_cluster_267375483_3077077589', 'cluster1299481290_252000834_4063893143',
-              'J02', 'J0333', 'GS_3075917655', '652409498', 'cluster1302567574_149374913_305918532', 'GS_cluster_2298692584_7170315064', 'joinedS_5', '491543745', 'cluster1302567586_149374901_305918149',
-              'GS_cluster_506774249_5371110830', 'GS_cluster_1845506036_305930099', 'GS_cluster_1635701799_1635701803', 'GS_1713983096', 'GS_1713983087', 'joinedS_12']
+              'GS_cluster_1800186885_1800186886_243072210_3404227323_494986739', 'GS_cluster_1302128733_423805246', 'GS_cluster_267375483_3077077589', 'J02',
+              '652409498', 'cluster1302567574_149374913_305918532', 'GS_cluster_2298692584_7170315064', 'joinedS_5', '491543745', 'cluster1302567586_149374901_305918149',
+              'GS_cluster_506774249_5371110830', 'GS_cluster_1845506036_305930099', 'GS_cluster_1635701799_1635701803', 'GS_1713983096', 'GS_1713983087', 'joinedS_12', 'GS_1299481284',
+              '133278923', 'joinedS_3', 'GS_164480279', 'GS_1656149839', 'joinedS_9', '1783585139', 'joinedS_10', '1845505945', 'GS_198873099', 'GS_225057604', '235809784', 'GS_243072205',
+              'GS_243072206', 'GS_250883344', 'GS_251048925', 'GS_251050905', '251053238', '251053453', 'GS_251053667', '251053668', '251054519', '251056180', 'GS_251997373', '252269915',
+              '260579122', '260579123', 'GS_267375333', '288393948', 'GS_288393949', '295718903', 'GS_3076442881', 'GS_320950907', 'GS_352836899', '362339802', 'GS_393330677',
+              'GS_439772972', '439806870', '439806886', '440740820', 'GS_468704354', 'GS_4688955408', 'GS_469141720', 'GS_469309921', '469309961', 'cluster1638013968_cluster_1638013992_1656149900_4052112289',
+              '471611509', 'GS_471611512', 'GS_471611514', '471611519', 'GS_476281346', '485133343', 'GS_485133383', 'GS_485133394', '485133399', '489576842',
+              'GS_492092314', '492204162', '492204171', '493138763', 'GS_494986735', '494986738', '496978290', '497394917', 'GS_498476334', 'GS_506774198',
+              'joinedS_16', 'GS_508063549', '517340666', '517340669', '517340672', '530710713', 'GS_6257632307', 'GS_6286429547', 'GS_8983324940', 'GS_9160219128',
+              'cluster_10861016298_1299481357_1299481366_164480282_849010069', 'GS_cluster_1302128722_3075924708_8674467625_8674467626', 'cluster_1499392862_393332459_5936292019',
+              'cluster_1575153557_260469525', 'GS_cluster_1628579789_243072201', 'GS_cluster_1635333815_251056169_252192622_6233070869_6233070871_6233070875_6233070881_6304582153',
+              'GS_cluster_1635660842_1635660844', 'GS_cluster_1674605528_478487605', 'joinedS_17', 'GS_cluster_1705440129_250883337_251056183', 'GS_cluster_1800186890_251997370',
+              'cluster_198873054_3077077638', 'cluster_198873247_506774200', 'GS_cluster_198873257_8568267658', 'cluster_2327596112_439772980_469309959', 'joinedS_2',
+              'cluster_250883332_251056162', 'cluster_250889004_250896553_3076475495_3076475499', 'GS_cluster_251997367_251997369_6525168932_6525168938_8666071616',
+              'joinedS_18', 'cluster_294326287_531028789_5343505332', 'GS_cluster_408501435_6315125559', 'cluster_485133368_485133379', 'GS_cluster_488539561_8567356615',
+              'cluster_530710726_683650128', 'GS_cluster_6286429546_6286429552', 'cluster_6286429557_6990557731', '269243965']
 
 
 
 
-    def __init__(self, intensity=1, starting_time=0, ending_time=24):
+    def __init__(self, intensity=1, starting_time=0, ending_time=24, seed=42):
         """
         Init of class
         :param intensity: The intensity of the normal flow. A coefficient to multiply the number of vehicle for each flow.
@@ -113,7 +127,7 @@ class LilleNetwork(Network):
         self.GRAPH = self.net_to_graph()
         self.flows = FlowBuilder()
         self.flows.add_v_type(id='car0')
-        self.generate_flows(intensity * self.AD_HOC_COEFFICIENT_FOR_FLOWS, starting_time, ending_time)
+        self.generate_flows(intensity * self.AD_HOC_COEFFICIENT_FOR_FLOWS, starting_time, ending_time, seed)
         self.generate_detectors()
         self.generate_config_file()
         self.TLS_DETECTORS = {
@@ -153,10 +167,6 @@ class LilleNetwork(Network):
             'GS_cluster_1800186885_1800186886_243072210_3404227323_494986739': self.DETECTORS_GS_cluster_1800186885_1800186886_243072210_3404227323_494986739,
             'GS_cluster_1302128733_423805246': self.DETECTORS_GS_cluster_1302128733_423805246,
             'GS_cluster_267375483_3077077589': self.DETECTORS_GS_cluster_267375483_3077077589,
-            'cluster1299481290_252000834_4063893143': self.DETECTORS_cluster1299481290_252000834_4063893143,
-            'J02': self.DETECTORS_J02,
-            'J0333': self.DETECTORS_J0333,
-            'GS_3075917655': self.DETECTORS_GS_3075917655,
             'joinedS_12': self.DETECTORS_joinedS_12,
             '652409498': self.DETECTORS_652409498,
             'cluster1302567586_149374901_305918149': self.DETECTORS_cluster1302567586_149374901_305918149,
@@ -164,7 +174,113 @@ class LilleNetwork(Network):
             'GS_cluster_2298692584_7170315064': self.DETECTORS_GS_cluster_2298692584_7170315064,
             'joinedS_5': self.DETECTORS_joinedS_5,
             '491543745': self.DETECTORS_491543745,
+            'GS_1299481284': self.DETECTORS_GS_1299481284,
+            '133278923': self.DETECTORS_133278923,
+            'joinedS_3': self.DETECTORS_joinedS_3,
+            'GS_164480279': self.DETECTORS_GS_164480279,
+            'GS_1656149839': self.DETECTORS_GS_1656149839,
+            'joinedS_9': self.DETECTORS_joinedS_9,
+            '1783585139': self.DETECTORS_1783585139,
+            'joinedS_10': self.DETECTORS_joinedS_10,
+            '1845505945': self.DETECTORS_1845505945,
+            'GS_198873099': self.DETECTORS_GS_198873099,
+            'GS_225057604': self.DETECTORS_GS_225057604,
+            '235809784': self.DETECTORS_235809784,
+            'GS_243072205': self.DETECTORS_GS_243072205,
+            'GS_243072206': self.DETECTORS_GS_243072206,
+            'GS_250883344': self.DETECTORS_GS_250883344,
+            'GS_251048925': self.DETECTORS_GS_251048925,
+            'GS_251050905': self.DETECTORS_GS_251050905,
+            '251053238': self.DETECTORS_251053238,
+            '251053453': self.DETECTORS_251053453,
+            'GS_251053667': self.DETECTORS_GS_251053667,
+            '251053668': self.DETECTORS_251053668,
+            '251054519': self.DETECTORS_251054519,
+            '251056180': self.DETECTORS_251056180,
+            'GS_251997373': self.DETECTORS_GS_251997373,
+            '252269915': self.DETECTORS_252269915,
+            '260579122': self.DETECTORS_260579122,
+            '260579123': self.DETECTORS_260579123,
+            'GS_267375333': self.DETECTORS_GS_267375333,
+            '288393948': self.DETECTORS_288393948,
+            'GS_288393949': self.DETECTORS_GS_288393949,
+            '295718903': self.DETECTORS_295718903,
+            'GS_3076442881': self.DETECTORS_GS_3076442881,
+            'GS_320950907': self.DETECTORS_GS_320950907,
+            'GS_352836899': self.DETECTORS_GS_352836899,
+            '362339802': self.DETECTORS_362339802,
+            'GS_393330677': self.DETECTORS_GS_393330677,
+            'GS_439772972': self.DETECTORS_GS_439772972,
+            '439806870': self.DETECTORS_439806870,
+            '439806886': self.DETECTORS_439806886,
+            '440740820': self.DETECTORS_440740820,
+            'GS_468704354': self.DETECTORS_GS_468704354,
+            'GS_4688955408': self.DETECTORS_GS_4688955408,
+            'GS_469141720': self.DETECTORS_GS_469141720,
+            'GS_469309921': self.DETECTORS_GS_469309921,
+            '469309961': self.DETECTORS_469309961,
+            '471611509': self.DETECTORS_471611509,
+            'GS_471611512': self.DETECTORS_GS_471611512,
+            'GS_471611514': self.DETECTORS_GS_471611514,
+            '471611519': self.DETECTORS_471611519,
+            'GS_476281346': self.DETECTORS_GS_476281346,
+            '485133343': self.DETECTORS_485133343,
+            'GS_485133383': self.DETECTORS_GS_485133383,
+            'GS_485133394': self.DETECTORS_GS_485133394,
+            '485133399': self.DETECTORS_485133399,
+            '489576842': self.DETECTORS_489576842,
+            'GS_492092314': self.DETECTORS_GS_492092314,
+            '492204162': self.DETECTORS_492204162,
+            '492204171': self.DETECTORS_492204171,
+            '493138763': self.DETECTORS_493138763,
+            'GS_494986735': self.DETECTORS_GS_494986735,
+            '494986738': self.DETECTORS_494986738,
+            '496978290': self.DETECTORS_496978290,
+            '497394917': self.DETECTORS_497394917,
+            'GS_498476334': self.DETECTORS_GS_498476334,
+            'GS_506774198': self.DETECTORS_GS_506774198,
+            'joinedS_16': self.DETECTORS_joinedS_16,
+            'GS_508063549': self.DETECTORS_GS_508063549,
+            '517340666': self.DETECTORS_517340666,
+            '517340669': self.DETECTORS_517340669,
+            '517340672': self.DETECTORS_517340672,
+            '530710713': self.DETECTORS_530710713,
+            'GS_6257632307': self.DETECTORS_GS_6257632307,
+            'GS_6286429547': self.DETECTORS_GS_6286429547,
+            'GS_8983324940': self.DETECTORS_GS_8983324940,
+            'GS_9160219128': self.DETECTORS_GS_9160219128,
+            'cluster1638013968_cluster_1638013992_1656149900_4052112289': self.DETECTORS_cluster1638013968_cluster_1638013992_1656149900_4052112289,
+            'cluster_10861016298_1299481357_1299481366_164480282_849010069': self.DETECTORS_cluster_10861016298_1299481357_1299481366_164480282_849010069,
+            'GS_cluster_1302128722_3075924708_8674467625_8674467626': self.DETECTORS_GS_cluster_1302128722_3075924708_8674467625_8674467626,
+            'cluster_1499392862_393332459_5936292019': self.DETECTORS_cluster_1499392862_393332459_5936292019,
+            'cluster_1575153557_260469525': self.DETECTORS_cluster_1575153557_260469525,
+            'GS_cluster_1628579789_243072201': self.DETECTORS_GS_cluster_1628579789_243072201,
+            'GS_cluster_1635333815_251056169_252192622_6233070869_6233070871_6233070875_6233070881_6304582153': self.DETECTORS_GS_cluster_1635333815_251056169_252192622_6233070869_6233070871_6233070875_6233070881_6304582153,
+            'GS_cluster_1635660842_1635660844': self.DETECTORS_GS_cluster_1635660842_1635660844,
+            'joinedS_17': self.DETECTORS_joinedS_17,
+            'GS_cluster_1674605528_478487605': self.DETECTORS_GS_cluster_1674605528_478487605,
+            'GS_cluster_1705440129_250883337_251056183': self.DETECTORS_GS_cluster_1705440129_250883337_251056183,
+            'GS_cluster_1800186890_251997370': self.DETECTORS_GS_cluster_1800186890_251997370,
+            'cluster_198873054_3077077638': self.DETECTORS_cluster_198873054_3077077638,
+            'cluster_198873247_506774200': self.DETECTORS_cluster_198873247_506774200,
+            'GS_cluster_198873257_8568267658': self.DETECTORS_GS_cluster_198873257_8568267658,
+            'cluster_2327596112_439772980_469309959': self.DETECTORS_cluster_2327596112_439772980_469309959,
+            'joinedS_2': self.DETECTORS_joinedS_2,
+            'cluster_250883332_251056162': self.DETECTORS_cluster_250883332_251056162,
+            'cluster_250889004_250896553_3076475495_3076475499': self.DETECTORS_cluster_250889004_250896553_3076475495_3076475499,
+            'GS_cluster_251997367_251997369_6525168932_6525168938_8666071616': self.DETECTORS_GS_cluster_251997367_251997369_6525168932_6525168938_8666071616,
+            'joinedS_18': self.DETECTORS_joinedS_18,
+            'cluster_294326287_531028789_5343505332': self.DETECTORS_cluster_294326287_531028789_5343505332,
+            'GS_cluster_408501435_6315125559': self.DETECTORS_GS_cluster_408501435_6315125559,
+            'cluster_485133368_485133379': self.DETECTORS_cluster_485133368_485133379,
+            'GS_cluster_488539561_8567356615': self.DETECTORS_GS_cluster_488539561_8567356615,
+            'cluster_530710726_683650128': self.DETECTORS_cluster_530710726_683650128,
+            'GS_cluster_6286429546_6286429552': self.DETECTORS_GS_cluster_6286429546_6286429552,
+            'cluster_6286429557_6990557731': self.DETECTORS_cluster_6286429557_6990557731,
+            '269243965': self.DETECTORS_269243965,
+            'J02': self.DETECTORS_J02,
         }
+
 
     def run(self, traci_function, simulation_duration=None, gui=False, seed=None, no_warnings=True, nb_threads=1, time_to_teleport=150):
         """
@@ -204,7 +320,7 @@ class LilleNetwork(Network):
         self.clean_files()
         return res
 
-    def generate_flows(self, intensity=1, starting_time=0, ending_time=24):
+    def generate_flows(self, intensity=1, starting_time=0, ending_time=24, seed=42):
         """
         Generate flows for the network.
         :param intensity: The intensity of the normal flow. A coefficient to multiply the number of vehicle for each flow.
@@ -213,9 +329,12 @@ class LilleNetwork(Network):
         :type starting_time: int
         :param ending_time: The hour of the day at which the flow ends. Must be between 1 and 24, and greater than starting time.
         :type ending_time: int
+        :param seed: The seed of the random generator to create flows
+        :type seed: int
         :return: The flows
         :rtype: FlowBuilder
         """
+        random_generator = random.Random(seed)
         forbid_exits = self.get_forbidden_exits()
         forbid_start_edges = self.get_forbidden_starts()
         tree = ET.parse(self.NET_FILE)
@@ -230,7 +349,7 @@ class LilleNetwork(Network):
                 for entry in self.ENTRIES_EACH_FLOW[flow]:
                     c = 0
                     while c < self.NB_ROUTES_EACH_FLOW:
-                        exit = random.choices(edges)[0]
+                        exit = random_generator.choices(edges)[0]
                         if exit[0] != ':' and nx.has_path(self.GRAPH, entry, exit) and exit not in forbid_exits:
                             freq = int((self.FLOWS_ENTRIES[flow] * self.PROPORTIONS_TO_TIME[current_time] * self.ENTRIES_EACH_FLOW[flow][entry]) // self.NB_ROUTES_EACH_FLOW)
                             freq *= intensity
@@ -553,24 +672,12 @@ class LilleNetwork(Network):
         det.add_lane_area_detector(id='6316129114_b6', edge='231933252#0', lane=1, end_pos=-1, type='boolean')
         det.add_lane_area_detector(id='6316129114_b7', edge='231933218', lane=0, end_pos=-1, type='boolean')
         det.add_lane_area_detector(id='6316129114_b8', edge='231933218', lane=1, end_pos=-1, type='boolean')
-        det.add_lane_area_detector(id='6316129114_b9', edge='674434835#3', lane=0, end_pos=-1, type='boolean')
-        det.add_lane_area_detector(id='6316129114_b10', edge='674434835#3', lane=1, end_pos=-1, type='boolean')
-        det.add_lane_area_detector(id='6316129114_b11', edge='674434835#3', lane=2, end_pos=-1, type='boolean')
-        det.add_lane_area_detector(id='6316129114_b12', edge='295265888#0', lane=0, pos=141, end_pos=161, type='boolean')
-        det.add_lane_area_detector(id='6316129114_b13', edge='295265888#0', lane=1, pos=141, end_pos=161, type='boolean')
-        det.add_lane_area_detector(id='6316129114_b14', edge='935166810', lane=0, end_pos=-1, type='boolean')
-        det.add_lane_area_detector(id='6316129114_b15', edge='935166810', lane=1, end_pos=-1, type='boolean')
-        det.add_lane_area_detector(id='6316129114_b16', edge='935166810', lane=2, end_pos=-1, type='boolean')
-        det.add_lane_area_detector(id='6316129114_b17', edge='295241795#0', lane=0, pos=128, end_pos=148, type='boolean')
-        det.add_lane_area_detector(id='6316129114_b18', edge='295241795#0', lane=1, pos=128, end_pos=148, type='boolean')
-        det.add_lane_area_detector(id='6316129114_b19', edge='674434832', lane=0, end_pos=-1, type='boolean')
-        det.add_lane_area_detector(id='6316129114_b20', edge='674434832', lane=1, end_pos=-1, type='boolean')
-        det.add_lane_area_detector(id='6316129114_b21', edge='674434832', lane=2, end_pos=-1, type='boolean')
-        det.add_lane_area_detector(id='6316129114_b22', edge='267674184#7', lane=0, pos=30, end_pos=50, type='boolean')
-        det.add_lane_area_detector(id='6316129114_b23', edge='267674184#7', lane=1, pos=30, end_pos=50, type='boolean')
-        det.add_lane_area_detector(id='6316129114_b24', edge='674434835#0', lane=0, end_pos=-1, type='boolean')
-        det.add_lane_area_detector(id='6316129114_b25', edge='674434835#0', lane=1, end_pos=-1, type='boolean')
-        det.add_lane_area_detector(id='6316129114_b26', edge='674434835#0', lane=2, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='6316129114_b9', edge='295265888#0', lane=0, pos=141, end_pos=161, type='boolean')
+        det.add_lane_area_detector(id='6316129114_b10', edge='295265888#0', lane=1, pos=141, end_pos=161, type='boolean')
+        det.add_lane_area_detector(id='6316129114_b11', edge='295241795#0', lane=0, pos=128, end_pos=148, type='boolean')
+        det.add_lane_area_detector(id='6316129114_b12', edge='295241795#0', lane=1, pos=128, end_pos=148, type='boolean')
+        det.add_lane_area_detector(id='6316129114_b13', edge='267674184#7', lane=0, pos=30, end_pos=50, type='boolean')
+        det.add_lane_area_detector(id='6316129114_b14', edge='267674184#7', lane=1, pos=30, end_pos=50, type='boolean')
         det.add_lane_area_detector(id='6316129114_s1', edge='36700826', lane=0, end_pos=20, type='saturation')
         det.add_lane_area_detector(id='6316129114_s2', edge='36700826', lane=1, end_pos=20, type='saturation')
         det.add_lane_area_detector(id='6316129114_s3', edge='122445725', lane=0, end_pos=20, type='saturation')
@@ -593,26 +700,14 @@ class LilleNetwork(Network):
         det.add_lane_area_detector(id='6316129114_n10', edge='231933235', lane=1, end_pos=-1, type='numerical')
         det.add_lane_area_detector(id='6316129114_n11', edge='122445725', lane=0, end_pos=-1, type='numerical')
         det.add_lane_area_detector(id='6316129114_n12', edge='122445725', lane=1, end_pos=-1, type='numerical')
-        det.add_lane_area_detector(id='6316129114_n13', edge='674434835#3', lane=0, end_pos=-1, type='numerical')
-        det.add_lane_area_detector(id='6316129114_n14', edge='674434835#3', lane=1, end_pos=-1, type='numerical')
-        det.add_lane_area_detector(id='6316129114_n15', edge='674434835#3', lane=2, end_pos=-1, type='numerical')
-        det.add_lane_area_detector(id='6316129114_n16', edge='295265888#0', lane=0, end_pos=-1, type='numerical')
-        det.add_lane_area_detector(id='6316129114_n17', edge='295265888#0', lane=1, end_pos=-1, type='numerical')
-        det.add_lane_area_detector(id='6316129114_n18', edge='935166810', lane=0, end_pos=-1, type='numerical')
-        det.add_lane_area_detector(id='6316129114_n19', edge='935166810', lane=1, end_pos=-1, type='numerical')
-        det.add_lane_area_detector(id='6316129114_n20', edge='935166810', lane=2, end_pos=-1, type='numerical')
-        det.add_lane_area_detector(id='6316129114_n21', edge='295241795#0', lane=0, end_pos=-1, type='numerical')
-        det.add_lane_area_detector(id='6316129114_n22', edge='295241795#0', lane=1, end_pos=-1, type='numerical')
-        det.add_lane_area_detector(id='6316129114_n23', edge='674434832', lane=0, end_pos=-1, type='numerical')
-        det.add_lane_area_detector(id='6316129114_n24', edge='674434832', lane=1, end_pos=-1, type='numerical')
-        det.add_lane_area_detector(id='6316129114_n25', edge='674434832', lane=2, end_pos=-1, type='numerical')
-        det.add_lane_area_detector(id='6316129114_n26', edge='267674184#7', lane=0, end_pos=-1, type='numerical')
-        det.add_lane_area_detector(id='6316129114_n27', edge='267674184#7', lane=1, end_pos=-1, type='numerical')
-        det.add_lane_area_detector(id='6316129114_n28', edge='267674184#5', lane=0, end_pos=-1, type='numerical')
-        det.add_lane_area_detector(id='6316129114_n29', edge='267674184#5', lane=1, end_pos=-1, type='numerical')
-        det.add_lane_area_detector(id='6316129114_n30', edge='674434835#0', lane=0, end_pos=-1, type='numerical')
-        det.add_lane_area_detector(id='6316129114_n31', edge='674434835#0', lane=1, end_pos=-1, type='numerical')
-        det.add_lane_area_detector(id='6316129114_n32', edge='674434835#0', lane=2, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='6316129114_n13', edge='295265888#0', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='6316129114_n14', edge='295265888#0', lane=1, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='6316129114_n15', edge='295241795#0', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='6316129114_n16', edge='295241795#0', lane=1, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='6316129114_n17', edge='267674184#7', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='6316129114_n18', edge='267674184#7', lane=1, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='6316129114_n19', edge='267674184#5', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='6316129114_n20', edge='267674184#5', lane=1, end_pos=-1, type='numerical')
         # TLS GS_cluster_1615590751_3305892794
         det.add_lane_area_detector(id='cluster_1615590751_b1', edge='141068498#0', lane=0, pos=132, end_pos=152, type='boolean')
         det.add_lane_area_detector(id='cluster_1615590751_b2', edge='-448216348#1', lane=0, pos=11, end_pos=31, type='boolean')
@@ -983,24 +1078,24 @@ class LilleNetwork(Network):
         det.add_lane_area_detector(id='cluster1638086122_n9', edge='288267110#0', lane=0, end_pos=-1, type='numerical')
         det.add_lane_area_detector(id='cluster1638086122_n10', edge='288267110#0', lane=1, end_pos=-1, type='numerical')
         # TLS cluster1638013968_cluster_1638013992_1656149900_4052112289
-        det.add_lane_area_detector(id='cluster1638086122_b1', edge='366657788#0', lane=0, pos=140, end_pos=-1, type='boolean')
-        det.add_lane_area_detector(id='cluster1638086122_b2', edge='366657788#0', lane=1, pos=140, end_pos=-1, type='boolean')
-        det.add_lane_area_detector(id='cluster1638086122_b3', edge='40554478#0', lane=0, pos=2, end_pos=-1, type='boolean')
-        det.add_lane_area_detector(id='cluster1638086122_b4', edge='40554478#0', lane=1, pos=2, end_pos=-1, type='boolean')
-        det.add_lane_area_detector(id='cluster1638086122_b5', edge='23209684#0', lane=0, pos=134, end_pos=-1, type='boolean')
-        det.add_lane_area_detector(id='cluster1638086122_b6', edge='23209684#0', lane=1, pos=134, end_pos=-1, type='boolean')
-        det.add_lane_area_detector(id='cluster1638086122_s1', edge='366657788#0', lane=0, pos=0, end_pos=20, type='saturation')
-        det.add_lane_area_detector(id='cluster1638086122_s2', edge='366657788#0', lane=1, pos=0, end_pos=20, type='saturation')
-        det.add_lane_area_detector(id='cluster1638086122_s3', edge='40237005', lane=0, pos=0, end_pos=20, type='saturation')
-        det.add_lane_area_detector(id='cluster1638086122_s4', edge='23209684#0', lane=0, pos=0, end_pos=20, type='saturation')
-        det.add_lane_area_detector(id='cluster1638086122_s5', edge='23209684#0', lane=1, pos=0, end_pos=20, type='saturation')
-        det.add_lane_area_detector(id='cluster1638086122_n1', edge='366657788#0', lane=0, end_pos=-1, type='numerical')
-        det.add_lane_area_detector(id='cluster1638086122_n2', edge='366657788#0', lane=1, end_pos=-1, type='numerical')
-        det.add_lane_area_detector(id='cluster1638086122_n3', edge='40554478#0', lane=0, end_pos=-1, type='numerical')
-        det.add_lane_area_detector(id='cluster1638086122_n4', edge='40554478#0', lane=1, end_pos=-1, type='numerical')
-        det.add_lane_area_detector(id='cluster1638086122_n5', edge='40237005', lane=0, end_pos=-1, type='numerical')
-        det.add_lane_area_detector(id='cluster1638086122_n6', edge='23209684#0', lane=0, end_pos=-1, type='numerical')
-        det.add_lane_area_detector(id='cluster1638086122_n7', edge='23209684#0', lane=1, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='cluster1638013968_b1', edge='366657788#0', lane=0, pos=140, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='cluster1638013968_b2', edge='366657788#0', lane=1, pos=140, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='cluster1638013968_b3', edge='40554478#0', lane=0, pos=2, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='cluster1638013968_b4', edge='40554478#0', lane=1, pos=2, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='cluster1638013968_b5', edge='23209684#0', lane=0, pos=134, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='cluster1638013968_b6', edge='23209684#0', lane=1, pos=134, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='cluster1638013968_s1', edge='366657788#0', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='cluster1638013968_s2', edge='366657788#0', lane=1, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='cluster1638013968_s3', edge='40237005', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='cluster1638013968_s4', edge='23209684#0', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='cluster1638013968_s5', edge='23209684#0', lane=1, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='cluster1638013968_n1', edge='366657788#0', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='cluster1638013968_n2', edge='366657788#0', lane=1, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='cluster1638013968_n3', edge='40554478#0', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='cluster1638013968_n4', edge='40554478#0', lane=1, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='cluster1638013968_n5', edge='40237005', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='cluster1638013968_n6', edge='23209684#0', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='cluster1638013968_n7', edge='23209684#0', lane=1, end_pos=-1, type='numerical')
         # TLS GS_cluster_1635760230_1635775294_3706468062
         det.add_lane_area_detector(id='cluster_1635760230_b1', edge='671285244', lane=0, pos=0, end_pos=-1, type='boolean')
         det.add_lane_area_detector(id='cluster_1635760230_b2', edge='671285244', lane=1, pos=0, end_pos=-1, type='boolean')
@@ -1433,93 +1528,16 @@ class LilleNetwork(Network):
         det.add_lane_area_detector(id='cluster_250889004_n1', edge='684604123#5', lane=0, end_pos=-1, type='numerical')
         det.add_lane_area_detector(id='cluster_250889004_n2', edge='221337528', lane=0, end_pos=-1, type='numerical')
         det.add_lane_area_detector(id='cluster_250889004_n3', edge='221337528', lane=1, end_pos=-1, type='numerical')
-        # TLS cluster1299481290_252000834_4063893143
-        det.add_lane_area_detector(id='cluster_250889004_b1', edge='672941449', lane=0, pos=20, end_pos=-1, type='boolean')
-        det.add_lane_area_detector(id='cluster_250889004_b2', edge='672941449', lane=1, pos=20, end_pos=-1, type='boolean')
-        det.add_lane_area_detector(id='cluster_250889004_b3', edge='276335209#5', lane=0, pos=94, end_pos=-1, type='boolean')
-        det.add_lane_area_detector(id='cluster_250889004_b4', edge='276335209#5', lane=1, pos=94, end_pos=-1, type='boolean')
-        det.add_lane_area_detector(id='cluster_250889004_s1', edge='672941449', lane=0, pos=0, end_pos=20, type='saturation')
-        det.add_lane_area_detector(id='cluster_250889004_s2', edge='672941449', lane=1, pos=0, end_pos=20, type='saturation')
-        det.add_lane_area_detector(id='cluster_250889004_s3', edge='276335209#2', lane=0, pos=155, end_pos=175, type='saturation')
-        det.add_lane_area_detector(id='cluster_250889004_s4', edge='276335209#2', lane=1, pos=155, end_pos=175, type='saturation')
-        det.add_lane_area_detector(id='cluster_250889004_n1', edge='672941449', lane=0, end_pos=-1, type='numerical')
-        det.add_lane_area_detector(id='cluster_250889004_n2', edge='672941449', lane=1, end_pos=-1, type='numerical')
-        det.add_lane_area_detector(id='cluster_250889004_n3', edge='276335209#5', lane=0, end_pos=-1, type='numerical')
-        det.add_lane_area_detector(id='cluster_250889004_n4', edge='276335209#5', lane=1, end_pos=-1, type='numerical')
-        det.add_lane_area_detector(id='cluster_250889004_n5', edge='276335209#2', lane=0, pos=155, end_pos=-1, type='numerical')
-        det.add_lane_area_detector(id='cluster_250889004_n6', edge='276335209#2', lane=1, pos=155, end_pos=-1, type='numerical')
-        # TLS J02
-        det.add_lane_area_detector(id='J02_b1', edge='934860520#0', lane=0, pos=52, end_pos=-1, type='boolean')
-        det.add_lane_area_detector(id='J02_b2', edge='934860520#0', lane=1, pos=52, end_pos=-1, type='boolean')
-        det.add_lane_area_detector(id='J02_b3', edge='934860520#0', lane=2, pos=52, end_pos=-1, type='boolean')
-        det.add_lane_area_detector(id='J02_b4', edge='897625760#0', lane=0, end_pos=-1, type='boolean')
-        det.add_lane_area_detector(id='J02_b5', edge='897625760#0', lane=1, end_pos=-1, type='boolean')
-        det.add_lane_area_detector(id='J02_s1', edge='1149903351', lane=0, pos=0, end_pos=20, type='saturation')
-        det.add_lane_area_detector(id='J02_s2', edge='1149903351', lane=1, pos=0, end_pos=20, type='saturation')
-        det.add_lane_area_detector(id='J02_s3', edge='1149903351', lane=2, pos=0, end_pos=20, type='saturation')
-        det.add_lane_area_detector(id='J02_s4', edge='1149903351', lane=3, pos=0, end_pos=20, type='saturation')
-        det.add_lane_area_detector(id='J02_s5', edge='897625760#0', lane=0, end_pos=-1, type='saturation')
-        det.add_lane_area_detector(id='J02_s6', edge='897625760#0', lane=1, end_pos=-1, type='saturation')
-        det.add_lane_area_detector(id='J02_n1', edge='934860520#0', lane=0, end_pos=-1, type='numerical')
-        det.add_lane_area_detector(id='J02_n2', edge='934860520#0', lane=1, end_pos=-1, type='numerical')
-        det.add_lane_area_detector(id='J02_n3', edge='934860520#0', lane=2, end_pos=-1, type='numerical')
-        det.add_lane_area_detector(id='J02_n4', edge='1149903351', lane=0, end_pos=-1, type='numerical')
-        det.add_lane_area_detector(id='J02_n5', edge='1149903351', lane=1, end_pos=-1, type='numerical')
-        det.add_lane_area_detector(id='J02_n6', edge='1149903351', lane=2, end_pos=-1, type='numerical')
-        det.add_lane_area_detector(id='J02_n7', edge='1149903351', lane=3, end_pos=-1, type='numerical')
-        det.add_lane_area_detector(id='J02_n8', edge='897625760#0', lane=0, end_pos=-1, type='numerical')
-        det.add_lane_area_detector(id='J02_n9', edge='897625760#0', lane=1, end_pos=-1, type='numerical')
-        # TLS J0333
-        det.add_lane_area_detector(id='J0333_b1', edge='897625771', lane=0, pos=14, end_pos=-1, type='boolean')
-        det.add_lane_area_detector(id='J0333_b2', edge='897625771', lane=1, pos=14, end_pos=-1, type='boolean')
-        det.add_lane_area_detector(id='J0333_b3', edge='897625775', lane=1, pos=54, end_pos=-1, type='boolean')
-        det.add_lane_area_detector(id='J0333_b4', edge='897625775', lane=2, pos=54, end_pos=-1, type='boolean')
-        det.add_lane_area_detector(id='J0333_b5', edge='897625775', lane=3, pos=54, end_pos=-1, type='boolean')
-        det.add_lane_area_detector(id='J0333_b6', edge='897625775', lane=4, pos=54, end_pos=-1, type='boolean')
-        det.add_lane_area_detector(id='J0333_s1', edge='897625771', lane=0, pos=0, end_pos=20, type='saturation')
-        det.add_lane_area_detector(id='J0333_s2', edge='897625771', lane=1, pos=0, end_pos=20, type='saturation')
-        det.add_lane_area_detector(id='J0333_s3', edge='897625775', lane=1, pos=0, end_pos=20, type='saturation')
-        det.add_lane_area_detector(id='J0333_s4', edge='897625775', lane=2, pos=0, end_pos=20, type='saturation')
-        det.add_lane_area_detector(id='J0333_s5', edge='897625775', lane=3, pos=0, end_pos=20, type='saturation')
-        det.add_lane_area_detector(id='J0333_s6', edge='897625775', lane=4, pos=0, end_pos=20, type='saturation')
-        det.add_lane_area_detector(id='J0333_n1', edge='897625771', lane=0, end_pos=-1, type='numerical')
-        det.add_lane_area_detector(id='J0333_n2', edge='897625771', lane=1, end_pos=-1, type='numerical')
-        det.add_lane_area_detector(id='J0333_n3', edge='897625775', lane=1, end_pos=-1, type='numerical')
-        det.add_lane_area_detector(id='J0333_n4', edge='897625775', lane=2, end_pos=-1, type='numerical')
-        det.add_lane_area_detector(id='J0333_n5', edge='897625775', lane=3, end_pos=-1, type='numerical')
-        det.add_lane_area_detector(id='J0333_n6', edge='897625775', lane=4, end_pos=-1, type='numerical')
-        # TLS GS_3075917655
-        det.add_lane_area_detector(id='3075917655_b1', edge='671150573#2', lane=0, end_pos=-1, type='boolean')
-        det.add_lane_area_detector(id='3075917655_b2', edge='671150573#2', lane=1, end_pos=-1, type='boolean')
-        det.add_lane_area_detector(id='3075917655_b3', edge='1149903352#0', lane=1, pos=78, end_pos=-1, type='boolean')
-        det.add_lane_area_detector(id='3075917655_b4', edge='1149903352#0', lane=2, pos=78, end_pos=-1, type='boolean')
-        det.add_lane_area_detector(id='3075917655_s1', edge='671150573#2', lane=0, end_pos=-1, type='saturation')
-        det.add_lane_area_detector(id='3075917655_s2', edge='671150573#2', lane=1, end_pos=-1, type='saturation')
-        det.add_lane_area_detector(id='3075917655_s3', edge='69682368', lane=0, pos=38, end_pos=58, type='saturation')
-        det.add_lane_area_detector(id='3075917655_s4', edge='69682368', lane=1, pos=38, end_pos=58, type='saturation')
-        det.add_lane_area_detector(id='3075917655_n1', edge='671150573#2', lane=0, end_pos=-1, type='numerical')
-        det.add_lane_area_detector(id='3075917655_n2', edge='671150573#2', lane=1, end_pos=-1, type='numerical')
-        det.add_lane_area_detector(id='3075917655_n3', edge='1149903352#0', lane=1, end_pos=-1, type='numerical')
-        det.add_lane_area_detector(id='3075917655_n4', edge='1149903352#0', lane=2, end_pos=-1, type='numerical')
-        det.add_lane_area_detector(id='3075917655_n5', edge='69682368', lane=0, pos=38, end_pos=-1, type='numerical')
-        det.add_lane_area_detector(id='3075917655_n6', edge='69682368', lane=1, pos=38, end_pos=-1, type='numerical')
         # TLS joinedS_12
         det.add_lane_area_detector(id='joinedS_12_b1', edge='276335210#0', lane=0, pos=118, end_pos=-1, type='boolean')
         det.add_lane_area_detector(id='joinedS_12_b2', edge='276335210#0', lane=1, pos=118, end_pos=-1, type='boolean')
         det.add_lane_area_detector(id='joinedS_12_b3', edge='276335210#0', lane=2, pos=118, end_pos=-1, type='boolean')
-        det.add_lane_area_detector(id='joinedS_12_b4', edge='91675900', lane=0, pos=5, end_pos=-1, type='boolean')
-        det.add_lane_area_detector(id='joinedS_12_b5', edge='91675900', lane=1, pos=5, end_pos=-1, type='boolean')
-        det.add_lane_area_detector(id='joinedS_12_b6', edge='91675900', lane=2, pos=5, end_pos=-1, type='boolean')
-        det.add_lane_area_detector(id='joinedS_12_b7', edge='694271872#4', lane=0, pos=45, end_pos=-1, type='boolean')
-        det.add_lane_area_detector(id='joinedS_12_b8', edge='694271872#4', lane=1, pos=45, end_pos=-1, type='boolean')
-        det.add_lane_area_detector(id='joinedS_12_b9', edge='22662398', lane=0, pos=14, end_pos=-1, type='boolean')
-        det.add_lane_area_detector(id='joinedS_12_b10', edge='204817782#0', lane=0, pos=124, end_pos=-1, type='boolean')
-        det.add_lane_area_detector(id='joinedS_12_b11', edge='204817782#0', lane=1, pos=124, end_pos=-1, type='boolean')
-        det.add_lane_area_detector(id='joinedS_12_b12', edge='204817782#0', lane=2, pos=124, end_pos=-1, type='boolean')
-        det.add_lane_area_detector(id='joinedS_12_b13', edge='671150562#0', lane=0, pos=15, end_pos=-1, type='boolean')
-        det.add_lane_area_detector(id='joinedS_12_b14', edge='126505997', lane=0, pos=19, end_pos=-1, type='boolean')
-        det.add_lane_area_detector(id='joinedS_12_b15', edge='126505997', lane=1, pos=19, end_pos=-1, type='boolean')
-        det.add_lane_area_detector(id='joinedS_12_b16', edge='126505997', lane=2, pos=19, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='joinedS_12_b4', edge='694271872#4', lane=0, pos=45, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='joinedS_12_b5', edge='694271872#4', lane=1, pos=45, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='joinedS_12_b6', edge='204817782#0', lane=0, pos=124, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='joinedS_12_b7', edge='204817782#0', lane=1, pos=124, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='joinedS_12_b8', edge='204817782#0', lane=2, pos=124, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='joinedS_12_b9', edge='671150562#0', lane=0, pos=15, end_pos=-1, type='boolean')
         det.add_lane_area_detector(id='joinedS_12_s1', edge='177433778-AddedOffRampEdge', lane=0, pos=19, end_pos=39, type='saturation')
         det.add_lane_area_detector(id='joinedS_12_s2', edge='177433778-AddedOffRampEdge', lane=1, pos=19, end_pos=39, type='saturation')
         det.add_lane_area_detector(id='joinedS_12_s3', edge='177433778-AddedOffRampEdge', lane=2, pos=19, end_pos=39, type='saturation')
@@ -1536,30 +1554,23 @@ class LilleNetwork(Network):
         det.add_lane_area_detector(id='joinedS_12_n4', edge='177433778-AddedOffRampEdge', lane=0, pos=19, end_pos=-1, type='numerical')
         det.add_lane_area_detector(id='joinedS_12_n5', edge='177433778-AddedOffRampEdge', lane=1, pos=19, end_pos=-1, type='numerical')
         det.add_lane_area_detector(id='joinedS_12_n6', edge='177433778-AddedOffRampEdge', lane=2, pos=19, end_pos=-1, type='numerical')
-        det.add_lane_area_detector(id='joinedS_12_n7', edge='91675900', lane=0, pos=5, end_pos=-1, type='numerical')
-        det.add_lane_area_detector(id='joinedS_12_n8', edge='91675900', lane=1, pos=5, end_pos=-1, type='numerical')
-        det.add_lane_area_detector(id='joinedS_12_n9', edge='91675900', lane=2, pos=5, end_pos=-1, type='numerical')
-        det.add_lane_area_detector(id='joinedS_12_n10', edge='694271872#4', lane=0, end_pos=-1, type='numerical')
-        det.add_lane_area_detector(id='joinedS_12_n11', edge='694271872#4', lane=1, end_pos=-1, type='numerical')
-        det.add_lane_area_detector(id='joinedS_12_n12', edge='694271872#3', lane=0, end_pos=-1, type='numerical')
-        det.add_lane_area_detector(id='joinedS_12_n13', edge='694271872#3', lane=1, end_pos=-1, type='numerical')
-        det.add_lane_area_detector(id='joinedS_12_n14', edge='694271872#3', lane=2, end_pos=-1, type='numerical')
-        det.add_lane_area_detector(id='joinedS_12_n15', edge='694271872#0', lane=0, pos=78, end_pos=-1, type='numerical')
-        det.add_lane_area_detector(id='joinedS_12_n16', edge='694271872#0', lane=1, pos=78, end_pos=-1, type='numerical')
-        det.add_lane_area_detector(id='joinedS_12_n17', edge='22662398', lane=0, end_pos=-1, type='numerical')
-        det.add_lane_area_detector(id='joinedS_12_n18', edge='204817782#0', lane=0, end_pos=-1, type='numerical')
-        det.add_lane_area_detector(id='joinedS_12_n19', edge='204817782#0', lane=1, end_pos=-1, type='numerical')
-        det.add_lane_area_detector(id='joinedS_12_n20', edge='204817782#0', lane=2, end_pos=-1, type='numerical')
-        det.add_lane_area_detector(id='joinedS_12_n21', edge='177480212', lane=0, pos=75, end_pos=-1, type='numerical')
-        det.add_lane_area_detector(id='joinedS_12_n22', edge='177480212', lane=1, pos=75, end_pos=-1, type='numerical')
-        det.add_lane_area_detector(id='joinedS_12_n23', edge='177480212', lane=2, pos=75, end_pos=-1, type='numerical')
-        det.add_lane_area_detector(id='joinedS_12_n24', edge='671150562#0', lane=0, end_pos=-1, type='numerical')
-        det.add_lane_area_detector(id='joinedS_12_n25', edge='681552697', lane=0, end_pos=-1, type='numerical')
-        det.add_lane_area_detector(id='joinedS_12_n26', edge='681552697', lane=1, end_pos=-1, type='numerical')
-        det.add_lane_area_detector(id='joinedS_12_n27', edge='126505997', lane=0, end_pos=-1, type='numerical')
-        det.add_lane_area_detector(id='joinedS_12_n28', edge='126505997', lane=1, end_pos=-1, type='numerical')
-        det.add_lane_area_detector(id='joinedS_12_n29', edge='126505997', lane=2, end_pos=-1, type='numerical')
-        det.add_lane_area_detector(id='joinedS_12_n30', edge='32258211', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='joinedS_12_n7', edge='694271872#4', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='joinedS_12_n8', edge='694271872#4', lane=1, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='joinedS_12_n9', edge='694271872#3', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='joinedS_12_n10', edge='694271872#3', lane=1, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='joinedS_12_n11', edge='694271872#3', lane=2, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='joinedS_12_n12', edge='694271872#0', lane=0, pos=78, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='joinedS_12_n13', edge='694271872#0', lane=1, pos=78, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='joinedS_12_n14', edge='204817782#0', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='joinedS_12_n15', edge='204817782#0', lane=1, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='joinedS_12_n16', edge='204817782#0', lane=2, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='joinedS_12_n17', edge='177480212', lane=0, pos=75, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='joinedS_12_n18', edge='177480212', lane=1, pos=75, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='joinedS_12_n19', edge='177480212', lane=2, pos=75, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='joinedS_12_n20', edge='671150562#0', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='joinedS_12_n21', edge='681552697', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='joinedS_12_n22', edge='126505997', lane=2, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='joinedS_12_n23', edge='32258211', lane=0, end_pos=-1, type='numerical')
         # TLS 652409498
         det.add_lane_area_detector(id='652409498_b1', edge='84465448', lane=0, pos=31, end_pos=-1, type='boolean')
         det.add_lane_area_detector(id='652409498_b2', edge='84465448', lane=1, pos=31, end_pos=-1, type='boolean')
@@ -1678,24 +1689,14 @@ class LilleNetwork(Network):
         # TLS joinedS_5
         det.add_lane_area_detector(id='joinedS_5_b1', edge='40666176#2', lane=0, pos=71, end_pos=-1, type='boolean')
         det.add_lane_area_detector(id='joinedS_5_b2', edge='40666176#2', lane=1, pos=71, end_pos=-1, type='boolean')
-        det.add_lane_area_detector(id='joinedS_5_b3', edge='179264937#0', lane=0, end_pos=-1, type='boolean')
-        det.add_lane_area_detector(id='joinedS_5_b4', edge='179264937#0', lane=1, end_pos=-1, type='boolean')
-        det.add_lane_area_detector(id='joinedS_5_b5', edge='1133747103#0', lane=0, pos=5, end_pos=-1, type='boolean')
-        det.add_lane_area_detector(id='joinedS_5_b6', edge='1081841963#0', lane=0, pos=35, end_pos=-1, type='boolean')
-        det.add_lane_area_detector(id='joinedS_5_b7', edge='1081841963#0', lane=1, pos=35, end_pos=-1, type='boolean')
-        det.add_lane_area_detector(id='joinedS_5_b8', edge='40527483#0', lane=0, end_pos=-1, type='boolean')
-        det.add_lane_area_detector(id='joinedS_5_b9', edge='40527483#0', lane=1, end_pos=-1, type='boolean')
-        det.add_lane_area_detector(id='joinedS_5_b10', edge='40527483#0', lane=2, end_pos=-1, type='boolean')
-        det.add_lane_area_detector(id='joinedS_5_b11', edge='40527483#0', lane=3, end_pos=-1, type='boolean')
-        det.add_lane_area_detector(id='joinedS_5_b12', edge='927571006#0', lane=0, pos=37, end_pos=-1, type='boolean')
-        det.add_lane_area_detector(id='joinedS_5_b13', edge='927571006#0', lane=1, pos=37, end_pos=-1, type='boolean')
-        det.add_lane_area_detector(id='joinedS_5_b14', edge='927571006#0', lane=2, pos=37, end_pos=-1, type='boolean')
-        det.add_lane_area_detector(id='joinedS_5_b15', edge='97564142#0', lane=0, end_pos=-1, type='boolean')
-        det.add_lane_area_detector(id='joinedS_5_b16', edge='97564142#0', lane=1, end_pos=-1, type='boolean')
-        det.add_lane_area_detector(id='joinedS_5_b17', edge='787899593#0', lane=0, pos=21, end_pos=-1, type='boolean')
-        det.add_lane_area_detector(id='joinedS_5_b18', edge='787899593#0', lane=1, pos=21, end_pos=-1, type='boolean')
-        det.add_lane_area_detector(id='joinedS_5_b19', edge='306136472#0', lane=0, end_pos=-1, type='boolean')
-        det.add_lane_area_detector(id='joinedS_5_b20', edge='306136472#0', lane=1, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='joinedS_5_b3', edge='1133747103#0', lane=0, pos=5, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='joinedS_5_b4', edge='1081841963#0', lane=0, pos=35, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='joinedS_5_b5', edge='1081841963#0', lane=1, pos=35, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='joinedS_5_b6', edge='927571006#0', lane=0, pos=37, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='joinedS_5_b7', edge='927571006#0', lane=1, pos=37, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='joinedS_5_b8', edge='927571006#0', lane=2, pos=37, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='joinedS_5_b9', edge='787899593#0', lane=0, pos=21, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='joinedS_5_b10', edge='787899593#0', lane=1, pos=21, end_pos=-1, type='boolean')
         det.add_lane_area_detector(id='joinedS_5_s1', edge='40666176#2', lane=0, pos=0, end_pos=20, type='saturation')
         det.add_lane_area_detector(id='joinedS_5_s2', edge='40666176#2', lane=1, pos=0, end_pos=20, type='saturation')
         det.add_lane_area_detector(id='joinedS_5_s3', edge='-147396980#1', lane=0, pos=0, end_pos=20, type='saturation')
@@ -1708,39 +1709,29 @@ class LilleNetwork(Network):
         det.add_lane_area_detector(id='joinedS_5_s10', edge='306136474#0', lane=3, end_pos=-1, type='saturation')
         det.add_lane_area_detector(id='joinedS_5_n1', edge='40666176#2', lane=0, end_pos=-1, type='numerical')
         det.add_lane_area_detector(id='joinedS_5_n2', edge='40666176#2', lane=1, end_pos=-1, type='numerical')
-        det.add_lane_area_detector(id='joinedS_5_n3', edge='179264937#0', lane=0, end_pos=-1, type='numerical')
-        det.add_lane_area_detector(id='joinedS_5_n4', edge='179264937#0', lane=1, end_pos=-1, type='numerical')
-        det.add_lane_area_detector(id='joinedS_5_n5', edge='1133747103#0', lane=0, end_pos=-1, type='numerical')
-        det.add_lane_area_detector(id='joinedS_5_n6', edge='-147396980#0', lane=0, end_pos=-1, type='numerical')
-        det.add_lane_area_detector(id='joinedS_5_n7', edge='-147396980#1', lane=0, end_pos=-1, type='numerical')
-        det.add_lane_area_detector(id='joinedS_5_n8', edge='1081841963#0', lane=0, end_pos=-1, type='numerical')
-        det.add_lane_area_detector(id='joinedS_5_n9', edge='1081841963#0', lane=1, end_pos=-1, type='numerical')
-        det.add_lane_area_detector(id='joinedS_5_n10', edge='40401871#0', lane=0, end_pos=-1, type='numerical')
-        det.add_lane_area_detector(id='joinedS_5_n11', edge='40527483#0', lane=0, end_pos=-1, type='numerical')
-        det.add_lane_area_detector(id='joinedS_5_n12', edge='40527483#0', lane=1, end_pos=-1, type='numerical')
-        det.add_lane_area_detector(id='joinedS_5_n13', edge='40527483#0', lane=2, end_pos=-1, type='numerical')
-        det.add_lane_area_detector(id='joinedS_5_n14', edge='40527483#0', lane=3, end_pos=-1, type='numerical')
-        det.add_lane_area_detector(id='joinedS_5_n15', edge='927571006#0', lane=0, end_pos=-1, type='numerical')
-        det.add_lane_area_detector(id='joinedS_5_n16', edge='927571006#0', lane=1, end_pos=-1, type='numerical')
-        det.add_lane_area_detector(id='joinedS_5_n17', edge='927571006#0', lane=2, end_pos=-1, type='numerical')
-        det.add_lane_area_detector(id='joinedS_5_n18', edge='39725932#3', lane=0, end_pos=-1, type='numerical')
-        det.add_lane_area_detector(id='joinedS_5_n19', edge='39725932#3', lane=1, end_pos=-1, type='numerical')
-        det.add_lane_area_detector(id='joinedS_5_n20', edge='39725932#1', lane=0, pos=34, end_pos=-1, type='numerical')
-        det.add_lane_area_detector(id='joinedS_5_n21', edge='39725932#1', lane=1, pos=34, end_pos=-1, type='numerical')
-        det.add_lane_area_detector(id='joinedS_5_n22', edge='97564142#0', lane=0, end_pos=-1, type='numerical')
-        det.add_lane_area_detector(id='joinedS_5_n23', edge='97564142#0', lane=1, end_pos=-1, type='numerical')
-        det.add_lane_area_detector(id='joinedS_5_n24', edge='787899593#0', lane=0, end_pos=-1, type='numerical')
-        det.add_lane_area_detector(id='joinedS_5_n25', edge='787899593#0', lane=1, end_pos=-1, type='numerical')
-        det.add_lane_area_detector(id='joinedS_5_n26', edge='306136474#2', lane=0, end_pos=-1, type='numerical')
-        det.add_lane_area_detector(id='joinedS_5_n27', edge='306136474#2', lane=1, end_pos=-1, type='numerical')
-        det.add_lane_area_detector(id='joinedS_5_n28', edge='306136474#2', lane=2, end_pos=-1, type='numerical')
-        det.add_lane_area_detector(id='joinedS_5_n29', edge='306136474#2', lane=3, end_pos=-1, type='numerical')
-        det.add_lane_area_detector(id='joinedS_5_n30', edge='306136474#0', lane=0, end_pos=-1, type='numerical')
-        det.add_lane_area_detector(id='joinedS_5_n31', edge='306136474#0', lane=1, end_pos=-1, type='numerical')
-        det.add_lane_area_detector(id='joinedS_5_n32', edge='306136474#0', lane=2, end_pos=-1, type='numerical')
-        det.add_lane_area_detector(id='joinedS_5_n33', edge='306136474#0', lane=3, end_pos=-1, type='numerical')
-        det.add_lane_area_detector(id='joinedS_5_n34', edge='306136472#0', lane=0, end_pos=-1, type='numerical')
-        det.add_lane_area_detector(id='joinedS_5_n35', edge='306136472#0', lane=1, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='joinedS_5_n3', edge='1133747103#0', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='joinedS_5_n4', edge='-147396980#0', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='joinedS_5_n5', edge='-147396980#1', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='joinedS_5_n6', edge='1081841963#0', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='joinedS_5_n7', edge='1081841963#0', lane=1, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='joinedS_5_n8', edge='40401871#0', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='joinedS_5_n9', edge='927571006#0', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='joinedS_5_n10', edge='927571006#0', lane=1, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='joinedS_5_n11', edge='927571006#0', lane=2, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='joinedS_5_n12', edge='39725932#3', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='joinedS_5_n13', edge='39725932#3', lane=1, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='joinedS_5_n14', edge='39725932#1', lane=0, pos=34, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='joinedS_5_n15', edge='39725932#1', lane=1, pos=34, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='joinedS_5_n16', edge='787899593#0', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='joinedS_5_n17', edge='787899593#0', lane=1, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='joinedS_5_n18', edge='306136474#2', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='joinedS_5_n19', edge='306136474#2', lane=1, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='joinedS_5_n20', edge='306136474#2', lane=2, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='joinedS_5_n21', edge='306136474#2', lane=3, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='joinedS_5_n22', edge='306136474#0', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='joinedS_5_n23', edge='306136474#0', lane=1, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='joinedS_5_n24', edge='306136474#0', lane=2, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='joinedS_5_n25', edge='306136474#0', lane=3, end_pos=-1, type='numerical')
         # TLS 491543745
         det.add_lane_area_detector(id='491543745_b1', edge='630227327#0', lane=0, pos=73, end_pos=-1, type='boolean')
         det.add_lane_area_detector(id='491543745_b2', edge='630227327#0', lane=1, pos=73, end_pos=-1, type='boolean')
@@ -1811,6 +1802,1318 @@ class LilleNetwork(Network):
         det.add_lane_area_detector(id='491543745_n32', edge='671269689#0', lane=3, end_pos=-1, type='numerical')
         det.add_lane_area_detector(id='491543745_n33', edge='40527487#0', lane=0, end_pos=-1, type='numerical')
         det.add_lane_area_detector(id='491543745_n34', edge='40527487#0', lane=1, end_pos=-1, type='numerical')
+        # GS_1299481284
+        det.add_lane_area_detector(id='GS_1299481284_b1', edge='181636453#0', lane=0, pos=37, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_1299481284_b2', edge='181636453#0', lane=1, pos=37, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_1299481284_b3', edge='46656368#0', lane=0, pos=19, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_1299481284_b4', edge='46656368#0', lane=1, pos=19, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_1299481284_s1', edge='114800007', lane=0, pos=7, end_pos=27, type='saturation')
+        det.add_lane_area_detector(id='GS_1299481284_s2', edge='114800007', lane=1, pos=7, end_pos=27, type='saturation')
+        det.add_lane_area_detector(id='GS_1299481284_s3', edge='46656516#0', lane=0, pos=47, end_pos=67, type='saturation')
+        det.add_lane_area_detector(id='GS_1299481284_s4', edge='46656516#0', lane=1, pos=47, end_pos=67, type='saturation')
+        det.add_lane_area_detector(id='GS_1299481284_n1', edge='181636453#0', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_1299481284_n2', edge='181636453#0', lane=1, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_1299481284_n3', edge='114800007', lane=0, pos=7, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_1299481284_n4', edge='114800007', lane=1, pos=7, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_1299481284_n5', edge='46656368#0', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_1299481284_n6', edge='46656368#0', lane=1, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_1299481284_n7', edge='46656516#0-AddedOffRampEdge', lane=1, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_1299481284_n8', edge='46656516#0-AddedOffRampEdge', lane=2, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_1299481284_n9', edge='46656516#0', lane=0, pos=47, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_1299481284_n10', edge='46656516#0', lane=1, pos=47, end_pos=-1, type='numerical')
+        # 133278923
+        det.add_lane_area_detector(id='133278923_b1', edge='246426373#5', lane=0, pos=59, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='133278923_b2', edge='246426373#5', lane=1, pos=59, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='133278923_b3', edge='145895351#3', lane=0, pos=43, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='133278923_b4', edge='145895351#3', lane=1, pos=43, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='133278923_s1', edge='246426373#2', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='133278923_s2', edge='246426373#2', lane=1, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='133278923_s3', edge='145895351#3', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='133278923_s4', edge='145895351#3', lane=1, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='133278923_n1', edge='246426373#5', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='133278923_n2', edge='246426373#5', lane=1, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='133278923_n3', edge='246426373#2', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='133278923_n4', edge='246426373#2', lane=1, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='133278923_n5', edge='145895351#3', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='133278923_n6', edge='145895351#3', lane=1, end_pos=-1, type='numerical')
+        # joinedS_3
+        det.add_lane_area_detector(id='joinedS_3_b1', edge='40203861#0', lane=0, pos=6, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='joinedS_3_b2', edge='40203861#0', lane=1, pos=6, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='joinedS_3_b3', edge='40203861#0', lane=2, pos=6, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='joinedS_3_b4', edge='70991116', lane=0, pos=12, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='joinedS_3_b5', edge='70991116', lane=1, pos=12, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='joinedS_3_b6', edge='70991116', lane=2, pos=12, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='joinedS_3_b7', edge='-40236821#3', lane=0, pos=49, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='joinedS_3_b8', edge='40203859#1', lane=0, pos=21, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='joinedS_3_b9', edge='40203859#1', lane=1, pos=21, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='joinedS_3_s1', edge='40236834#4', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='joinedS_3_s2', edge='40236834#4', lane=1, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='joinedS_3_s3', edge='-40236821#3', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='joinedS_3_s4', edge='40203859#1', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='joinedS_3_s5', edge='40203859#1', lane=1, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='joinedS_3_n1', edge='40203861#0', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='joinedS_3_n2', edge='40203861#0', lane=1, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='joinedS_3_n3', edge='40203861#0', lane=2, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='joinedS_3_n4', edge='70991116', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='joinedS_3_n5', edge='70991116', lane=1, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='joinedS_3_n6', edge='70991116', lane=2, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='joinedS_3_n7', edge='40236834#4', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='joinedS_3_n8', edge='40236834#4', lane=1, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='joinedS_3_n9', edge='-40236821#3', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='joinedS_3_n10', edge='40203859#1', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='joinedS_3_n11', edge='40203859#1', lane=1, end_pos=-1, type='numerical')
+        # GS_164480279
+        det.add_lane_area_detector(id='GS_164480279_b1', edge='16207741#1', lane=0, pos=45, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_164480279_b2', edge='-484396465#3', lane=0, pos=137, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_164480279_b3', edge='-1167807980#3', lane=0, pos=74, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_164480279_s1', edge='16207741#0', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='GS_164480279_s2', edge='-484396465#3', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='GS_164480279_s3', edge='-1167807980#3', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='GS_164480279_n1', edge='16207741#1', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_164480279_n2', edge='16207741#0', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_164480279_n3', edge='-484396465#3', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_164480279_n4', edge='-1167807980#3', lane=0, end_pos=-1, type='numerical')
+        # GS_1656149839
+        det.add_lane_area_detector(id='GS_1656149839_b1', edge='-150547012#1', lane=0, pos=55, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_1656149839_b2', edge='1050785991#0', lane=0, pos=33, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_1656149839_b3', edge='1050785991#0', lane=1, pos=33, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_1656149839_b4', edge='1021069943#2', lane=0, pos=64, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_1656149839_s1', edge='-150547012#2', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='GS_1656149839_s2', edge='209877626#1', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='GS_1656149839_s3', edge='209877626#1', lane=1, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='GS_1656149839_s4', edge='1021069943#0', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='GS_1656149839_n1', edge='-150547012#1', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_1656149839_n2', edge='-150547012#2', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_1656149839_n3', edge='1050785991#0', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_1656149839_n4', edge='1050785991#0', lane=1, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_1656149839_n5', edge='1050786416#0', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_1656149839_n6', edge='209877626#1', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_1656149839_n7', edge='209877626#1', lane=1, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_1656149839_n8', edge='1021069943#2', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_1656149839_n9', edge='1021069943#0', lane=0, end_pos=-1, type='numerical')
+        # joinedS_9
+        det.add_lane_area_detector(id='joinedS_9_b1', edge='674324361#2', lane=0, pos=61, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='joinedS_9_b2', edge='674324361#2', lane=1, pos=61, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='joinedS_9_b3', edge='165600269#0', lane=0, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='joinedS_9_b4', edge='165600269#0', lane=1, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='joinedS_9_b5', edge='103066467#1', lane=0, pos=10, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='joinedS_9_b6', edge='-165600269#5', lane=0, pos=66, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='joinedS_9_b7', edge='-165600269#2', lane=0, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='joinedS_9_b8', edge='41502369#0', lane=0, pos=13, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='joinedS_9_b9', edge='41502369#0', lane=1, pos=13, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='joinedS_9_s1', edge='674324361#2', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='joinedS_9_s2', edge='674324361#2', lane=1, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='joinedS_9_s3', edge='103066467#1', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='joinedS_9_s4', edge='-180790926#3', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='joinedS_9_s5', edge='15117711#0', lane=0, pos=63, end_pos=83, type='saturation')
+        det.add_lane_area_detector(id='joinedS_9_n1', edge='674324361#2', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='joinedS_9_n2', edge='674324361#2', lane=1, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='joinedS_9_n3', edge='165600269#0', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='joinedS_9_n4', edge='165600269#0', lane=1, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='joinedS_9_n5', edge='103066467#1', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='joinedS_9_n6', edge='-165600269#2', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='joinedS_9_n7', edge='-165600269#5', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='joinedS_9_n8', edge='-180790926#0', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='joinedS_9_n9', edge='-180790926#3', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='joinedS_9_n10', edge='41502369#0', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='joinedS_9_n11', edge='41502369#0', lane=1, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='joinedS_9_n12', edge='15117711#0', lane=0, pos=63, end_pos=-1, type='numerical')
+        # 1783585139
+        det.add_lane_area_detector(id='1783585139_b1', edge='709681981#0', lane=0, pos=172, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='1783585139_b2', edge='41432791#0', lane=0, pos=172, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='1783585139_b3', edge='41432776#0', lane=0, pos=76, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='1783585139_b4', edge='41432776#0', lane=1, pos=76, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='1783585139_s1', edge='709681981#0', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='1783585139_s2', edge='41432791#0', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='1783585139_s3', edge='41432776#0', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='1783585139_s4', edge='41432776#0', lane=1, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='1783585139_n1', edge='709681981#0', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='1783585139_n2', edge='41432791#0', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='1783585139_n3', edge='41432776#0', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='1783585139_n4', edge='41432776#0', lane=1, end_pos=-1, type='numerical')
+        # joinedS_10
+        det.add_lane_area_detector(id='joinedS_10_b1', edge='167175382#0', lane=0, pos=284, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='joinedS_10_b2', edge='312521185#0', lane=0, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='joinedS_10_b3', edge='312521185#0', lane=1, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='joinedS_10_b4', edge='224900500#0', lane=0, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='joinedS_10_b5', edge='224900500#0', lane=1, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='joinedS_10_s1', edge='167175382#0', lane=0, pos=104, end_pos=124, type='saturation')
+        det.add_lane_area_detector(id='joinedS_10_s2', edge='23282409', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='joinedS_10_s3', edge='23282409', lane=1, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='joinedS_10_s4', edge='23282409', lane=2, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='joinedS_10_s5', edge='303291937', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='joinedS_10_s6', edge='303291937', lane=1, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='joinedS_10_n1', edge='167175382#0', lane=0, pos=104, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='joinedS_10_n2', edge='312521185#0', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='joinedS_10_n3', edge='312521185#0', lane=1, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='joinedS_10_n4', edge='23282409', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='joinedS_10_n5', edge='23282409', lane=1, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='joinedS_10_n6', edge='23282409', lane=2, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='joinedS_10_n7', edge='224900500#0', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='joinedS_10_n8', edge='224900500#0', lane=1, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='joinedS_10_n9', edge='303291937', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='joinedS_10_n10', edge='303291937', lane=1, end_pos=-1, type='numerical')
+        # 1845505945
+        det.add_lane_area_detector(id='1845505945_b1', edge='-173794839#0', lane=0, pos=35, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='1845505945_b2', edge='857245401#7', lane=0, pos=112, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='1845505945_b3', edge='-147572086#4', lane=0, pos=47, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='1845505945_s1', edge='-992570225#2', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='1845505945_s2', edge='857245401#7', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='1845505945_s3', edge='-147572086#4', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='1845505945_n1', edge='-173794839#0', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='1845505945_n2', edge='-173794839#1', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='1845505945_n3', edge='-992570225#2', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='1845505945_n4', edge='857245401#7', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='1845505945_n5', edge='-147572086#4', lane=0, end_pos=-1, type='numerical')
+        # GS_198873099
+        det.add_lane_area_detector(id='GS_198873099_b1', edge='312521175#0', lane=0, pos=5, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_198873099_b2', edge='438130798#0', lane=0, pos=96, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_198873099_s1', edge='312521175#0', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='GS_198873099_s2', edge='438130798#0', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='GS_198873099_n1', edge='312521175#0', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_198873099_n2', edge='438130798#0', lane=0, end_pos=-1, type='numerical')
+        # GS_225057604
+        det.add_lane_area_detector(id='GS_225057604_b1', edge='-103066477#2', lane=0, pos=37, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_225057604_b2', edge='-103066477#2', lane=1, pos=37, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_225057604_b3', edge='992570225#0', lane=0, pos=18, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_225057604_b4', edge='992570225#0', lane=1, pos=18, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_225057604_b5', edge='-131751140#2', lane=0, pos=57, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_225057604_s1', edge='-548098364#3', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='GS_225057604_s2', edge='173794839#1', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='GS_225057604_s3', edge='-131751140#2', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='GS_225057604_n1', edge='-103066477#2', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_225057604_n2', edge='-103066477#2', lane=1, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_225057604_n3', edge='-548098364#3', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_225057604_n4', edge='992570225#0', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_225057604_n5', edge='992570225#0', lane=1, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_225057604_n6', edge='173794839#1', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_225057604_n7', edge='-131751140#2', lane=0, end_pos=-1, type='numerical')
+        # 235809784
+        det.add_lane_area_detector(id='235809784_b1', edge='147677592#0', lane=0, pos=28, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='235809784_b2', edge='-21883171#1', lane=0, pos=48, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='235809784_b3', edge='180787926#3', lane=0, pos=151, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='235809784_s1', edge='147677592#0', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='235809784_s2', edge='-21883171#1', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='235809784_s3', edge='180787926#3', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='235809784_n1', edge='147677592#0', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='235809784_n2', edge='-21883171#1', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='235809784_n3', edge='180787926#3', lane=0, end_pos=-1, type='numerical')
+        # GS_243072205
+        det.add_lane_area_detector(id='GS_243072205_b1', edge='-1020857159#7', lane=0, pos=119, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_243072205_b2', edge='22662375', lane=0, pos=72, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_243072205_b3', edge='22662375', lane=1, pos=72, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_243072205_b4', edge='935166817#2', lane=0, pos=82, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_243072205_b5', edge='-169970249#1', lane=0, pos=156, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_243072205_s1', edge='-1020857159#7', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='GS_243072205_s2', edge='84690886#0', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='GS_243072205_s3', edge='935166817#2', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='GS_243072205_s4', edge='-169970249#1', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='GS_243072205_n1', edge='-1020857159#7', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_243072205_n2', edge='22662375', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_243072205_n3', edge='22662375', lane=1, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_243072205_n4', edge='84690886#0', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_243072205_n5', edge='935166817#2', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_243072205_n6', edge='-169970249#1', lane=0, end_pos=-1, type='numerical')
+        # GS_243072206
+        det.add_lane_area_detector(id='GS_243072206_b1', edge='-23209407#6', lane=0, pos=84, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_243072206_b2', edge='135931683#0', lane=0, pos=156, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_243072206_b3', edge='1176629322#0', lane=0, pos=88, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_243072206_b4', edge='-206133857#1', lane=0, pos=74, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_243072206_s1', edge='-23209407#6', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='GS_243072206_s2', edge='135931683#0', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='GS_243072206_s3', edge='1176629322#0', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='GS_243072206_s4', edge='-206133857#1', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='GS_243072206_n1', edge='-23209407#6', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_243072206_n2', edge='135931683#0', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_243072206_n3', edge='1176629322#0', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_243072206_n4', edge='-206133857#1', lane=0, end_pos=-1, type='numerical')
+        # GS_250883344
+        det.add_lane_area_detector(id='GS_250883344_b1', edge='440531862', lane=0, pos=30, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_250883344_b2', edge='440531862', lane=1, pos=30, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_250883344_b3', edge='356256047#0', lane=0, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_250883344_b4', edge='356256047#0', lane=1, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_250883344_s1', edge='440531862', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='GS_250883344_s2', edge='440531862', lane=1, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='GS_250883344_s3', edge='23197997', lane=0, pos=181, end_pos=201, type='saturation')
+        det.add_lane_area_detector(id='GS_250883344_n1', edge='440531862', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_250883344_n2', edge='440531862', lane=1, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_250883344_n3', edge='316680837', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_250883344_n4', edge='316680837', lane=1, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_250883344_n5', edge='356256047#0', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_250883344_n6', edge='356256047#0', lane=1, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_250883344_n7', edge='23197997', lane=0, pos=181, end_pos=-1, type='numerical')
+        # GS_251048925
+        det.add_lane_area_detector(id='GS_251048925_b1', edge='95631681#2', lane=0, pos=51, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_251048925_b2', edge='-95067483#4', lane=0, pos=63, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_251048925_b3', edge='-95631681#5', lane=0, pos=124, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_251048925_b4', edge='95067483#1', lane=0, pos=78, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_251048925_s1', edge='95631681#2', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='GS_251048925_s2', edge='-95067483#4', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='GS_251048925_s3', edge='-95631681#5', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='GS_251048925_s4', edge='95067483#1', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='GS_251048925_n1', edge='95631681#2', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_251048925_n2', edge='-95067483#4', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_251048925_n3', edge='-95631681#5', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_251048925_n4', edge='95067483#1', lane=0, end_pos=-1, type='numerical')
+        # GS_251050905
+        det.add_lane_area_detector(id='GS_251050905_b1', edge='880131127#0', lane=0, pos=25, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_251050905_b2', edge='120226485#0', lane=0, pos=128, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_251050905_b3', edge='26484576#0', lane=0, pos=99, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_251050905_s1', edge='880131127#0', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='GS_251050905_s2', edge='120226485#0', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='GS_251050905_s3', edge='26484576#0', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='GS_251050905_n1', edge='880131127#0', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_251050905_n2', edge='120226485#0', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_251050905_n3', edge='26484576#0', lane=0, end_pos=-1, type='numerical')
+        # 251053238
+        det.add_lane_area_detector(id='251053238_b1', edge='670994200#0', lane=0, pos=19, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='251053238_b2', edge='-220781185#7', lane=0, pos=89, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='251053238_b3', edge='24028294#0', lane=0, pos=95, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='251053238_s1', edge='670994200#0', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='251053238_s2', edge='-220781185#7', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='251053238_s3', edge='24028294#0', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='251053238_n1', edge='670994200#0', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='251053238_n2', edge='-220781185#7', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='251053238_n3', edge='24028294#0', lane=0, end_pos=-1, type='numerical')
+        # 251053453
+        det.add_lane_area_detector(id='251053453_b1', edge='484396456#5', lane=0, pos=87, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='251053453_b2', edge='-673365084#4', lane=0, pos=81, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='251053453_b3', edge='25674419#0', lane=0, pos=190, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='251053453_s1', edge='484396456#5', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='251053453_s2', edge='-673365084#4', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='251053453_s3', edge='25674419#0', lane=0, pos=10, end_pos=30, type='saturation')
+        det.add_lane_area_detector(id='251053453_n1', edge='484396456#5', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='251053453_n2', edge='-673365084#4', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='251053453_n3', edge='25674419#0', lane=0, end_pos=-1, type='numerical')
+        # GS_251053667
+        det.add_lane_area_detector(id='GS_251053667_b1', edge='674959068#1', lane=0, pos=2, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_251053667_b2', edge='484396454#0', lane=0, pos=77, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_251053667_b3', edge='-484396453#3', lane=0, pos=172, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_251053667_s1', edge='674959068#1', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='GS_251053667_s2', edge='484396454#0', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='GS_251053667_s3', edge='-484396453#3', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='GS_251053667_n1', edge='674959068#1', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_251053667_n2', edge='484396454#0', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_251053667_n3', edge='-484396453#3', lane=0, end_pos=-1, type='numerical')
+        # 251053668
+        det.add_lane_area_detector(id='251053668_b1', edge='-97596158#6', lane=0, pos=200, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='251053668_b2', edge='123593237#2', lane=0, pos=7, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='251053668_b3', edge='97596159#4', lane=0, pos=112, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='251053668_s1', edge='-97596158#6', lane=0, pos=20, end_pos=40, type='saturation')
+        det.add_lane_area_detector(id='251053668_s2', edge='123593237#2', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='251053668_s3', edge='97596159#4', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='251053668_n1', edge='-97596158#6', lane=0, pos=20, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='251053668_n2', edge='123593237#2', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='251053668_n3', edge='97596159#4', lane=0, end_pos=-1, type='numerical')
+        # 251054519
+        det.add_lane_area_detector(id='251054519_b1', edge='84690889#1', lane=0, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='251054519_b2', edge='84690889#1', lane=1, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='251054519_b3', edge='40995422#1', lane=0, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='251054519_s1', edge='84690889#1', lane=0, end_pos=-1, type='saturation')
+        det.add_lane_area_detector(id='251054519_s2', edge='84690889#1', lane=1, end_pos=-1, type='saturation')
+        det.add_lane_area_detector(id='251054519_s3', edge='40995422#1', lane=0, end_pos=-1, type='saturation')
+        det.add_lane_area_detector(id='251054519_n1', edge='84690889#1', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='251054519_n2', edge='84690889#1', lane=1, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='251054519_n3', edge='40995422#1', lane=0, end_pos=-1, type='numerical')
+        # 251056180
+        det.add_lane_area_detector(id='251056180_b1', edge='87607969#2', lane=0, pos=54, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='251056180_b2', edge='289351515#0', lane=0, pos=58, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='251056180_s1', edge='87607969#2', lane=0, pos =0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='251056180_s2', edge='685973537', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='251056180_s3', edge='685973537', lane=1, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='251056180_n1', edge='87607969#2', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='251056180_n2', edge='289351515#0', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='251056180_n3', edge='685973537', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='251056180_n4', edge='685973537', lane=1, end_pos=-1, type='numerical')
+        # GS_251997373
+        det.add_lane_area_detector(id='GS_251997373_b1', edge='-312521170#5', lane=0, pos=174, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_251997373_b2', edge='23209407#0', lane=0, pos=83, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_251997373_b3', edge='641711251#0', lane=0, pos=69, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_251997373_b4', edge='641711251#0', lane=1, pos=69, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_251997373_s1', edge='-312521170#5', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='GS_251997373_s2', edge='23209407#0', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='GS_251997373_s3', edge='23282411#0', lane=0, pos=64, end_pos=84, type='saturation')
+        det.add_lane_area_detector(id='GS_251997373_n1', edge='-312521170#5', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_251997373_n2', edge='23209407#0', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_251997373_n3', edge='641711251#0', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_251997373_n4', edge='641711251#0', lane=1, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_251997373_n5', edge='23282411#0', lane=0, pos=64, end_pos=-1, type='numerical')
+        # 252269915
+        det.add_lane_area_detector(id='252269915_b1', edge='880143899', lane=0, pos=51, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='252269915_b2', edge='162138548#0', lane=0, pos=120, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='252269915_s1', edge='880143899', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='252269915_s2', edge='162138548#0', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='252269915_n1', edge='880143899', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='252269915_n2', edge='162138548#0', lane=0, end_pos=-1, type='numerical')
+        # 260579122
+        det.add_lane_area_detector(id='260579122_b1', edge='673365084#0', lane=0, pos=81, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='260579122_b2', edge='115202991#1', lane=0, pos=103, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='260579122_b3', edge='97596158#0', lane=0, pos=200, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='260579122_s1', edge='673365084#0', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='260579122_s2', edge='115202991#1', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='260579122_s3', edge='97596158#0', lane=0, pos=20, end_pos=40, type='saturation')
+        det.add_lane_area_detector(id='260579122_n1', edge='673365084#0', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='260579122_n2', edge='115202991#1', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='260579122_n3', edge='97596158#0', lane=0, pos=20, end_pos=-1, type='numerical')
+        # 260579123
+        det.add_lane_area_detector(id='260579123_b1', edge='118086263#5', lane=0, pos=55, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='260579123_b2', edge='191002371', lane=0, pos=43, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='260579123_b3', edge='97596152#1', lane=0, pos=18, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='260579123_b4', edge='97596152#1', lane=1, pos=18, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='260579123_s1', edge='118086263#5', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='260579123_s2', edge='191002371', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='260579123_s3', edge='97596152#1', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='260579123_s4', edge='97596152#1', lane=1, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='260579123_n1', edge='118086263#5', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='260579123_n2', edge='191002371', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='260579123_n3', edge='97596152#1', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='260579123_n4', edge='97596152#1', lane=1, end_pos=-1, type='numerical')
+        # GS_267375333
+        det.add_lane_area_detector(id='GS_267375333_b1', edge='152814630#3', lane=0, pos=80, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_267375333_b2', edge='87607965#4', lane=0, pos=78, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_267375333_b3', edge='-157848623#1', lane=0, pos=52, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_267375333_b4', edge='41847984#0', lane=0, pos=87, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_267375333_s1', edge='152814630#3', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='GS_267375333_s2', edge='87607965#4', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='GS_267375333_s3', edge='-157848623#1', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='GS_267375333_s4', edge='41847984#0', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='GS_267375333_n1', edge='152814630#3', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_267375333_n2', edge='87607965#4', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_267375333_n3', edge='-157848623#1', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_267375333_n4', edge='41847984#0', lane=0, end_pos=-1, type='numerical')
+        # 288393948
+        det.add_lane_area_detector(id='288393948_b1', edge='246426373#0', lane=0, pos=3, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='288393948_b2', edge='246426373#0', lane=1, pos=3, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='288393948_b3', edge='234880762#0', lane=0, pos=107, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='288393948_s1', edge='246426373#0', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='288393948_s2', edge='246426373#0', lane=1, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='288393948_s3', edge='234880762#0', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='288393948_n1', edge='246426373#0', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='288393948_n2', edge='246426373#0', lane=1, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='288393948_n3', edge='234880762#0', lane=0, end_pos=-1, type='numerical')
+        # GS_288393949
+        det.add_lane_area_detector(id='GS_288393949_b1', edge='833002651#5', lane=0, pos=111, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_288393949_b2', edge='1158931710#5', lane=0, pos=40, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_288393949_b3', edge='168275984#1', lane=0, pos=73, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_288393949_s1', edge='833002651#5', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='GS_288393949_s2', edge='1158931710#5', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='GS_288393949_s3', edge='168275984#1', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='GS_288393949_n1', edge='833002651#5', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_288393949_n2', edge='1158931710#5', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_288393949_n3', edge='168275984#1', lane=0, end_pos=-1, type='numerical')
+        # 295718903
+        det.add_lane_area_detector(id='295718903_b1', edge='26980716#0', lane=0, pos=116, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='295718903_b2', edge='151991095#5', lane=0, pos=34, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='295718903_b3', edge='-26980716#1', lane=0, pos=21, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='295718903_b4', edge='-151991095#7', lane=0, pos=58, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='295718903_s1', edge='26980716#0', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='295718903_s2', edge='151991095#5', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='295718903_s3', edge='-26980716#1', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='295718903_s4', edge='-151991095#7', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='295718903_n1', edge='26980716#0', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='295718903_n2', edge='151991095#5', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='295718903_n3', edge='-26980716#1', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='295718903_n4', edge='-151991095#7', lane=0, end_pos=-1, type='numerical')
+        # GS_3076442881
+        det.add_lane_area_detector(id='GS_3076442881_b1', edge='24204778#0', lane=0, pos=48, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_3076442881_b2', edge='671285245', lane=0, pos=46, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_3076442881_s1', edge='24204778#0', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='GS_3076442881_s2', edge='671285245', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='GS_3076442881_n1', edge='24204778#0', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_3076442881_n2', edge='671285245', lane=0, end_pos=-1, type='numerical')
+        # GS_320950907
+        det.add_lane_area_detector(id='GS_320950907_b1', edge='29187029#0', lane=0, pos=36, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_320950907_b2', edge='29187029#0', lane=1, pos=36, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_320950907_b3', edge='29185600#0', lane=0, pos=81, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_320950907_s1', edge='29187029#0', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='GS_320950907_s2', edge='29187029#0', lane=1, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='GS_320950907_s3', edge='29185600#0', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='GS_320950907_n1', edge='29187029#0', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_320950907_n2', edge='29187029#0', lane=1, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_320950907_n3', edge='29185600#0', lane=0, end_pos=-1, type='numerical')
+        # GS_352836899
+        det.add_lane_area_detector(id='GS_352836899_b1', edge='23209072#0', lane=0, pos=17, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_352836899_b2', edge='94527181#1', lane=0, pos=117, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_352836899_b3', edge='-95631681#1', lane=0, pos=83, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_352836899_b4', edge='-94527140#1', lane=0, pos=134, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_352836899_s1', edge='23209072#0', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='GS_352836899_s2', edge='94527181#1', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='GS_352836899_s3', edge='-95631681#1', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='GS_352836899_s4', edge='-94527140#1', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='GS_352836899_n1', edge='23209072#0', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_352836899_n2', edge='94527181#1', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_352836899_n3', edge='-95631681#1', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_352836899_n4', edge='-94527140#1', lane=0, end_pos=-1, type='numerical')
+        # 362339802
+        det.add_lane_area_detector(id='362339802_b1', edge='-460236443#3', lane=0, pos=209, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='362339802_b2', edge='117119292#0', lane=0, pos=8, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='362339802_b3', edge='693976858#3', lane=0, pos=120, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='362339802_s1', edge='-460236443#3', lane=0, pos=29, end_pos=49, type='saturation')
+        det.add_lane_area_detector(id='362339802_s2', edge='673321100', lane=0, pos=36, end_pos=56, type='saturation')
+        det.add_lane_area_detector(id='362339802_s3', edge='24028303#0', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='362339802_s4', edge='693976858#3', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='362339802_n1', edge='-460236443#3', lane=0, pos=29, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='362339802_n2', edge='117119292#0', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='362339802_n3', edge='673321100', lane=0, pos=36, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='362339802_n4', edge='24028303#0', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='362339802_n5', edge='693976858#3', lane=0, end_pos=-1, type='numerical')
+        # GS_393330677
+        det.add_lane_area_detector(id='GS_393330677_b1', edge='686637168#0', lane=0, pos=44, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_393330677_b2', edge='686637168#0', lane=1, pos=44, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_393330677_b3', edge='686637168#0', lane=2, pos=44, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_393330677_b4', edge='686637168#0', lane=3, pos=44, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_393330677_b5', edge='23298863#0', lane=0, pos=31, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_393330677_b6', edge='23298863#0', lane=1, pos=31, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_393330677_b7', edge='23298863#0', lane=2, pos=31, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_393330677_s1', edge='23298864', lane=0, end_pos=-1, type='saturation')
+        det.add_lane_area_detector(id='GS_393330677_s2', edge='23298864', lane=1, end_pos=-1, type='saturation')
+        det.add_lane_area_detector(id='GS_393330677_s3', edge='23298863#0', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='GS_393330677_s4', edge='23298863#0', lane=1, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='GS_393330677_s5', edge='23298863#0', lane=2, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='GS_393330677_n1', edge='686637168#0', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_393330677_n2', edge='686637168#0', lane=1, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_393330677_n3', edge='686637168#0', lane=2, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_393330677_n4', edge='686637168#0', lane=3, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_393330677_n5', edge='23298864', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_393330677_n6', edge='23298864', lane=1, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_393330677_n7', edge='23298863#0', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_393330677_n8', edge='23298863#0', lane=1, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_393330677_n9', edge='23298863#0', lane=2, end_pos=-1, type='numerical')
+        # GS_439772972
+        det.add_lane_area_detector(id='GS_439772972_b1', edge='392793710#4', lane=0, pos=133, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_439772972_b2', edge='766710290#10', lane=0, pos=25, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_439772972_b3', edge='-766710290#13', lane=0, pos=46, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_439772972_s1', edge='392793710#4', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='GS_439772972_s2', edge='766710290#10', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='GS_439772972_s3', edge='-766710290#13', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='GS_439772972_n1', edge='392793710#4', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_439772972_n2', edge='766710290#10', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_439772972_n3', edge='-766710290#13', lane=0, end_pos=-1, type='numerical')
+        # 439806870
+        det.add_lane_area_detector(id='439806870_b1', edge='180787918#0', lane=0, pos=44, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='439806870_b2', edge='180787918#0', lane=1, pos=44, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='439806870_b3', edge='-37548828', lane=0, pos=213, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='439806870_s1', edge='180787918#0', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='439806870_s2', edge='180787918#0', lane=1, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='439806870_s3', edge='-37548828', lane=0, pos=33, end_pos=53, type='saturation')
+        det.add_lane_area_detector(id='439806870_n1', edge='180787918#0', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='439806870_n2', edge='180787918#0', lane=1, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='439806870_n3', edge='-37548828', lane=0, pos=33, end_pos=-1, type='numerical')
+        # 439806886
+        det.add_lane_area_detector(id='439806886_b1', edge='-95565302#1', lane=0, pos=31, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='439806886_b2', edge='147677590#0', lane=0, pos=28, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='439806886_b3', edge='37548828', lane=0, pos=213, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='439806886_s1', edge='-95565302#1', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='439806886_s2', edge='147677590#0', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='439806886_s3', edge='37548828', lane=0, pos=33, end_pos=53, type='saturation')
+        det.add_lane_area_detector(id='439806886_n1', edge='-95565302#1', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='439806886_n2', edge='147677590#0', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='439806886_n3', edge='37548828', lane=0, end_pos=-1, type='numerical')
+        # 440740820
+        det.add_lane_area_detector(id='440740820_b1', edge='95631681#4', lane=0, pos=124, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='440740820_b2', edge='151991095#8', lane=0, pos=11, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='440740820_b3', edge='-95631681#6', lane=0, pos=30, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='440740820_b4', edge='-151991095#10', lane=0, pos=68, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='440740820_s1', edge='95631681#4', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='440740820_s2', edge='151991095#6', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='440740820_s3', edge='-95631681#6', lane=0, pos=0, end_pos=13, type='saturation')
+        det.add_lane_area_detector(id='440740820_s4', edge='-152025223#1', lane=0, end_pos=-1, type='saturation')
+        det.add_lane_area_detector(id='440740820_s5', edge='-151991095#10', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='440740820_n1', edge='95631681#4', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='440740820_n2', edge='151991095#6', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='440740820_n3', edge='151991095#8', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='440740820_n4', edge='-95631681#6', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='440740820_n5', edge='-152025223#1', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='440740820_n6', edge='-151991095#10', lane=0, end_pos=-1, type='numerical')
+        # GS_468704354
+        det.add_lane_area_detector(id='GS_468704354_b1', edge='766710290#15', lane=0, pos=16, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_468704354_b2', edge='155602430#7', lane=0, pos=145, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_468704354_b3', edge='-766710290#20', lane=0, pos=100, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_468704354_s1', edge='766710290#15', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='GS_468704354_s2', edge='155602430#7', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='GS_468704354_s3', edge='-766710290#20', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='GS_468704354_n1', edge='766710290#15', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_468704354_n2', edge='155602430#7', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_468704354_n3', edge='-766710290#20', lane=0, end_pos=-1, type='numerical')
+        # GS_4688955408
+        det.add_lane_area_detector(id='GS_4688955408_b1', edge='39725933#0', lane=0, pos=66, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_4688955408_b2', edge='39725933#0', lane=1, pos=66, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_4688955408_b3', edge='39725933#0', lane=2, pos=66, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_4688955408_b4', edge='475086607#10', lane=0, pos=2, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_4688955408_b5', edge='475086607#10', lane=1, pos=2, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_4688955408_b6', edge='475086607#10', lane=2, pos=2, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_4688955408_s1', edge='39725933#0', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='GS_4688955408_s2', edge='39725933#0', lane=1, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='GS_4688955408_s3', edge='39725933#0', lane=2, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='GS_4688955408_s4', edge='475086607#10', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='GS_4688955408_s5', edge='475086607#10', lane=1, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='GS_4688955408_s6', edge='475086607#10', lane=2, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='GS_4688955408_n1', edge='39725933#0', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_4688955408_n2', edge='39725933#0', lane=1, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_4688955408_n3', edge='39725933#0', lane=2, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_4688955408_n4', edge='475086607#10', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_4688955408_n5', edge='475086607#10', lane=1, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_4688955408_n6', edge='475086607#10', lane=2, end_pos=-1, type='numerical')
+        # GS_469141720
+        det.add_lane_area_detector(id='GS_469141720_b1', edge='155602430#4', lane=0, pos=73, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_469141720_b2', edge='-39166410#1', lane=0, pos=76, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_469141720_s1', edge='155602430#4', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='GS_469141720_s2', edge='-39166410#1', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='GS_469141720_n1', edge='155602430#4', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_469141720_n2', edge='-39166410#1', lane=0, end_pos=-1, type='numerical')
+        # GS_469309921
+        det.add_lane_area_detector(id='GS_469309921_b1', edge='766710290#27', lane=0, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_469309921_b2', edge='39178017#3', lane=0, pos=108, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_469309921_b3', edge='-1158931710#1', lane=0, pos=102, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_469309921_s1', edge='766710290#25', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='GS_469309921_s2', edge='39178017#3', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='GS_469309921_s3', edge='-1158931710#1', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='GS_469309921_n1', edge='766710290#27', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_469309921_n2', edge='766710290#25', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_469309921_n3', edge='39178017#3', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_469309921_n4', edge='-1158931710#1', lane=0, end_pos=-1, type='numerical')
+        # 469309961
+        det.add_lane_area_detector(id='469309961_b1', edge='833002650#4', lane=0, pos=61, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='469309961_b2', edge='147572086#2', lane=0, pos=47, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='469309961_b3', edge='147572085#2', lane=0, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='469309961_s1', edge='833002650#4', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='469309961_s2', edge='147572086#2', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='469309961_s3', edge='147572085#0', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='469309961_n1', edge='833002650#4', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='469309961_n2', edge='147572086#2', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='469309961_n3', edge='147572085#2', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='469309961_n4', edge='147572085#0', lane=0, end_pos=-1, type='numerical')
+        # 471611509
+        det.add_lane_area_detector(id='471611509_b1', edge='1185722342#0', lane=0, pos=14, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='471611509_b2', edge='89606453#0', lane=0, pos=58, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='471611509_s1', edge='1185722342#0', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='471611509_s2', edge='89606453#0', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='471611509_n1', edge='1185722342#0', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='471611509_n2', edge='89606453#0', lane=0, end_pos=-1, type='numerical')
+        # GS_471611512
+        det.add_lane_area_detector(id='GS_471611512_b1', edge='392793712#0', lane=0, pos=15, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_471611512_b2', edge='39363178#0', lane=0, pos=119, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_471611512_s1', edge='392793712#0', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='GS_471611512_s2', edge='39363178#0', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='GS_471611512_n1', edge='392793712#0', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_471611512_n2', edge='39363178#0', lane=0, end_pos=-1, type='numerical')
+        # GS_471611514
+        det.add_lane_area_detector(id='GS_471611514_b1', edge='102621877#10', lane=0, pos=132, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_471611514_b2', edge='180790927#0', lane=0, pos=156, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_471611514_b3', edge='-39148839#1', lane=0, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_471611514_s1', edge='102621877#10', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='GS_471611514_s2', edge='180790927#0', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='GS_471611514_s3', edge='-39148839#1', lane=0, end_pos=-1, type='saturation')
+        det.add_lane_area_detector(id='GS_471611514_n1', edge='102621877#10', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_471611514_n2', edge='180790927#0', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_471611514_n3', edge='-39148839#1', lane=0, end_pos=-1, type='numerical')
+        # 471611519
+        det.add_lane_area_detector(id='471611519_b1', edge='833002651#3', lane=0, pos=77, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='471611519_b2', edge='-88899637#3', lane=0, pos=24, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='471611519_b3', edge='88899637#1', lane=0, pos=81, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='471611519_s1', edge='833002651#3', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='471611519_s2', edge='-88899637#3', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='471611519_s3', edge='88899637#1', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='471611519_n1', edge='833002651#3', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='471611519_n2', edge='-88899637#3', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='471611519_n3', edge='88899637#1', lane=0, end_pos=-1, type='numerical')
+        # GS_476281346
+        det.add_lane_area_detector(id='GS_476281346_b1', edge='39878318#1', lane=0, pos=211, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_476281346_b2', edge='57241977#5', lane=0, pos=76, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_476281346_s1', edge='39878318#1', lane=0, pos=31, end_pos=51, type='saturation')
+        det.add_lane_area_detector(id='GS_476281346_s2', edge='57241977#5', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='GS_476281346_n1', edge='39878318#1', lane=0, pos=31, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_476281346_n2', edge='57241977#5', lane=0, end_pos=-1, type='numerical')
+        # 485133343
+        det.add_lane_area_detector(id='485133343_b1', edge='-150547012#9', lane=0, pos=56, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='485133343_b2', edge='150547012#6', lane=0, pos=4, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='485133343_b3', edge='-102621877#1', lane=0, pos=65, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='485133343_s1', edge='-150547012#9', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='485133343_s2', edge='150547012#6', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='485133343_s3', edge='-102621877#1', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='485133343_n1', edge='-150547012#9', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='485133343_n2', edge='150547012#6', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='485133343_n3', edge='-102621877#1', lane=0, end_pos=-1, type='numerical')
+        # GS_485133383
+        det.add_lane_area_detector(id='GS_485133383_b1', edge='668861332#1', lane=0, pos=72, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_485133383_b2', edge='102621877#8', lane=0, pos=42, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_485133383_b3', edge='-102621877#13', lane=0, pos=132, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_485133383_s1', edge='668861332#1', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='GS_485133383_s2', edge='102621877#8', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='GS_485133383_s3', edge='-102621877#13', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='GS_485133383_n1', edge='668861332#1', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_485133383_n2', edge='102621877#8', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_485133383_n3', edge='-102621877#13', lane=0, end_pos=-1, type='numerical')
+        # GS_485133394
+        det.add_lane_area_detector(id='GS_485133394_b1', edge='180787914#0', lane=0, pos=62, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_485133394_b2', edge='150950348#0', lane=0, pos=102, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_485133394_b3', edge='-392793711#2', lane=0, pos=22, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_485133394_s1', edge='180787914#0', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='GS_485133394_s2', edge='150950348#0', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='GS_485133394_s3', edge='-392793711#2', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='GS_485133394_n1', edge='180787914#0', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_485133394_n2', edge='150950348#0', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_485133394_n3', edge='-392793711#2', lane=0, end_pos=-1, type='numerical')
+        # 485133399
+        det.add_lane_area_detector(id='485133399_b1', edge='392793710#2', lane=0, pos=34, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='485133399_b2', edge='1185722340', lane=0, pos=54, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='485133399_s1', edge='392793710#2', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='485133399_s2', edge='1185722340', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='485133399_n1', edge='392793710#2', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='485133399_n2', edge='1185722340', lane=0, end_pos=-1, type='numerical')
+        # 489576842
+        det.add_lane_area_detector(id='489576842_b1', edge='-302704693#4', lane=0, pos=7, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='489576842_b2', edge='880143900#1', lane=0, pos=12, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='489576842_b3', edge='302704693#3', lane=0, pos=98, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='489576842_b4', edge='-47705161#3', lane=0, pos=128, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='489576842_s1', edge='-302704693#4', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='489576842_s2', edge='880143900#1', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='489576842_s3', edge='302704693#3', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='489576842_s4', edge='-47705161#3', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='489576842_n1', edge='-302704693#4', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='489576842_n2', edge='880143900#1', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='489576842_n3', edge='302704693#3', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='489576842_n4', edge='1185722340', lane=0, end_pos=-1, type='numerical')
+        # GS_492092314
+        det.add_lane_area_detector(id='GS_492092314_b1', edge='-147396980#15', lane=0, pos=22, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_492092314_b2', edge='40550667#2', lane=0, pos=28, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_492092314_b3', edge='147396980#5', lane=0, pos=144, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_492092314_s1', edge='-147396980#15', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='GS_492092314_s2', edge='40550667#2', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='GS_492092314_s3', edge='147396980#5', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='GS_492092314_n1', edge='-147396980#15', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_492092314_n2', edge='40550667#2', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_492092314_n3', edge='147396980#5', lane=0, end_pos=-1, type='numerical')
+        # 492204162
+        det.add_lane_area_detector(id='492204162_b1', edge='40554475#1', lane=0, pos=203, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='492204162_b2', edge='392793714#2', lane=0, pos=61, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='492204162_b3', edge='392793716#4', lane=0, pos=100, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='492204162_s1', edge='40554475#1', lane=0, pos=23, end_pos=43, type='saturation')
+        det.add_lane_area_detector(id='492204162_s2', edge='392793714#2', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='492204162_s3', edge='392793716#4', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='492204162_n1', edge='40554475#1', lane=0, pos=23, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='492204162_n2', edge='392793714#2', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='492204162_n3', edge='392793716#4', lane=0, end_pos=-1, type='numerical')
+        # 492204171
+        det.add_lane_area_detector(id='492204171_b1', edge='39178010#4', lane=0, pos=126, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='492204171_b2', edge='392793716#0', lane=0, pos=60, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='492204171_s1', edge='39178010#4', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='492204171_s2', edge='392793716#0', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='492204171_n1', edge='39178010#4', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='492204171_n2', edge='392793716#0', lane=0, end_pos=-1, type='numerical')
+        # 493138763
+        det.add_lane_area_detector(id='493138763_b1', edge='40605749#0', lane=0, pos=216, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='493138763_b2', edge='40666176#0', lane=0, pos=85, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='493138763_b3', edge='40666176#0', lane=1, pos=85, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='493138763_s1', edge='40605749#0', lane=0, pos=36, end_pos=56, type='saturation')
+        det.add_lane_area_detector(id='493138763_s2', edge='40666173#1', lane=0, end_pos=-1, type='saturation')
+        det.add_lane_area_detector(id='493138763_n1', edge='40605749#0', lane=0, pos=36, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='493138763_n2', edge='40666176#0', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='493138763_n3', edge='40666176#0', lane=1, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='493138763_n4', edge='40666173#1', lane=0, end_pos=-1, type='numerical')
+        # GS_494986735
+        det.add_lane_area_detector(id='GS_494986735_b1', edge='84690879#0', lane=0, pos=53, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_494986735_b2', edge='84690879#0', lane=1, pos=53, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_494986735_b3', edge='102143189#0', lane=0, pos=64, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_494986735_s1', edge='84690879#0', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='GS_494986735_s2', edge='84690879#0', lane=1, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='GS_494986735_s3', edge='102143189#0', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='GS_494986735_n1', edge='84690879#0', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_494986735_n2', edge='84690879#0', lane=1, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_494986735_n3', edge='102143189#0', lane=0, end_pos=-1, type='numerical')
+        # 494986738
+        det.add_lane_area_detector(id='494986738_b1', edge='-147572085#1', lane=0, pos=24, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='494986738_b2', edge='-665071996#3', lane=0, pos=63, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='494986738_b3', edge='1158931703#1', lane=0, pos=14, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='494986738_b4', edge='665071996#0', lane=0, pos=2, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='494986738_s1', edge='-147572085#1', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='494986738_s2', edge='-665071996#3', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='494986738_s3', edge='1158931703#1', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='494986738_s4', edge='665071996#0', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='494986738_n1', edge='-147572085#1', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='494986738_n2', edge='-665071996#3', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='494986738_n3', edge='1158931703#1', lane=0,  end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='494986738_n4', edge='665071996#0', lane=0, end_pos=-1, type='numerical')
+        # 496978290
+        det.add_lane_area_detector(id='496978290_b1', edge='-165742064#3', lane=0, pos=130, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='496978290_b2', edge='40848252#0', lane=0, pos=324, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='496978290_b3', edge='-165742420#2', lane=0, pos=142, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='496978290_s1', edge='-165742064#3', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='496978290_s2', edge='40848252#0', lane=0, pos=144, end_pos=164, type='saturation')
+        det.add_lane_area_detector(id='496978290_s3', edge='-165742420#2', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='496978290_n1', edge='-165742064#3', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='496978290_n2', edge='40848252#0', lane=0, pos=144, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='496978290_n3', edge='-165742420#2', lane=0, end_pos=-1, type='numerical')
+        # 497394917
+        det.add_lane_area_detector(id='497394917_b1', edge='61482193#2', lane=0, pos=88, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='497394917_b2', edge='40848258#0', lane=0, pos=75, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='497394917_b3', edge='40876931#2', lane=0, pos=48, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='497394917_s1', edge='61482193#2', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='497394917_s2', edge='40848258#0', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='497394917_s3', edge='40876931#2', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='497394917_n1', edge='61482193#2', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='497394917_n2', edge='40848258#0', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='497394917_n3', edge='40876931#2', lane=0, end_pos=-1, type='numerical')
+        # GS_498476334
+        det.add_lane_area_detector(id='GS_498476334_b1', edge='-147396980#18', lane=0, pos=63, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_498476334_b2', edge='147396980#12', lane=0, pos=22, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_498476334_b3', edge='815430469#0', lane=0, pos=21, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_498476334_s1', edge='-147396980#18', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='GS_498476334_s2', edge='147396980#12', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='GS_498476334_s3', edge='815430469#0', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='GS_498476334_n1', edge='-147396980#18', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_498476334_n2', edge='147396980#12', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_498476334_n3', edge='815430469#0', lane=0, end_pos=-1, type='numerical')
+        # GS_506774198
+        det.add_lane_area_detector(id='GS_506774198_b1', edge='131751140#3', lane=0, pos=16, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_506774198_b2', edge='89606444#0', lane=0, pos=52, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_506774198_b3', edge='-936924400#2', lane=0, pos=26, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_506774198_s1', edge='131751140#3', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='GS_506774198_s2', edge='89606444#0', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='GS_506774198_s3', edge='833002649#1', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='GS_506774198_n1', edge='131751140#3', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_506774198_n2', edge='89606444#0', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_506774198_n3', edge='-936924400#2', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_506774198_n4', edge='833002649#1', lane=0, end_pos=-1, type='numerical')
+        # joinedS_16
+        det.add_lane_area_detector(id='joinedS_16_b1', edge='41432777#0', lane=0, pos=240, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='joinedS_16_b2', edge='1020593791#0', lane=0, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='joinedS_16_b3', edge='1020593791#0', lane=1, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='joinedS_16_b4', edge='1020593791#0', lane=2, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='joinedS_16_b5', edge='-832969436', lane=0, pos=151, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='joinedS_16_b6', edge='-180787926#2', lane=0, pos=19, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='joinedS_16_b7', edge='922904465#0', lane=0, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='joinedS_16_b8', edge='922904465#0', lane=1, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='joinedS_16_b9', edge='111512089#2', lane=0, pos=98, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='joinedS_16_b10', edge='145894912#0', lane=0, pos=165, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='joinedS_16_b11', edge='180787926#0', lane=0, pos=19, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='joinedS_16_b12', edge='50997880#0', lane=0, pos=3, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='joinedS_16_s1', edge='41432777#0', lane=0, pos=60, end_pos=80, type='saturation')
+        det.add_lane_area_detector(id='joinedS_16_s2', edge='-832969436', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='joinedS_16_s3', edge='922904465#0', lane=0, end_pos=-1, type='saturation')
+        det.add_lane_area_detector(id='joinedS_16_s4', edge='922904465#0', lane=1, end_pos=-1, type='saturation')
+        det.add_lane_area_detector(id='joinedS_16_s5', edge='111512089#2', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='joinedS_16_s6', edge='145894912#0', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='joinedS_16_n1', edge='41432777#0', lane=0, pos=60, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='joinedS_16_n2', edge='1020593791#0', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='joinedS_16_n3', edge='1020593791#0', lane=1, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='joinedS_16_n4', edge='1020593791#0', lane=2, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='joinedS_16_n5', edge='-832969436', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='joinedS_16_n6', edge='-180787926#2', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='joinedS_16_n7', edge='922904465#0', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='joinedS_16_n8', edge='922904465#0', lane=1, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='joinedS_16_n9', edge='111512089#2', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='joinedS_16_n10', edge='145894912#0', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='joinedS_16_n11', edge='180787926#0', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='joinedS_16_n12', edge='50997880#0', lane=0, end_pos=-1, type='numerical')
+        # GS_508063549
+        det.add_lane_area_detector(id='GS_508063549_b1', edge='-41503512#2', lane=0, pos=11, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_508063549_b2', edge='548098364#0', lane=0, pos=67, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_508063549_s1', edge='-41503512#2', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='GS_508063549_s2', edge='103066477#0', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='GS_508063549_n1', edge='-41503512#2', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_508063549_n2', edge='548098364#0', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_508063549_n3', edge='103066477#0', lane=0, end_pos=-1, type='numerical')
+        # 517340666
+        det.add_lane_area_detector(id='517340666_b1', edge='23303682#1', lane=0, pos=194, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='517340666_b2', edge='41847985#0', lane=0, pos=322, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='517340666_s1', edge='23303682#1', lane=0, pos=14, end_pos=34, type='saturation')
+        det.add_lane_area_detector(id='517340666_s2', edge='41847985#0', lane=0, pos=142, end_pos=162, type='saturation')
+        det.add_lane_area_detector(id='517340666_n1', edge='23303682#1', lane=0, pos=14, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='517340666_n2', edge='41847985#0', lane=0, pos=142, end_pos=-1, type='numerical')
+        # 517340669
+        det.add_lane_area_detector(id='517340669_b1', edge='41847988#3', lane=0, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='517340669_b2', edge='23303682#0', lane=0, pos=58, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='517340669_s1', edge='41847988#3', lane=0, end_pos=-1, type='saturation')
+        det.add_lane_area_detector(id='517340669_s2', edge='23303682#0', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='517340669_n1', edge='41847988#3', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='517340669_n2', edge='23303682#0', lane=0, end_pos=-1, type='numerical')
+        # 517340672
+        det.add_lane_area_detector(id='517340672_b1', edge='296422468', lane=0, pos=77, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='517340672_b2', edge='296422468', lane=1, pos=77, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='517340672_b3', edge='41847986#0', lane=0, pos=255, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='517340672_s1', edge='296422468', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='517340672_s2', edge='296422468', lane=1, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='517340672_s3', edge='41847986#0', lane=0, pos=75, end_pos=95, type='saturation')
+        det.add_lane_area_detector(id='517340672_n1', edge='296422468', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='517340672_n2', edge='296422468', lane=1, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='517340672_n3', edge='41847986#0', lane=0, pos=75, end_pos=-1, type='numerical')
+        # 530710713
+        det.add_lane_area_detector(id='530710713_b1', edge='87607973#2', lane=0, pos=36, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='530710713_b2', edge='23209551#6', lane=0, pos=36, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='530710713_s1', edge='87607973#2', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='530710713_s2', edge='23209551#6', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='530710713_n1', edge='87607973#2', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='530710713_n2', edge='23209551#6', lane=0, end_pos=-1, type='numerical')
+        # GS_6257632307
+        det.add_lane_area_detector(id='GS_6257632307_b1', edge='475086607#7', lane=0, pos=23, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_6257632307_b2', edge='475086607#7', lane=1, pos=23, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_6257632307_b3', edge='475086607#7', lane=2, pos=23, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_6257632307_b4', edge='978801828#1', lane=0, pos=6, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_6257632307_b5', edge='978801828#1', lane=1, pos=6, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_6257632307_b6', edge='978801828#1', lane=2, pos=6, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_6257632307_s1', edge='475086607#7', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='GS_6257632307_s2', edge='475086607#7', lane=1, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='GS_6257632307_s3', edge='475086607#7', lane=2, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='GS_6257632307_s4', edge='978801828#1', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='GS_6257632307_s5', edge='978801828#1', lane=1, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='GS_6257632307_s6', edge='978801828#1', lane=2, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='GS_6257632307_n1', edge='475086607#7', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_6257632307_n2', edge='475086607#7', lane=1, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_6257632307_n3', edge='475086607#7', lane=2, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_6257632307_n4', edge='978801828#1', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_6257632307_n5', edge='978801828#1', lane=1, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_6257632307_n6', edge='978801828#1', lane=2, end_pos=-1, type='numerical')
+        # GS_6286429547
+        det.add_lane_area_detector(id='GS_6286429547_b1', edge='22324796', lane=0, pos=130, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_6286429547_b2', edge='22324796', lane=1, pos=130, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_6286429547_b3', edge='114869616', lane=0, pos=170, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_6286429547_b4', edge='114869616', lane=1, pos=170, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_6286429547_b5', edge='671285253#0', lane=0, pos=1, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_6286429547_b6', edge='671285253#0', lane=1, pos=1, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_6286429547_s1', edge='22324796', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='GS_6286429547_s2', edge='22324796', lane=1, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='GS_6286429547_s3', edge='114869616', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='GS_6286429547_s4', edge='114869616', lane=1, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='GS_6286429547_n1', edge='22324796', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_6286429547_n2', edge='22324796', lane=1, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_6286429547_n3', edge='114869616', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_6286429547_n4', edge='114869616', lane=1, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_6286429547_n5', edge='671285253#0', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_6286429547_n6', edge='671285253#0', lane=1, end_pos=-1, type='numerical')
+        # GS_8983324940
+        det.add_lane_area_detector(id='GS_8983324940_b1', edge='143367789#0', lane=0, pos=47, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_8983324940_b2', edge='-26484578#2', lane=0, pos=57, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_8983324940_s1', edge='143367789#0', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='GS_8983324940_s2', edge='-26484578#2', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='GS_8983324940_n1', edge='143367789#0', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_8983324940_n2', edge='-26484578#2', lane=0, end_pos=-1, type='numerical')
+        # GS_9160219128
+        det.add_lane_area_detector(id='GS_9160219128_b1', edge='180787921#0', lane=0, pos=116, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_9160219128_b2', edge='41432784#4', lane=0, pos=15, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_9160219128_b3', edge='-41432784#10', lane=0, pos=88, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_9160219128_s1', edge='180787921#0', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='GS_9160219128_s2', edge='41432784#4', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='GS_9160219128_s3', edge='-41432784#10', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='GS_9160219128_n1', edge='180787921#0', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_9160219128_n2', edge='41432784#4', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_9160219128_n3', edge='-41432784#10', lane=0, end_pos=-1, type='numerical')
+        # cluster_10861016298_1299481357_1299481366_164480282_849010069
+        det.add_lane_area_detector(id='cluster_10861016298_b1', edge='1167807980#0', lane=0, pos=74, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='cluster_10861016298_b2', edge='673633320#3', lane=0, pos=67, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='cluster_10861016298_b3', edge='673633320#3', lane=1, pos=67, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='cluster_10861016298_b4', edge='118972291#0', lane=0, pos=33, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='cluster_10861016298_b5', edge='118972291#0', lane=1, pos=33, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='cluster_10861016298_b6', edge='118972291#0', lane=2, pos=33, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='cluster_10861016298_s1', edge='1167807980#0', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='cluster_10861016298_s2', edge='673633320#3', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='cluster_10861016298_s3', edge='673633320#3', lane=1, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='cluster_10861016298_s4', edge='114800035#0', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='cluster_10861016298_s5', edge='114800035#0', lane=1, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='cluster_10861016298_n1', edge='1167807980#0', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='cluster_10861016298_n2', edge='673633320#3', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='cluster_10861016298_n3', edge='673633320#3', lane=1, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='cluster_10861016298_n4', edge='118972291#0', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='cluster_10861016298_n5', edge='118972291#0', lane=1, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='cluster_10861016298_n6', edge='118972291#0', lane=2, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='cluster_10861016298_n7', edge='114800035#0', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='cluster_10861016298_n8', edge='114800035#0', lane=1, end_pos=-1, type='numerical')
+        # GS_cluster_1302128722_3075924708_8674467625_8674467626
+        det.add_lane_area_detector(id='cluster_1302128722_b1', edge='967782641#0', lane=0, pos=16, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='cluster_1302128722_b2', edge='967782641#0', lane=1, pos=16, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='cluster_1302128722_b3', edge='936141520', lane=0, pos=65, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='cluster_1302128722_b4', edge='114822970#0', lane=0, pos=179, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='cluster_1302128722_s1', edge='967782641#0', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='cluster_1302128722_s2', edge='967782641#0', lane=1, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='cluster_1302128722_s3', edge='-936141522', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='cluster_1302128722_s4', edge='114822970#0', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='cluster_1302128722_n1', edge='967782641#0', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='cluster_1302128722_n2', edge='967782641#0', lane=1, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='cluster_1302128722_n3', edge='936141520', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='cluster_1302128722_n4', edge='-936141522', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='cluster_1302128722_n5', edge='114822970#0', lane=0, end_pos=-1, type='numerical')
+        # cluster_1499392862_393332459_5936292019
+        det.add_lane_area_detector(id='cluster_1499392862_b1', edge='202818248#4', lane=0, pos=3, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='cluster_1499392862_b2', edge='202818248#4', lane=1, pos=3, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='cluster_1499392862_b3', edge='679040266', lane=0, pos=248, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='cluster_1499392862_b4', edge='679040266', lane=1, pos=248, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='cluster_1499392862_s1', edge='1019211659#0-AddedOffRampEdge', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='cluster_1499392862_s2', edge='1019211659#0-AddedOffRampEdge', lane=1, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='cluster_1499392862_s3', edge='1019211659#0-AddedOffRampEdge', lane=2, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='cluster_1499392862_s4', edge='679040266', lane=0, pos=68, end_pos=88, type='saturation')
+        det.add_lane_area_detector(id='cluster_1499392862_s5', edge='679040266', lane=1, pos=68, end_pos=88, type='saturation')
+        det.add_lane_area_detector(id='cluster_1499392862_n1', edge='202818248#4', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='cluster_1499392862_n2', edge='202818248#4', lane=1, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='cluster_1499392862_n3', edge='1019211659#0-AddedOffRampEdge', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='cluster_1499392862_n4', edge='1019211659#0-AddedOffRampEdge', lane=1, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='cluster_1499392862_n5', edge='1019211659#0-AddedOffRampEdge', lane=2, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='cluster_1499392862_n6', edge='679040266', lane=0, pos=68, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='cluster_1499392862_n7', edge='679040266', lane=1, pos=68, end_pos=-1, type='numerical')
+        # cluster_1575153557_260469525
+        det.add_lane_area_detector(id='cluster_1575153557_b1', edge='132691252', lane=0, pos=66, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='cluster_1575153557_b2', edge='167980920#1', lane=0, pos=103, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='cluster_1575153557_b3', edge='40875620#5', lane=0, pos=25, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='cluster_1575153557_b4', edge='1262937360#0', lane=0, pos=93, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='cluster_1575153557_s1', edge='132691252', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='cluster_1575153557_s2', edge='167980920#1', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='cluster_1575153557_s3', edge='40875620#5', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='cluster_1575153557_s4', edge='1262937360#0', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='cluster_1575153557_n1', edge='132691252', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='cluster_1575153557_n2', edge='167980920#1', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='cluster_1575153557_n3', edge='40875620#5', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='cluster_1575153557_n4', edge='1262937360#0', lane=0, end_pos=-1, type='numerical')
+        # GS_cluster_1628579789_243072201
+        det.add_lane_area_detector(id='GS_cluster_1628579789_b1', edge='167980920#2', lane=0, pos=85, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_cluster_1628579789_b2', edge='1020857159#10', lane=0, pos=50, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_cluster_1628579789_b3', edge='640391933#6', lane=0, pos=34, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_cluster_1628579789_s1', edge='167980920#2', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='GS_cluster_1628579789_s2', edge='1020857159#10', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='GS_cluster_1628579789_s3', edge='640391933#6', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='GS_cluster_1628579789_n1', edge='167980920#2', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_cluster_1628579789_n2', edge='1020857159#10', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_cluster_1628579789_n3', edge='640391933#6', lane=0, end_pos=-1, type='numerical')
+        # GS_cluster_1635333815_251056169_252192622_6233070869_6233070871_6233070875_6233070881_6304582153
+        det.add_lane_area_detector(id='GS_cluster_1635333815_b1', edge='157848623#6', lane=0, pos=41, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_cluster_1635333815_b2', edge='685973540#1', lane=0, pos=61, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_cluster_1635333815_b3', edge='665859713#0', lane=0, pos=48, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_cluster_1635333815_b4', edge='665859713#0', lane=1, pos=48, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_cluster_1635333815_b5', edge='679034480#0', lane=0, pos=3, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_cluster_1635333815_b6', edge='679034480#0', lane=1, pos=3, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_cluster_1635333815_s1', edge='157848623#6', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='GS_cluster_1635333815_s2', edge='685973540#1', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='GS_cluster_1635333815_s3', edge='665859713#0', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='GS_cluster_1635333815_s4', edge='665859713#0', lane=1, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='GS_cluster_1635333815_s5', edge='296422467#5', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='GS_cluster_1635333815_n1', edge='157848623#6', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_cluster_1635333815_n2', edge='685973540#1', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_cluster_1635333815_n3', edge='665859713#0', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_cluster_1635333815_n4', edge='665859713#0', lane=1, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_cluster_1635333815_n5', edge='679034480#0', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_cluster_1635333815_n6', edge='679034480#0', lane=1, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_cluster_1635333815_n7', edge='296422467#5', lane=0, end_pos=-1, type='numerical')
+        # joinedS_17
+        det.add_lane_area_detector(id='joinedS_17_b1', edge='151021288#0', lane=0, pos=25, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='joinedS_17_b2', edge='151021288#0', lane=1, pos=25, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='joinedS_17_b3', edge='625017978#0', lane=0, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='joinedS_17_b4', edge='625017978#0', lane=1, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='joinedS_17_b5', edge='40236830#0', lane=0, pos=74, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='joinedS_17_b6', edge='40236830#0', lane=1, pos=74, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='joinedS_17_b7', edge='40236830#0', lane=2, pos=74, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='joinedS_17_b8', edge='151021290#0', lane=0, pos=34, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='joinedS_17_b9', edge='151021290#0', lane=1, pos=34, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='joinedS_17_b10', edge='151021291#0', lane=0, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='joinedS_17_b11', edge='151021291#0', lane=1, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='joinedS_17_b12', edge='40236833#2', lane=0, pos=13, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='joinedS_17_b13', edge='40236833#2', lane=1, pos=13, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='joinedS_17_s1', edge='180818488#0', lane=0, pos=104, end_pos=124, type='saturation')
+        det.add_lane_area_detector(id='joinedS_17_s2', edge='40236830#0', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='joinedS_17_s3', edge='40236830#0', lane=1, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='joinedS_17_s4', edge='40236830#0', lane=2, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='joinedS_17_s5', edge='150547012#7', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='joinedS_17_s6', edge='40236833#0', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='joinedS_17_s7', edge='40236833#0', lane=1, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='joinedS_17_n1', edge='151021288#0', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='joinedS_17_n2', edge='151021288#0', lane=1, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='joinedS_17_n3', edge='180818488#0', lane=0, pos=104, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='joinedS_17_n4', edge='625017978#0', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='joinedS_17_n5', edge='625017978#0', lane=1, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='joinedS_17_n6', edge='40236830#0', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='joinedS_17_n7', edge='40236830#0', lane=1, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='joinedS_17_n8', edge='40236830#0', lane=2, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='joinedS_17_n9', edge='151021290#0', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='joinedS_17_n10', edge='151021290#0', lane=1, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='joinedS_17_n11', edge='150547012#7', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='joinedS_17_n12', edge='151021291#0', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='joinedS_17_n13', edge='151021291#0', lane=1, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='joinedS_17_n14', edge='40236833#2', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='joinedS_17_n15', edge='40236833#2', lane=1, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='joinedS_17_n16', edge='40236833#0', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='joinedS_17_n17', edge='40236833#0', lane=1, end_pos=-1, type='numerical')
+        # GS_cluster_1674605528_478487605
+        det.add_lane_area_detector(id='GS_cluster_1674605528_b1', edge='155013415#0', lane=0, pos=29, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_cluster_1674605528_b2', edge='97564172#2', lane=0, pos=103, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_cluster_1674605528_b3', edge='1074305289#0', lane=0, pos=130, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_cluster_1674605528_s1', edge='-39878326#0', lane=0, end_pos=-1, type='saturation')
+        det.add_lane_area_detector(id='GS_cluster_1674605528_s2', edge='97564172#2', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='GS_cluster_1674605528_s3', edge='1074305289#0', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='GS_cluster_1674605528_n1', edge='155013415#0', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_cluster_1674605528_n2', edge='-39878326#0', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_cluster_1674605528_n3', edge='97564172#2', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_cluster_1674605528_n4', edge='1074305289#0', lane=0, end_pos=-1, type='numerical')
+        # GS_cluster_1705440129_250883337_251056183
+        det.add_lane_area_detector(id='GS_cluster_1705440129_b1', edge='40435656#4', lane=0, pos=23, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_cluster_1705440129_b2', edge='150636523#0', lane=0, pos=195, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_cluster_1705440129_b3', edge='289351515#1', lane=0, pos=144, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_cluster_1705440129_s1', edge='40435656#1', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='GS_cluster_1705440129_s2', edge='150636523#0', lane=0, pos=15, end_pos=35, type='saturation')
+        det.add_lane_area_detector(id='GS_cluster_1705440129_s3', edge='289351515#1', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='GS_cluster_1705440129_n1', edge='40435656#4', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_cluster_1705440129_n2', edge='40435656#1', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_cluster_1705440129_n3', edge='150636523#0', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_cluster_1705440129_n4', edge='289351515#1', lane=0, end_pos=-1, type='numerical')
+        # GS_cluster_1800186890_251997370
+        det.add_lane_area_detector(id='GS_cluster_1800186890_b1', edge='312521184#0', lane=0, pos=18, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_cluster_1800186890_b2', edge='312521184#0', lane=1, pos=18, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_cluster_1800186890_b3', edge='206133656#0', lane=0, pos=4, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_cluster_1800186890_b4', edge='206133656#0', lane=1, pos=4, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_cluster_1800186890_b5', edge='664910822', lane=0, pos=71, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_cluster_1800186890_s1', edge='312521184#0', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='GS_cluster_1800186890_s2', edge='312521184#0', lane=1, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='GS_cluster_1800186890_s3', edge='206133857#2', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='GS_cluster_1800186890_s4', edge='664910822', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='GS_cluster_1800186890_n1', edge='312521184#0', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_cluster_1800186890_n2', edge='312521184#0', lane=1, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_cluster_1800186890_n3', edge='206133656#0', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_cluster_1800186890_n4', edge='206133656#0', lane=1, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_cluster_1800186890_n5', edge='206133857#2', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_cluster_1800186890_n6', edge='664910822', lane=0, end_pos=-1, type='numerical')
+        # cluster_198873054_3077077638
+        det.add_lane_area_detector(id='cluster_198873054_b1', edge='43734375', lane=0, pos=144, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='cluster_198873054_b2', edge='717491830#0', lane=0, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='cluster_198873054_b3', edge='435171001#0', lane=0, pos=302, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='cluster_198873054_b4', edge='90825927', lane=0, pos=66, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='cluster_198873054_s1', edge='43734375', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='cluster_198873054_s2', edge='435171001#0', lane=0, pos=124, end_pos=144, type='saturation')
+        det.add_lane_area_detector(id='cluster_198873054_s3', edge='115132694', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='cluster_198873054_n1', edge='43734375', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='cluster_198873054_n2', edge='717491830#0', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='cluster_198873054_n3', edge='435171001#0', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='cluster_198873054_n4', edge='90825927', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='cluster_198873054_n5', edge='-303354750', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='cluster_198873054_n6', edge='-936141519', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='cluster_198873054_n7', edge='115132694', lane=0, end_pos=-1, type='numerical')
+        # cluster_198873247_506774200
+        det.add_lane_area_detector(id='cluster_198873247_b1', edge='709681531#0', lane=0, pos=67, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='cluster_198873247_b2', edge='-709681531#3', lane=0, pos=48, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='cluster_198873247_b3', edge='14037915', lane=0, pos=162, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='cluster_198873247_b4', edge='497944366#1', lane=0, pos=69, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='cluster_198873247_s1', edge='709681531#0', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='cluster_198873247_s2', edge='-709681531#3', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='cluster_198873247_s3', edge='14037915', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='cluster_198873247_s4', edge='497944366#1', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='cluster_198873247_n1', edge='709681531#0', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='cluster_198873247_n2', edge='-709681531#3', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='cluster_198873247_n3', edge='14037915', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='cluster_198873247_n4', edge='497944366#1', lane=0, end_pos=-1, type='numerical')
+        # GS_cluster_198873257_8568267658
+        det.add_lane_area_detector(id='GS_cluster_198873257_b1', edge='687315299#0', lane=0, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_cluster_198873257_b2', edge='687315299#0', lane=1, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_cluster_198873257_b3', edge='673717423#0', lane=0, pos=32, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_cluster_198873257_b4', edge='673717423#0', lane=1, pos=32, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_cluster_198873257_b5', edge='-131751145#3', lane=0, pos=116, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_cluster_198873257_b6', edge='673717426#1', lane=0, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_cluster_198873257_s1', edge='687315299#0', lane=0, end_pos=-1, type='saturation')
+        det.add_lane_area_detector(id='GS_cluster_198873257_s2', edge='687315299#0', lane=1, end_pos=-1, type='saturation')
+        det.add_lane_area_detector(id='GS_cluster_198873257_s3', edge='673717423#0', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='GS_cluster_198873257_s4', edge='673717423#0', lane=1, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='GS_cluster_198873257_s5', edge='-131751145#3', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='GS_cluster_198873257_s6', edge='-923010605#0', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='GS_cluster_198873257_n1', edge='687315299#0', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_cluster_198873257_n2', edge='687315299#0', lane=1, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_cluster_198873257_n3', edge='673717423#0', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_cluster_198873257_n4', edge='673717423#0', lane=1, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_cluster_198873257_n5', edge='-131751145#3', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_cluster_198873257_n6', edge='673717426#1', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_cluster_198873257_n7', edge='-923010605#0', lane=0, end_pos=-1, type='numerical')
+        # cluster_2327596112_439772980_469309959
+        det.add_lane_area_detector(id='cluster_2327596112_b1', edge='-1158931703#0', lane=0, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='cluster_2327596112_b2', edge='766710290#29', lane=0, pos=103, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='cluster_2327596112_b3', edge='95565302#2', lane=0, pos=54, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='cluster_2327596112_b4', edge='-1158931710#3', lane=0, pos=77, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='cluster_2327596112_s1', edge='-1158931703#0', lane=0, end_pos=-1, type='saturation')
+        det.add_lane_area_detector(id='cluster_2327596112_s2', edge='766710290#29', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='cluster_2327596112_s3', edge='95565302#2', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='cluster_2327596112_s4', edge='-1158931710#3', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='cluster_2327596112_n1', edge='-1158931703#0', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='cluster_2327596112_n2', edge='766710290#29', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='cluster_2327596112_n3', edge='95565302#2', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='cluster_2327596112_n4', edge='-1158931710#3', lane=0, end_pos=-1, type='numerical')
+        # cluster_250883332_251056162
+        det.add_lane_area_detector(id='cluster_250883332_b1', edge='120970425#2', lane=0, pos=176, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='cluster_250883332_b2', edge='120970425#2', lane=1, pos=176, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='cluster_250883332_b3', edge='40513089#2', lane=0, pos=40, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='cluster_250883332_b4', edge='296422467#0', lane=0, pos=245, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='cluster_250883332_s1', edge='120970425#2', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='cluster_250883332_s2', edge='120970425#2', lane=1, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='cluster_250883332_s3', edge='40513089#2', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='cluster_250883332_s4', edge='296422467#0', lane=0, pos=65, end_pos=80, type='saturation')
+        det.add_lane_area_detector(id='cluster_250883332_n1', edge='120970425#2', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='cluster_250883332_n2', edge='120970425#2', lane=1, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='cluster_250883332_n3', edge='40513089#2', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='cluster_250883332_n4', edge='296422467#0', lane=0, pos=65, end_pos=-1, type='numerical')
+        # GS_cluster_251997367_251997369_6525168932_6525168938_8666071616
+        det.add_lane_area_detector(id='GS_cluster_251997367_b1', edge='880099405#3', lane=0, pos=255, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_cluster_251997367_b2', edge='180913157#0', lane=0, pos=18, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_cluster_251997367_b3', edge='180913157#0', lane=1, pos=18, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_cluster_251997367_b4', edge='717546622#0', lane=0, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_cluster_251997367_b5', edge='717546622#0', lane=1, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_cluster_251997367_b6', edge='935166811#0', lane=0, pos=71, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_cluster_251997367_b7', edge='935166811#0', lane=1, pos=71, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_cluster_251997367_s1', edge='880099405#3', lane=0, pos=75, end_pos=95, type='saturation')
+        det.add_lane_area_detector(id='GS_cluster_251997367_s2', edge='180913157#0', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='GS_cluster_251997367_s3', edge='180913157#0', lane=1, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='GS_cluster_251997367_s4', edge='303247929#0', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='GS_cluster_251997367_n1', edge='880099405#3', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_cluster_251997367_n2', edge='180913157#0', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_cluster_251997367_n3', edge='180913157#0', lane=1, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_cluster_251997367_n4', edge='717546622#0', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_cluster_251997367_n5', edge='717546622#0', lane=1, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_cluster_251997367_n6', edge='935166811#0', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_cluster_251997367_n7', edge='935166811#0', lane=1, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_cluster_251997367_n8', edge='303247929#0', lane=0, end_pos=-1, type='numerical')
+        # joinedS_18
+        det.add_lane_area_detector(id='joinedS_18_b1', edge='481464449#2', lane=0, pos=4, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='joinedS_18_b2', edge='680921676', lane=0, pos=67, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='joinedS_18_b3', edge='680921676', lane=1, pos=67, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='joinedS_18_s1', edge='177433775', lane=0, pos=75, end_pos=95, type='saturation')
+        det.add_lane_area_detector(id='joinedS_18_s2', edge='680921676', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='joinedS_18_s3', edge='680921676', lane=1, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='joinedS_18_n1', edge='481464449#2', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='joinedS_18_n2', edge='481464449#0', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='joinedS_18_n3', edge='177433775', lane=0, pos=75, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='joinedS_18_n4', edge='680921676', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='joinedS_18_n5', edge='680921676', lane=1, end_pos=-1, type='numerical')
+        # cluster_294326287_531028789_5343505332
+        det.add_lane_area_detector(id='cluster_294326287_b1', edge='143367790#0', lane=0, pos=113, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='cluster_294326287_b2', edge='-143367789#2', lane=0, pos=48, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='cluster_294326287_b3', edge='561197306', lane=0, pos=56, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='cluster_294326287_b4', edge='-26826792#1', lane=0, pos=57, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='cluster_294326287_s1', edge='143367790#0', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='cluster_294326287_s2', edge='-143367789#2', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='cluster_294326287_s3', edge='561197306', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='cluster_294326287_s4', edge='-26826792#1', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='cluster_294326287_n1', edge='143367790#0', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='cluster_294326287_n2', edge='-143367789#2', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='cluster_294326287_n3', edge='561197306', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='cluster_294326287_n4', edge='-26826792#1', lane=0, end_pos=-1, type='numerical')
+        # GS_cluster_408501435_6315125559
+        det.add_lane_area_detector(id='GS_cluster_408501435_b1', edge='1022057099#0', lane=0, pos=33, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_cluster_408501435_b2', edge='1022057099#0', lane=1, pos=33, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_cluster_408501435_b3', edge='-41435572#2', lane=0, pos=27, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_cluster_408501435_b4', edge='165600530#0', lane=0, pos=62, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_cluster_408501435_b5', edge='165600530#0', lane=1, pos=62, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_cluster_408501435_b6', edge='393594509#0', lane=0, pos=50, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_cluster_408501435_s1', edge='40203863#0', lane=0, pos=30, end_pos=50, type='saturation')
+        det.add_lane_area_detector(id='GS_cluster_408501435_s2', edge='-41435572#2', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='GS_cluster_408501435_s3', edge='165600530#0', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='GS_cluster_408501435_s4', edge='165600530#0', lane=1, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='GS_cluster_408501435_s5', edge='393594509#0', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='GS_cluster_408501435_n1', edge='1022057099#0', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_cluster_408501435_n2', edge='1022057099#0', lane=1, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_cluster_408501435_n3', edge='40203863#0', lane=0, pos=30, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_cluster_408501435_n4', edge='-41435572#2', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_cluster_408501435_n5', edge='165600530#0', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_cluster_408501435_n6', edge='165600530#0', lane=1, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_cluster_408501435_n7', edge='393594509#0', lane=0, end_pos=-1, type='numerical')
+        # cluster_485133368_485133379
+        det.add_lane_area_detector(id='cluster_485133368_b1', edge='40236821#4', lane=0, pos=29, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='cluster_485133368_b2', edge='86444416#1', lane=0, pos=15, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='cluster_485133368_b3', edge='180790918', lane=0, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='cluster_485133368_b4', edge='41435574#0', lane=0, pos=4, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='cluster_485133368_s1', edge='40236821#4', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='cluster_485133368_s2', edge='86444416#1', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='cluster_485133368_s3', edge='180790918', lane=0, end_pos=-1, type='saturation')
+        det.add_lane_area_detector(id='cluster_485133368_s4', edge='41435574#0', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='cluster_485133368_n1', edge='40236821#4', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='cluster_485133368_n2', edge='86444416#1', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='cluster_485133368_n3', edge='180790918', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='cluster_485133368_n4', edge='41435574#0', lane=0, end_pos=-1, type='numerical')
+        # GS_cluster_488539561_8567356615
+        det.add_lane_area_detector(id='GS_cluster_488539561_b1', edge='-147396980#11', lane=0, pos=144, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_cluster_488539561_b2', edge='40401877#0', lane=0, pos=165, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_cluster_488539561_b3', edge='147396980#2', lane=0, pos=102, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_cluster_488539561_s1', edge='-147396980#11', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='GS_cluster_488539561_s2', edge='40401877#0', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='GS_cluster_488539561_s3', edge='147396980#2', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='GS_cluster_488539561_n1', edge='-147396980#11', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_cluster_488539561_n2', edge='40401877#0', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_cluster_488539561_n3', edge='147396980#2', lane=0, end_pos=-1, type='numerical')
+        # cluster_530710726_683650128
+        det.add_lane_area_detector(id='cluster_530710726_b1', edge='524492805#0', lane=0, pos=50, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='cluster_530710726_b2', edge='94527184#0', lane=0, pos=66, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='cluster_530710726_b3', edge='87607993#5', lane=0, pos=16, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='cluster_530710726_b4', edge='-933868039#1', lane=0, pos=126, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='cluster_530710726_s1', edge='524492805#0', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='cluster_530710726_s2', edge='94527184#0', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='cluster_530710726_s3', edge='87607993#5', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='cluster_530710726_s4', edge='-933868039#1', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='cluster_530710726_n1', edge='524492805#0', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='cluster_530710726_n2', edge='94527184#0', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='cluster_530710726_n3', edge='87607993#5', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='cluster_530710726_n4', edge='-933868039#1', lane=0, end_pos=-1, type='numerical')
+        # GS_cluster_6286429546_6286429552
+        det.add_lane_area_detector(id='GS_cluster_6286429546_b1', edge='-71356645#2', lane=0, pos=67, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_cluster_6286429546_b2', edge='629444876#0', lane=0, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_cluster_6286429546_b3', edge='629444876#0', lane=1, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_cluster_6286429546_b4', edge='98669315#0', lane=0, pos=43, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='GS_cluster_6286429546_s1', edge='-71356645#2', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='GS_cluster_6286429546_s2', edge='677485521', lane=0, end_pos=-1, type='saturation')
+        det.add_lane_area_detector(id='GS_cluster_6286429546_s3', edge='677485521', lane=1, end_pos=-1, type='saturation')
+        det.add_lane_area_detector(id='GS_cluster_6286429546_s4', edge='524345398#13', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='GS_cluster_6286429546_n1', edge='-71356645#2', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_cluster_6286429546_n2', edge='629444876#0', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_cluster_6286429546_n3', edge='629444876#0', lane=1, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_cluster_6286429546_n4', edge='677485521', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_cluster_6286429546_n5', edge='677485521', lane=1, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_cluster_6286429546_n6', edge='98669315#0', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='GS_cluster_6286429546_n7', edge='524345398#13', lane=0, end_pos=-1, type='numerical')
+        # cluster_6286429557_6990557731
+        det.add_lane_area_detector(id='cluster_6286429557_b1', edge='71356645#0', lane=0, pos=67, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='cluster_6286429557_b2', edge='934976694#0', lane=0, pos=22, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='cluster_6286429557_b3', edge='934976694#0', lane=1, pos=22, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='cluster_6286429557_s1', edge='71356645#0', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='cluster_6286429557_s2', edge='-86986701#7', lane=0, pos=260, end_pos=280, type='saturation')
+        det.add_lane_area_detector(id='cluster_6286429557_n1', edge='71356645#0', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='cluster_6286429557_n2', edge='747087990', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='cluster_6286429557_n3', edge='86444412#3', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='cluster_6286429557_n4', edge='-86986701#7', lane=0, pos=260, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='cluster_6286429557_n5', edge='934976694#0', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='cluster_6286429557_n6', edge='934976694#0', lane=1, end_pos=-1, type='numerical')
+        # TLS J02
+        det.add_lane_area_detector(id='J02_b1', edge='1149903352#0', lane=0, pos=78, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='J02_b2', edge='1149903352#0', lane=1, pos=78, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='J02_b3', edge='897625775', lane=1, pos=54, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='J02_b4', edge='897625775', lane=2, pos=54, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='J02_b5', edge='897625775', lane=3, pos=54, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='J02_b6', edge='897625775', lane=4, pos=54, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='J02_b7', edge='934860520#0', lane=0, pos=52, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='J02_b8', edge='934860520#0', lane=1, pos=52, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='J02_b9', edge='934860520#0', lane=2, pos=52, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='J02_b10', edge='276335209#5', lane=0, pos=94, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='J02_b11', edge='276335209#5', lane=1, pos=94, end_pos=-1, type='boolean')
+        det.add_lane_area_detector(id='J02_s1', edge='69682368', lane=0, pos=38, end_pos=58, type='saturation')
+        det.add_lane_area_detector(id='J02_s2', edge='69682368', lane=1, pos=38, end_pos=58, type='saturation')
+        det.add_lane_area_detector(id='J02_s3', edge='897625775', lane=1, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='J02_s4', edge='897625775', lane=2, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='J02_s5', edge='897625775', lane=3, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='J02_s6', edge='897625775', lane=4, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='J02_s7', edge='1149903351', lane=0, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='J02_s8', edge='1149903351', lane=1, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='J02_s9', edge='1149903351', lane=2, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='J02_s10', edge='1149903351', lane=3, pos=0, end_pos=20, type='saturation')
+        det.add_lane_area_detector(id='J02_s11', edge='276335209#2', lane=0, pos=155, end_pos=175, type='saturation')
+        det.add_lane_area_detector(id='J02_s12', edge='276335209#2', lane=1, pos=155, end_pos=175, type='saturation')
+        det.add_lane_area_detector(id='J02_n1', edge='1149903352#0', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='J02_n2', edge='1149903352#0', lane=1, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='J02_n3', edge='69682368', lane=0, pos=38, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='J02_n4', edge='69682368', lane=1, pos=38, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='J02_n5', edge='897625775', lane=1, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='J02_n6', edge='897625775', lane=2, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='J02_n7', edge='897625775', lane=3, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='J02_n8', edge='897625775', lane=4, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='J02_n9', edge='934860520#0', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='J02_n10', edge='934860520#0', lane=1, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='J02_n11', edge='934860520#0', lane=2, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='J02_n12', edge='1149903351', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='J02_n13', edge='1149903351', lane=1, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='J02_n14', edge='1149903351', lane=2, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='J02_n15', edge='1149903351', lane=3, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='J02_n16', edge='276335209#5', lane=0, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='J02_n17', edge='276335209#5', lane=1, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='J02_n18', edge='276335209#2', lane=0, pos=155, end_pos=-1, type='numerical')
+        det.add_lane_area_detector(id='J02_n19', edge='276335209#2', lane=1, pos=155, end_pos=-1, type='numerical')
+
+
 
         det.build({'detectors': os.path.join(self.THIS_FILE_PATH,'lille/lille_detectors.add.xml')})
         return det
@@ -1868,21 +3171,33 @@ class LilleNetwork(Network):
 
     DETECTORS_6316129114 = {
         0: {
-            'boolean': ['6316129114_b1', '6316129114_b2', '6316129114_b3', '6316129114_b4', '6316129114_b9', '6316129114_b10', '6316129114_b11', '6316129114_b17', '6316129114_b18', '6316129114_b19', '6316129114_b20', '6316129114_b21'],
-            'saturation': ['6316129114_s1', '6316129114_s2', '6316129114_s7', '6316129114_s8'],
-            'numerical': ['6316129114_n1', '6316129114_n2', '6316129114_n3', '6316129114_n4', '6316129114_n13', '6316129114_n14', '6316129114_n15', '6316129114_n21', '6316129114_n22', '6316129114_n23', '6316129114_n24', '6316129114_n25'],
+            'boolean': ['6316129114_b1', '6316129114_b2', '6316129114_b3', '6316129114_b4'],
+            'saturation': ['6316129114_s1', '6316129114_s2'],
+            'numerical': ['6316129114_n1', '6316129114_n2', '6316129114_n3', '6316129114_n4'],
             'exit': []
         },
         2: {
-            'boolean': ['6316129114_b5', '6316129114_b6', '6316129114_b7', '6316129114_b8', '6316129114_b9', '6316129114_b10', '6316129114_b11', '6316129114_b14', '6316129114_b15', '6316129114_b16', '6316129114_b19', '6316129114_b20', '6316129114_b21', '6316129114_b24', '6316129114_b25', '6316129114_b26'],
-            'saturation': ['6316129114_s3', '6316129114_s4'],
-            'numerical': ['6316129114_n5', '6316129114_n6', '6316129114_n7', '6316129114_n8', '6316129114_n9', '6316129114_n10', '6316129114_n10', '6316129114_n11', '6316129114_n12', '6316129114_n13', '6316129114_n14', '6316129114_n15', '6316129114_n18', '6316129114_n19', '6316129114_n20', '6316129114_n23', '6316129114_n24', '6316129114_n25', '6316129114_n30', '6316129114_n31', '6316129114_n32'],
+            'boolean': ['6316129114_b13', '6316129114_b14'],
+            'saturation': ['6316129114_s9', '6316129114_s10'],
+            'numerical': ['6316129114_n17', '6316129114_n18', '6316129114_n19', '6316129114_n20'],
             'exit': []
         },
         4: {
-            'boolean': ['6316129114_b12', '6316129114_b13', '6316129114_b14', '6316129114_b15', '6316129114_b16', '6316129114_b22', '6316129114_b23', '6316129114_b24', '6316129114_b25', '6316129114_b26'],
-            'saturation': ['6316129114_s5', '6316129114_s6', '6316129114_s9', '6316129114_s10'],
-            'numerical': ['6316129114_n16', '6316129114_n17', '6316129114_n18', '6316129114_n19', '6316129114_n20', '6316129114_n26', '6316129114_n27', '6316129114_n28', '6316129114_n29', '6316129114_n30', '6316129114_n31', '6316129114_n32'],
+            'boolean': ['6316129114_b11', '6316129114_b12'],
+            'saturation': ['6316129114_s7', '6316129114_s8'],
+            'numerical': ['6316129114_n15', '6316129114_n16'],
+            'exit': []
+        },
+        6: {
+            'boolean': ['6316129114_b9', '6316129114_b10'],
+            'saturation': ['6316129114_s5', '6316129114_s6'],
+            'numerical': ['6316129114_n13', '6316129114_n14'],
+            'exit': []
+        },
+        8: {
+            'boolean': ['6316129114_b5', '6316129114_b6', '6316129114_b7', '6316129114_b8'],
+            'saturation': ['6316129114_s3', '6316129114_s4'],
+            'numerical': ['6316129114_n5', '6316129114_n6', '6316129114_n7', '6316129114_n8', '6316129114_n9', '6316129114_n10', '6316129114_n11', '6316129114_n12'],
             'exit': []
         }
     }
@@ -2174,21 +3489,45 @@ class LilleNetwork(Network):
 
     DETECTORS_6267747172 = {
         0: {
-            'boolean': ['6267747172_b1', '6267747172_b5', '6267747172_b8'],
-            'saturation': ['6267747172_s1', '6267747172_s4', '6267747172_s7'],
-            'numerical': ['6267747172_n1', '6267747172_n2', '6267747172_n8', '6267747172_n9', '6267747172_n10'],
+            'boolean': ['6267747172_b1'],
+            'saturation': ['6267747172_s1'],
+            'numerical': ['6267747172_n1', '6267747172_n2'],
+            'exit': []
+        },
+        2: {
+            'boolean': ['6267747172_b10', '6267747172_b11'],
+            'saturation': ['6267747172_s9', '6267747172_s10'],
+            'numerical': ['6267747172_n19', '6267747172_n20'],
             'exit': []
         },
         4: {
-            'boolean': ['6267747172_b6', '6267747172_b7', '6267747172_b10', '6267747172_b11'],
-            'saturation': ['6267747172_s5', '6267747172_s6', '6267747172_s9', '6267747172_s10'],
-            'numerical': ['6267747172_n11', '6267747172_n12', '6267747172_n13', '6267747172_n14', '6267747172_n19', '6267747172_n20'],
+            'boolean': ['6267747172_b9'],
+            'saturation': ['6267747172_s8'],
+            'numerical': ['6267747172_n17', '6267747172_n18'],
+            'exit': []
+        },
+        6: {
+            'boolean': ['6267747172_b8'],
+            'saturation': ['6267747172_s7'],
+            'numerical': ['6267747172_n15', '6267747172_n16'],
             'exit': []
         },
         8: {
-            'boolean': ['6267747172_b2', '6267747172_b3', '6267747172_b4', '6267747172_b9'],
-            'saturation': ['6267747172_s2', '6267747172_s3', '6267747172_s8'],
-            'numerical': ['6267747172_n3', '6267747172_n4', '6267747172_n5', '6267747172_n6', '6267747172_n7', '6267747172_n15', '6267747172_n16', '6267747172_n17', '6267747172_n18'],
+            'boolean': ['6267747172_b6', '6267747172_b7'],
+            'saturation': ['6267747172_s5', '6267747172_s6'],
+            'numerical': ['6267747172_n11', '6267747172_n12', '6267747172_n13', '6267747172_n14'],
+            'exit': []
+        },
+        10: {
+            'boolean': ['6267747172_b5'],
+            'saturation': ['6267747172_s4'],
+            'numerical': ['6267747172_n8', '6267747172_n9', '6267747172_n10'],
+            'exit': []
+        },
+        12: {
+            'boolean': ['6267747172_b2', '6267747172_b3', '6267747172_b4'],
+            'saturation': ['6267747172_s2', '6267747172_s3'],
+            'numerical': ['6267747172_n3', '6267747172_n4', '6267747172_n5', '6267747172_n6', '6267747172_n7'],
             'exit': []
         },
     }
@@ -2388,83 +3727,29 @@ class LilleNetwork(Network):
         }
     }
 
-    DETECTORS_cluster1299481290_252000834_4063893143 = {
-        0: {
-            'boolean': ['cluster_250889004_b3', 'cluster_250889004_b4'],
-            'saturation': ['cluster_250889004_s3', 'cluster_250889004_b4'],
-            'numerical': ['cluster_250889004_n3', 'cluster_250889004_n4', 'cluster_250889004_n5', 'cluster_250889004_n6'],
-            'exit': []
-        },
-        2: {
-            'boolean': ['cluster_250889004_b1', 'cluster_250889004_b2'],
-            'saturation': ['cluster_250889004_s1', 'cluster_250889004_s2'],
-            'numerical': ['cluster_250889004_n1', 'cluster_250889004_n2'],
-            'exit': []
-        }
-    }
-
-    DETECTORS_J02 = {
-        0: {
-            'boolean': ['J02_b1', 'J02_b2', 'J02_b3'],
-            'saturation': ['J02_s1', 'J02_s2', 'J02_s3', 'J02_s4'],
-            'numerical': ['J02_n1', 'J02_n2', 'J02_n3', 'J02_n4', 'J02_n5', 'J02_n6', 'J02_n7'],
-            'exit': []
-        },
-        2: {
-            'boolean': ['J02_b4', 'J02_b5'],
-            'saturation': ['J02_s5', 'J02_s6'],
-            'numerical': ['J02_n8', 'J02_n9'],
-            'exit': []
-        }
-    }
-
-    DETECTORS_J0333 = {
-        0: {
-            'boolean': ['J0333_b1', 'J0333_b2'],
-            'saturation': ['J0333_s1', 'J0333_s2'],
-            'numerical': ['J0333_n1', 'J0333_n2'],
-            'exit': []
-        },
-        2: {
-            'boolean': ['J0333_b3', 'J0333_b4', 'J0333_b5', 'J0333_b6'],
-            'saturation': ['J0333_s3', 'J0333_s4', 'J0333_s5', 'J0333_s6'],
-            'numerical': ['J0333_n3', 'J0333_n4', 'J0333_n5', 'J0333_n6'],
-            'exit': []
-        }
-    }
-
-    DETECTORS_GS_3075917655 = {
-        0: {
-            'boolean': ['3075917655_b1', '3075917655_b2'],
-            'saturation': ['3075917655_s1', '3075917655_s2'],
-            'numerical': ['3075917655_n1', '3075917655_n2'],
-            'exit': []
-        },
-        2: {
-            'boolean': ['3075917655_b3', '3075917655_b4'],
-            'saturation': ['3075917655_s3', '3075917655_s4'],
-            'numerical': ['3075917655_n3', '3075917655_n4', '3075917655_n5', '3075917655_n6'],
-            'exit': []
-        }
-    }
-
     DETECTORS_joinedS_12 = {
         0: {
-            'boolean': ['joinedS_12_b7', 'joinedS_12_b8', 'joinedS_12_b9', 'joinedS_12_b14', 'joinedS_12_b15', 'joinedS_12_b16'],
+            'boolean': ['joinedS_12_b4', 'joinedS_12_b5'],
             'saturation': ['joinedS_12_s4', 'joinedS_12_s5'],
-            'numerical': ['joinedS_12_n10', 'joinedS_12_n11', 'joinedS_12_n12', 'joinedS_12_n13', 'joinedS_12_n14', 'joinedS_12_n15', 'joinedS_12_n16', 'joinedS_12_n17', 'joinedS_12_n27', 'joinedS_12_n28', 'joinedS_12_n29', 'joinedS_12_n30'],
+            'numerical': ['joinedS_12_n7', 'joinedS_12_n8', 'joinedS_12_n9', 'joinedS_12_n10', 'joinedS_12_n11', 'joinedS_12_n12', 'joinedS_12_n13'],
             'exit': []
         },
         2: {
-            'boolean': ['joinedS_12_b1', 'joinedS_12_b2', 'joinedS_12_b3', 'joinedS_12_b4', 'joinedS_12_b5', 'joinedS_12_b6', 'joinedS_12_b10', 'joinedS_12_b11', 'joinedS_12_b12'],
-            'saturation': ['joinedS_12_s1', 'joinedS_12_s2', 'joinedS_12_s3', 'joinedS_12_s6', 'joinedS_12_s7', 'joinedS_12_s8'],
-            'numerical': ['joinedS_12_n1', 'joinedS_12_n2', 'joinedS_12_n3', 'joinedS_12_n4', 'joinedS_12_n5', 'joinedS_12_n6', 'joinedS_12_n7', 'joinedS_12_n8', 'joinedS_12_n9', 'joinedS_12_n18', 'joinedS_12_n19', 'joinedS_12_n20', 'joinedS_12_n21', 'joinedS_12_n22', 'joinedS_12_n23'],
+            'boolean': ['joinedS_12_b1', 'joinedS_12_b2', 'joinedS_12_b3'],
+            'saturation': ['joinedS_12_s1', 'joinedS_12_s2', 'joinedS_12_s3'],
+            'numerical': ['joinedS_12_n1', 'joinedS_12_n2', 'joinedS_12_n3', 'joinedS_12_n4', 'joinedS_12_n5', 'joinedS_12_n6'],
             'exit': []
         },
         4: {
-            'boolean': ['joinedS_12_b7', 'joinedS_12_b8', 'joinedS_12_b9', 'joinedS_12_b13', 'joinedS_12_b14', 'joinedS_12_b15', 'joinedS_12_b16'],
-            'saturation': ['joinedS_12_s4', 'joinedS_12_s5', 'joinedS_12_s9', 'joinedS_12_s10'],
-            'numerical': ['joinedS_12_n10', 'joinedS_12_n11', 'joinedS_12_n12', 'joinedS_12_n13', 'joinedS_12_n14', 'joinedS_12_n15', 'joinedS_12_n16', 'joinedS_12_n17', 'joinedS_12_n24', 'joinedS_12_n25', 'joinedS_12_n26', 'joinedS_12_n27', 'joinedS_12_n28', 'joinedS_12_n29', 'joinedS_12_n30'],
+            'boolean': ['joinedS_12_b9'],
+            'saturation': ['joinedS_12_s9', 'joinedS_12_s10'],
+            'numerical': ['joinedS_12_n20', 'joinedS_12_n21', 'joinedS_12_n22', 'joinedS_12_n23'],
+            'exit': []
+        },
+        6: {
+            'boolean': ['joinedS_12_b6', 'joinedS_12_b7', 'joinedS_12_b8'],
+            'saturation': ['joinedS_12_s6', 'joinedS_12_s7', 'joinedS_12_s8'],
+            'numerical': ['joinedS_12_n14', 'joinedS_12_n15', 'joinedS_12_n16', 'joinedS_12_n17', 'joinedS_12_n18', 'joinedS_12_n19'],
             'exit': []
         }
     }
@@ -2573,27 +3858,33 @@ class LilleNetwork(Network):
 
     DETECTORS_joinedS_5 = {
         0: {
-            'boolean': ['joinedS_5_b6', 'joinedS_5_b7', 'joinedS_5_b8', 'joinedS_5_b9', 'joinedS_5_b10', 'joinedS_5_b11', 'joinedS_5_b17', 'joinedS_5_b18', 'joinedS_5_b19', 'joinedS_5_b20'],
-            'saturation': ['joinedS_5_s4', 'joinedS_5_s7', 'joinedS_5_s8', 'joinedS_5_s9', 'joinedS_5_s10'],
-            'numerical': ['joinedS_5_n8', 'joinedS_5_n9', 'joinedS_5_n10', 'joinedS_5_n11', 'joinedS_5_n12', 'joinedS_5_n13', 'joinedS_5_n14', 'joinedS_5_n24', 'joinedS_5_n25', 'joinedS_5_n26', 'joinedS_5_n27', 'joinedS_5_n28', 'joinedS_5_n29', 'joinedS_5_n30', 'joinedS_5_n31', 'joinedS_5_n32', 'joinedS_5_n33', 'joinedS_5_n34', 'joinedS_5_n35'],
+            'boolean': ['joinedS_5_b6', 'joinedS_5_b7', 'joinedS_5_b8'],
+            'saturation': ['joinedS_5_s5', 'joinedS_5_s6'],
+            'numerical': ['joinedS_5_n9', 'joinedS_5_n10', 'joinedS_5_n11', 'joinedS_5_n12', 'joinedS_5_n13', 'joinedS_5_n14', 'joinedS_5_n15'],
             'exit': []
         },
         2: {
-            'boolean': ['joinedS_5_b5', 'joinedS_5_b8', 'joinedS_5_b9', 'joinedS_5_b10', 'joinedS_5_b11', 'joinedS_5_b17', 'joinedS_5_b18', 'joinedS_5_b19', 'joinedS_5_b20'],
-            'saturation': ['joinedS_5_s3', 'joinedS_5_s7', 'joinedS_5_s8', 'joinedS_5_s9', 'joinedS_5_s10'],
-            'numerical': ['joinedS_5_n5', 'joinedS_5_n6', 'joinedS_5_n7', 'joinedS_5_n11', 'joinedS_5_n12', 'joinedS_5_n13', 'joinedS_5_n14', 'joinedS_5_n24', 'joinedS_5_n25', 'joinedS_5_n26', 'joinedS_5_n27', 'joinedS_5_n28', 'joinedS_5_n29', 'joinedS_5_n30', 'joinedS_5_n31', 'joinedS_5_n32', 'joinedS_5_n33', 'joinedS_5_n34', 'joinedS_5_n35'],
+            'boolean': ['joinedS_5_b9', 'joinedS_5_b10'],
+            'saturation': ['joinedS_5_s7', 'joinedS_5_s8', 'joinedS_5_s9', 'joinedS_5_s10'],
+            'numerical': ['joinedS_5_n16', 'joinedS_5_n17', 'joinedS_5_n18', 'joinedS_5_n19', 'joinedS_5_n20', 'joinedS_5_n21', 'joinedS_5_n22', 'joinedS_5_n23', 'joinedS_5_n24', 'joinedS_5_n25'],
             'exit': []
         },
         4: {
-            'boolean': ['joinedS_5_b3', 'joinedS_5_b4', 'joinedS_5_b8', 'joinedS_5_b9', 'joinedS_5_b10', 'joinedS_5_b11', 'joinedS_5_b15', 'joinedS_5_b16', 'joinedS_5_b19', 'joinedS_5_b20'],
-            'saturation': [],
-            'numerical': ['joinedS_5_n3', 'joinedS_5_n4', 'joinedS_5_n11', 'joinedS_5_n12', 'joinedS_5_n13', 'joinedS_5_n14', 'joinedS_5_n22', 'joinedS_5_n23', 'joinedS_5_n34', 'joinedS_5_n35'],
+            'boolean': ['joinedS_5_b1', 'joinedS_5_b2'],
+            'saturation': ['joinedS_5_s1', 'joinedS_5_s2'],
+            'numerical': ['joinedS_5_n1', 'joinedS_5_n2'],
             'exit': []
         },
         6: {
-            'boolean': ['joinedS_5_b1', 'joinedS_5_b2', 'joinedS_5_b3', 'joinedS_5_b4', 'joinedS_5_b12', 'joinedS_5_b13', 'joinedS_5_b14', 'joinedS_5_b15', 'joinedS_5_b16'],
-            'saturation': ['joinedS_5_s1', 'joinedS_5_s2', 'joinedS_5_s5', 'joinedS_5_s6'],
-            'numerical': ['joinedS_5_n1', 'joinedS_5_n2', 'joinedS_5_n3', 'joinedS_5_n4', 'joinedS_5_n15', 'joinedS_5_n16', 'joinedS_5_n17', 'joinedS_5_n18', 'joinedS_5_n19', 'joinedS_5_n20', 'joinedS_5_n21', 'joinedS_5_n22', 'joinedS_5_n23'],
+            'boolean': ['joinedS_5_b3'],
+            'saturation': ['joinedS_5_s3'],
+            'numerical': ['joinedS_5_n3', 'joinedS_5_n4', 'joinedS_5_n5'],
+            'exit': []
+        },
+        8: {
+            'boolean': ['joinedS_5_b4', 'joinedS_5_b5'],
+            'saturation': ['joinedS_5_s4'],
+            'numerical': ['joinedS_5_n6', 'joinedS_5_n7', 'joinedS_5_n8'],
             'exit': []
         }
     }
@@ -2613,10 +3904,1596 @@ class LilleNetwork(Network):
         }
     }
 
+    DETECTORS_GS_1299481284 = {
+        0: {
+            'boolean': ['GS_1299481284_b1', 'GS_1299481284_b2'],
+            'saturation': ['GS_1299481284_s1', 'GS_1299481284_s2'],
+            'numerical': ['GS_1299481284_n1', 'GS_1299481284_n2', 'GS_1299481284_n3', 'GS_1299481284_n4'],
+            'exit': []
+        },
+        2: {
+            'boolean': ['GS_1299481284_b3', 'GS_1299481284_b4'],
+            'saturation': ['GS_1299481284_s3', 'GS_1299481284_s4'],
+            'numerical': ['GS_1299481284_n5', 'GS_1299481284_n6', 'GS_1299481284_n7', 'GS_1299481284_n8', 'GS_1299481284_n9', 'GS_1299481284_n10'],
+            'exit': []
+        }
+    }
+
+    DETECTORS_133278923 = {
+        0: {
+            'boolean': ['133278923_b3', '133278923_b4'],
+            'saturation': ['133278923_s3', '133278923_s4'],
+            'numerical': ['133278923_n5', '133278923_n6'],
+            'exit': []
+        },
+        2: {
+            'boolean': ['133278923_b1', '133278923_b2'],
+            'saturation': ['133278923_s1', '133278923_s2'],
+            'numerical': ['133278923_n1', '133278923_n2', '133278923_n3', '133278923_n4'],
+            'exit': []
+        }
+    }
+
+    DETECTORS_joinedS_3 = {
+        0: {
+            'boolean': ['joinedS_3_b1', 'joinedS_3_b2', 'joinedS_3_b3', 'joinedS_3_b4', 'joinedS_3_b5', 'joinedS_3_b6'],
+            'saturation': ['joinedS_3_s1', 'joinedS_3_s2'],
+            'numerical': ['joinedS_3_n1', 'joinedS_3_n2', 'joinedS_3_n3', 'joinedS_3_n4', 'joinedS_3_n5', 'joinedS_3_n6', 'joinedS_3_n7', 'joinedS_3_n8'],
+            'exit': []
+        },
+        2: {
+            'boolean': ['joinedS_3_b7', 'joinedS_3_b8', 'joinedS_3_b9'],
+            'saturation': ['joinedS_3_s3', 'joinedS_3_s4', 'joinedS_3_s5'],
+            'numerical': ['joinedS_3_n9', 'joinedS_3_n10', 'joinedS_3_n11'],
+            'exit': []
+        }
+    }
+
+    DETECTORS_GS_164480279 = {
+        0: {
+            'boolean': ['GS_164480279_b2', 'joinedS_3_b3'],
+            'saturation': ['GS_164480279_s2', 'GS_164480279_s3'],
+            'numerical': ['GS_164480279_n3', 'GS_164480279_n4'],
+            'exit': []
+        },
+        4: {
+            'boolean': ['GS_164480279_b1'],
+            'saturation': ['GS_164480279_s1'],
+            'numerical': ['GS_164480279_n1', 'GS_164480279_n2'],
+            'exit': []
+        }
+    }
+
+    DETECTORS_GS_1656149839 = {
+        0: {
+            'boolean': ['GS_1656149839_b1', 'GS_1656149839_b2', 'GS_1656149839_b3'],
+            'saturation': ['GS_1656149839_s1', 'GS_1656149839_s2', 'GS_1656149839_s3'],
+            'numerical': ['GS_1656149839_n1', 'GS_1656149839_n2', 'GS_1656149839_n3', 'GS_1656149839_n4', 'GS_1656149839_n5', 'GS_1656149839_n6', 'GS_1656149839_n7'],
+            'exit': []
+        },
+        4: {
+            'boolean': ['GS_1656149839_b4'],
+            'saturation': ['GS_1656149839_s4'],
+            'numerical': ['GS_1656149839_n8', 'GS_1656149839_n9'],
+            'exit': []
+        }
+    }
+
+    DETECTORS_joinedS_9 = {
+        0: {
+            'boolean': ['joinedS_9_b1', 'joinedS_9_b2', 'joinedS_9_b3', 'joinedS_9_b4', 'joinedS_9_b6', 'joinedS_9_b7'],
+            'saturation': ['joinedS_9_s1', 'joinedS_9_s2', 'joinedS_9_s4'],
+            'numerical': ['joinedS_9_n1', 'joinedS_9_n2', 'joinedS_9_n3', 'joinedS_9_n4', 'joinedS_9_n6', 'joinedS_9_n7', 'joinedS_9_n8', 'joinedS_9_n9'],
+            'exit': []
+        },
+        4: {
+            'boolean': ['joinedS_9_b5', 'joinedS_9_b8', 'joinedS_9_b9'],
+            'saturation': ['joinedS_9_s3', 'joinedS_9_s5'],
+            'numerical': ['joinedS_9_n5', 'joinedS_9_n10', 'joinedS_9_n11', 'joinedS_9_n12'],
+            'exit': []
+        }
+    }
+
+    DETECTORS_1783585139 = {
+        0: {
+            'boolean': ['1783585139_b2'],
+            'saturation': ['1783585139_s2'],
+            'numerical': ['1783585139_n2'],
+            'exit': []
+        },
+        2: {
+            'boolean': ['1783585139_b3', '1783585139_b4'],
+            'saturation': ['1783585139_s3', '1783585139_s4'],
+            'numerical': ['1783585139_n3', '1783585139_n4'],
+            'exit': []
+        },
+        4: {
+            'boolean': ['1783585139_b1'],
+            'saturation': ['1783585139_s1'],
+            'numerical': ['1783585139_n1'],
+            'exit': []
+        }
+    }
+
+    DETECTORS_joinedS_10 = {
+        0: {
+            'boolean': ['joinedS_10_b1', 'joinedS_10_b2', 'joinedS_10_b3'],
+            'saturation': ['joinedS_10_s1', 'joinedS_10_s2', 'joinedS_10_s3', 'joinedS_10_s4'],
+            'numerical': ['joinedS_10_n1', 'joinedS_10_n2', 'joinedS_10_n3', 'joinedS_10_n4', 'joinedS_10_n5', 'joinedS_10_n6'],
+            'exit': []
+        },
+        4: {
+            'boolean': ['joinedS_10_b4', 'joinedS_10_b5'],
+            'saturation': ['joinedS_10_s5', 'joinedS_10_s6'],
+            'numerical': ['joinedS_10_n7', 'joinedS_10_n8', 'joinedS_10_n9', 'joinedS_10_n10'],
+            'exit': []
+        }
+    }
+
+    DETECTORS_1845505945 = {
+        0: {
+            'boolean': ['1845505945_b1', '1845505945_b3'],
+            'saturation': ['1845505945_s1', '1845505945_s3'],
+            'numerical': ['1845505945_n1', '1845505945_n2', '1845505945_n3', '1845505945_n5'],
+            'exit': []
+        },
+        2: {
+            'boolean': ['1845505945_b2'],
+            'saturation': ['1845505945_s2'],
+            'numerical': ['1845505945_n4'],
+            'exit': []
+        }
+    }
+
+    DETECTORS_GS_198873099 = {
+        0: {
+            'boolean': ['GS_198873099_b2'],
+            'saturation': ['GS_198873099_s2'],
+            'numerical': ['GS_198873099_n2'],
+            'exit': []
+        },
+        2: {
+            'boolean': ['GS_198873099_b1'],
+            'saturation': ['GS_198873099_s1'],
+            'numerical': ['GS_198873099_n1'],
+            'exit': []
+        }
+    }
+
+    DETECTORS_GS_225057604 = {
+        0: {
+            'boolean': ['GS_225057604_b1', 'GS_225057604_b2', 'GS_225057604_b3', 'GS_225057604_b4'],
+            'saturation': ['GS_225057604_s1', 'GS_225057604_s2'],
+            'numerical': ['GS_225057604_n1', 'GS_225057604_n2', 'GS_225057604_n3', 'GS_225057604_n4', 'GS_225057604_n5', 'GS_225057604_n6'],
+            'exit': []
+        },
+        2: {
+            'boolean': ['GS_225057604_b5'],
+            'saturation': ['GS_225057604_s3'],
+            'numerical': ['GS_225057604_n7'],
+            'exit': []
+        }
+    }
+
+    DETECTORS_235809784 = {
+        0: {
+            'boolean': ['235809784_b1', '235809784_b3'],
+            'saturation': ['235809784_s1', '235809784_s3'],
+            'numerical': ['235809784_n1', '235809784_n3'],
+            'exit': []
+        },
+        4: {
+            'boolean': ['235809784_b2'],
+            'saturation': ['235809784_s2'],
+            'numerical': ['235809784_n2'],
+            'exit': []
+        }
+    }
+
+    DETECTORS_GS_243072205 = {
+        0: {
+            'boolean': ['GS_243072205_b2', 'GS_243072205_b3', 'GS_243072205_b5'],
+            'saturation': ['GS_243072205_s2', 'GS_243072205_s4'],
+            'numerical': ['GS_243072205_n2', 'GS_243072205_n3', 'GS_243072205_n4', 'GS_243072205_n6'],
+            'exit': []
+        },
+        4: {
+            'boolean': ['GS_243072205_b1', 'GS_243072205_b4'],
+            'saturation': ['GS_243072205_s1', 'GS_243072205_s3'],
+            'numerical': ['GS_243072205_n1', 'GS_243072205_b5'],
+            'exit': []
+        },
+    }
+
+    DETECTORS_GS_243072206 = {
+        0: {
+            'boolean': ['GS_243072206_b2', 'GS_243072206_b4'],
+            'saturation': ['GS_243072206_s2', 'GS_243072206_s4'],
+            'numerical': ['GS_243072206_n2', 'GS_243072206_n4'],
+            'exit': []
+        },
+        2: {
+            'boolean': ['GS_243072206_b1', 'GS_243072206_b3'],
+            'saturation': ['GS_243072206_s1', 'GS_243072206_s3'],
+            'numerical': ['GS_243072206_n1', 'GS_243072206_n3'],
+            'exit': []
+        }
+    }
+
+    DETECTORS_GS_250883344 = {
+        0: {
+            'boolean': ['GS_250883344_b1', 'GS_250883344_b2'],
+            'saturation': ['GS_250883344_s1', 'GS_250883344_s2'],
+            'numerical': ['GS_250883344_n1', 'GS_250883344_n2'],
+            'exit': []
+        },
+        2: {
+            'boolean': ['GS_250883344_b3', 'GS_250883344_b4'],
+            'saturation': ['GS_250883344_s3'],
+            'numerical': ['GS_250883344_n3', 'GS_250883344_n4', 'GS_250883344_n5', 'GS_250883344_n6', 'GS_250883344_n7'],
+            'exit': []
+        }
+    }
+
+    DETECTORS_GS_251048925 = {
+        0: {
+            'boolean': ['GS_251048925_b1', 'GS_251048925_b3'],
+            'saturation': ['GS_251048925_s1', 'GS_251048925_s3'],
+            'numerical': ['GS_251048925_n1', 'GS_251048925_n3'],
+            'exit': []
+        },
+        2: {
+            'boolean': ['GS_251048925_b2', 'GS_251048925_b4'],
+            'saturation': ['GS_251048925_s2', 'GS_251048925_s4'],
+            'numerical': ['GS_251048925_n2', 'GS_251048925_n4'],
+            'exit': []
+        }
+    }
+
+    DETECTORS_GS_251050905 = {
+        0: {
+            'boolean': ['GS_251050905_b1'],
+            'saturation': ['GS_251050905_s1'],
+            'numerical': ['GS_251050905_n1'],
+            'exit': []
+        },
+        2: {
+            'boolean': ['GS_251050905_b3'],
+            'saturation': ['GS_251050905_s3'],
+            'numerical': ['GS_251050905_n3'],
+            'exit': []
+        },
+        4: {
+            'boolean': ['GS_251050905_b2'],
+            'saturation': ['GS_251050905_s2'],
+            'numerical': ['GS_251050905_n2'],
+            'exit': []
+        },
+    }
+
+    DETECTORS_251053238 = {
+        0: {
+            'boolean': ['251053238_b1', '251053238_b2'],
+            'saturation': ['251053238_s1', '251053238_s2'],
+            'numerical': ['251053238_n1', '251053238_n2'],
+            'exit': []
+        },
+        4: {
+            'boolean': ['251053238_b3'],
+            'saturation': ['251053238_s3'],
+            'numerical': ['251053238_n3'],
+            'exit': []
+        }
+    }
+
+    DETECTORS_251053453 = {
+        0: {
+            'boolean': ['251053453_b1', '251053453_b2'],
+            'saturation': ['251053453_s1', '251053453_s2'],
+            'numerical': ['251053453_n1', '251053453_n2'],
+            'exit': []
+        },
+        4: {
+            'boolean': ['251053453_b3'],
+            'saturation': ['251053453_s3'],
+            'numerical': ['251053453_n3'],
+            'exit': []
+        }
+    }
+
+    DETECTORS_GS_251053667 = {
+        0: {
+            'boolean': ['GS_251053667_b2', 'GS_251053667_b3'],
+            'saturation': ['GS_251053667_s2', 'GS_251053667_s3'],
+            'numerical': ['GS_251053667_n2', 'GS_251053667_n3'],
+            'exit': []
+        },
+        4: {
+            'boolean': ['GS_251053667_b1'],
+            'saturation': ['GS_251053667_s1'],
+            'numerical': ['GS_251053667_n1'],
+            'exit': []
+        }
+    }
+
+    DETECTORS_251053668 = {
+        0: {
+            'boolean': ['251053668_b1', '251053668_b2'],
+            'saturation': ['251053668_s1', '251053668_s2'],
+            'numerical': ['251053668_n1', '251053668_n2'],
+            'exit': []
+        },
+        4: {
+            'boolean': ['251053668_b3'],
+            'saturation': ['251053668_s3'],
+            'numerical': ['251053668_n3'],
+            'exit': []
+        }
+    }
+
+    DETECTORS_251054519 = {
+        0: {
+            'boolean': ['251054519_b3'],
+            'saturation': ['251054519_s3'],
+            'numerical': ['251054519_n3'],
+            'exit': []
+        },
+        2: {
+            'boolean': ['251054519_b1', '251054519_b2'],
+            'saturation': ['251054519_s1', '251054519_s2'],
+            'numerical': ['251054519_n1', '251054519_n2'],
+            'exit': []
+        }
+    }
+
+    DETECTORS_251056180 = {
+        0: {
+            'boolean': ['251056180_b2'],
+            'saturation': ['251056180_s2', '251056180_s3'],
+            'numerical': ['251056180_n2', '251056180_n3', '251056180_n4'],
+            'exit': []
+        },
+        2: {
+            'boolean': ['251056180_b1'],
+            'saturation': ['251056180_s1'],
+            'numerical': ['251056180_n1'],
+            'exit': []
+        }
+    }
+
+    DETECTORS_GS_251997373 = {
+        0: {
+            'boolean': ['GS_251997373_b1', 'GS_251997373_b2'],
+            'saturation': ['GS_251997373_s1', 'GS_251997373_s2'],
+            'numerical': ['GS_251997373_n1', 'GS_251997373_n2'],
+            'exit': []
+        },
+        4: {
+            'boolean': ['GS_251997373_b3', 'GS_251997373_b4'],
+            'saturation': ['GS_251997373_s3'],
+            'numerical': ['GS_251997373_n3', 'GS_251997373_n4', 'GS_251997373_n5'],
+            'exit': []
+        }
+    }
+
+    DETECTORS_252269915 = {
+        0: {
+            'boolean': ['252269915_b2'],
+            'saturation': ['252269915_s2'],
+            'numerical': ['252269915_n2'],
+            'exit': []
+        },
+        2: {
+            'boolean': ['252269915_b1'],
+            'saturation': ['252269915_s1'],
+            'numerical': ['252269915_n1'],
+            'exit': []
+        }
+    }
+
+    DETECTORS_260579122 = {
+        0: {
+            'boolean': ['260579122_b1', '260579122_b3'],
+            'saturation': ['260579122_s1', '260579122_s3'],
+            'numerical': ['260579122_n1', '260579122_n3'],
+            'exit': []
+        },
+        4: {
+            'boolean': ['260579122_b2'],
+            'saturation': ['260579122_b2'],
+            'numerical': ['260579122_b2'],
+            'exit': []
+        }
+    }
+
+    DETECTORS_260579123 = {
+        0: {
+            'boolean': ['260579123_b3', '260579123_b4'],
+            'saturation': ['260579123_s3', '260579123_s4'],
+            'numerical': ['260579123_n3', '260579123_n4'],
+            'exit': []
+        },
+        2: {
+            'boolean': ['260579123_b1'],
+            'saturation': ['260579123_s1'],
+            'numerical': ['260579123_n1'],
+            'exit': []
+        },
+        4: {
+            'boolean': ['260579123_b2'],
+            'saturation': ['260579123_s2'],
+            'numerical': ['260579123_n2'],
+            'exit': []
+        }
+    }
+
+    DETECTORS_GS_267375333 = {
+        0: {
+            'boolean': ['GS_267375333_b1', 'GS_267375333_b3'],
+            'saturation': ['GS_267375333_s1', 'GS_267375333_s3'],
+            'numerical': ['GS_267375333_n1', 'GS_267375333_n3'],
+            'exit': []
+        },
+        4: {
+            'boolean': ['GS_267375333_b2', 'GS_267375333_b4'],
+            'saturation': ['GS_267375333_s2', 'GS_267375333_s4'],
+            'numerical': ['GS_267375333_n2', 'GS_267375333_n4'],
+            'exit': []
+        }
+    }
+
+    DETECTORS_288393948 = {
+        0: {
+            'boolean': ['288393948_b1', '288393948_b2'],
+            'saturation': ['288393948_s1', '288393948_s2'],
+            'numerical': ['288393948_n1', '288393948_n2'],
+            'exit': []
+        },
+        2: {
+            'boolean': ['288393948_b3'],
+            'saturation': ['288393948_s3'],
+            'numerical': ['288393948_n3'],
+            'exit': []
+        }
+    }
+
+    DETECTORS_GS_288393949 = {
+        0: {
+            'boolean': ['GS_288393949_b2', 'GS_288393949_b3'],
+            'saturation': ['GS_288393949_s2', 'GS_288393949_s3'],
+            'numerical': ['GS_288393949_n2', 'GS_288393949_n3'],
+            'exit': []
+        },
+        4: {
+            'boolean': ['GS_288393949_b1'],
+            'saturation': ['GS_288393949_s1'],
+            'numerical': ['GS_288393949_n1'],
+            'exit': []
+        }
+    }
+
+    DETECTORS_295718903 = {
+        0: {
+            'boolean': ['295718903_b1', '295718903_b3'],
+            'saturation': ['295718903_s1', '295718903_s3'],
+            'numerical': ['295718903_n1', '295718903_n3'],
+            'exit': []
+        },
+        2: {
+            'boolean': ['295718903_b2', '295718903_b4'],
+            'saturation': ['295718903_s2', '295718903_s4'],
+            'numerical': ['295718903_n2', '295718903_n4'],
+            'exit': []
+        }
+    }
+
+    DETECTORS_GS_3076442881 = {
+        0: {
+            'boolean': ['GS_3076442881_b2'],
+            'saturation': ['GS_3076442881_s2'],
+            'numerical': ['GS_3076442881_n2'],
+            'exit': []
+        },
+        2: {
+            'boolean': ['GS_3076442881_b1'],
+            'saturation': ['GS_3076442881_s1'],
+            'numerical': ['GS_3076442881_n1'],
+            'exit': []
+        }
+    }
+
+    DETECTORS_GS_320950907 = {
+        0: {
+            'boolean': ['GS_320950907_b3'],
+            'saturation': ['GS_320950907_s3'],
+            'numerical': ['GS_320950907_n3'],
+            'exit': []
+        },
+        2: {
+            'boolean': ['GS_320950907_b1', 'GS_320950907_b2'],
+            'saturation': ['GS_320950907_s1', 'GS_320950907_s2'],
+            'numerical': ['GS_320950907_n1', 'GS_320950907_n2'],
+            'exit': []
+        }
+    }
+
+    DETECTORS_GS_352836899 = {
+        0: {
+            'boolean': ['GS_352836899_b2', 'GS_352836899_b4'],
+            'saturation': ['GS_352836899_s2', 'GS_352836899_s4'],
+            'numerical': ['GS_352836899_n2', 'GS_352836899_n4'],
+            'exit': []
+        },
+        4: {
+            'boolean': ['GS_352836899_b1', 'GS_352836899_b3'],
+            'saturation': ['GS_352836899_s1', 'GS_352836899_s3'],
+            'numerical': ['GS_352836899_n1', 'GS_352836899_n3'],
+            'exit': []
+        }
+    }
+
+    DETECTORS_362339802 = {
+        0: {
+            'boolean': ['362339802_b1', '362339802_b2'],
+            'saturation': ['362339802_s1', '362339802_s2', '362339802_s3'],
+            'numerical': ['362339802_n1', '362339802_n2', '362339802_n3', '362339802_n4'],
+            'exit': []
+        },
+        4: {
+            'boolean': ['362339802_b3'],
+            'saturation': ['362339802_s4'],
+            'numerical': ['362339802_n5'],
+            'exit': []
+        }
+    }
+
+    DETECTORS_GS_393330677 = {
+        0: {
+            'boolean': ['GS_393330677_b1', 'GS_393330677_b2', 'GS_393330677_b3', 'GS_393330677_b4'],
+            'saturation': ['GS_393330677_s1', 'GS_393330677_s2'],
+            'numerical': ['GS_393330677_n1', 'GS_393330677_n2', 'GS_393330677_n3', 'GS_393330677_n4', 'GS_393330677_n5', 'GS_393330677_n6'],
+            'exit': []
+        },
+        2: {
+            'boolean': ['GS_393330677_b5', 'GS_393330677_b6', 'GS_393330677_b7'],
+            'saturation': ['GS_393330677_s3', 'GS_393330677_s4', 'GS_393330677_s5'],
+            'numerical': ['GS_393330677_n7', 'GS_393330677_n8', 'GS_393330677_n9'],
+            'exit': []
+        }
+    }
+
+    DETECTORS_GS_439772972 = {
+        0: {
+            'boolean': ['GS_439772972_b2', 'GS_439772972_b3'],
+            'saturation': ['GS_439772972_s2', 'GS_439772972_s3'],
+            'numerical': ['GS_439772972_n2', 'GS_439772972_n3'],
+            'exit': []
+        },
+        4: {
+            'boolean': ['GS_439772972_b1'],
+            'saturation': ['GS_439772972_s1'],
+            'numerical': ['GS_439772972_n1'],
+            'exit': []
+        }
+    }
+
+    DETECTORS_439806870 = {
+        0: {
+            'boolean': ['439806870_b3'],
+            'saturation': ['439806870_s3'],
+            'numerical': ['439806870_n3'],
+            'exit': []
+        },
+        2: {
+            'boolean': ['439806870_b1', '439806870_b2'],
+            'saturation': ['439806870_s1', '439806870_s2'],
+            'numerical': ['439806870_n1', '439806870_n2'],
+            'exit': []
+        }
+    }
+
+    DETECTORS_439806886 = {
+        0: {
+            'boolean': ['439806886_b1', '439806886_b2'],
+            'saturation': ['439806886_s1', '439806886_s2'],
+            'numerical': ['439806886_n1', '439806886_n2'],
+            'exit': []
+        },
+        4: {
+            'boolean': ['439806886_b3'],
+            'saturation': ['439806886_s3'],
+            'numerical': ['439806886_n3'],
+            'exit': []
+        },
+    }
+
+    DETECTORS_440740820 = {
+        0: {
+            'boolean': ['440740820_b1', '440740820_b3'],
+            'saturation': ['440740820_s1', '440740820_s3', '440740820_s4'],
+            'numerical': ['440740820_n1', '440740820_n4', '440740820_n5'],
+            'exit': []
+        },
+        2: {
+            'boolean': ['440740820_b2', '440740820_b4'],
+            'saturation': ['440740820_s2', '440740820_s5'],
+            'numerical': ['440740820_n2', '440740820_n3', '440740820_n6'],
+            'exit': []
+        },
+    }
+
+    DETECTORS_GS_468704354 = {
+        0: {
+            'boolean': ['GS_468704354_b1', 'GS_468704354_b3'],
+            'saturation': ['GS_468704354_s1', 'GS_468704354_s3'],
+            'numerical': ['GS_468704354_n1', 'GS_468704354_n3'],
+            'exit': []
+        },
+        4: {
+            'boolean': ['GS_468704354_b2'],
+            'saturation': ['GS_468704354_s2'],
+            'numerical': ['GS_468704354_n2'],
+            'exit': []
+        },
+    }
+
+    DETECTORS_GS_4688955408 = {
+        0: {
+            'boolean': ['GS_4688955408_b1', 'GS_4688955408_b2', 'GS_4688955408_b3'],
+            'saturation': ['GS_4688955408_s1', 'GS_4688955408_s2', 'GS_4688955408_s3'],
+            'numerical': ['GS_4688955408_n1', 'GS_4688955408_n2', 'GS_4688955408_n3'],
+            'exit': []
+        },
+        2: {
+            'boolean': ['GS_4688955408_b4', 'GS_4688955408_b5', 'GS_4688955408_b6'],
+            'saturation': ['GS_4688955408_s4', 'GS_4688955408_s5', 'GS_4688955408_s6'],
+            'numerical': ['GS_4688955408_n4', 'GS_4688955408_n5', 'GS_4688955408_n6'],
+            'exit': []
+        },
+    }
+
+    DETECTORS_GS_469141720 = {
+        0: {
+            'boolean': ['GS_469141720_b2'],
+            'saturation': ['GS_469141720_s2'],
+            'numerical': ['GS_469141720_n2'],
+            'exit': []
+        },
+        2: {
+            'boolean': ['GS_469141720_b1'],
+            'saturation': ['GS_469141720_s1'],
+            'numerical': ['GS_469141720_n1'],
+            'exit': []
+        },
+    }
+
+    DETECTORS_GS_469309921 = {
+        0: {
+            'boolean': ['GS_469309921_b1', 'GS_469309921_b3'],
+            'saturation': ['GS_469309921_s1', 'GS_469309921_s3'],
+            'numerical': ['GS_469309921_n1', 'GS_469309921_n2', 'GS_469309921_n4'],
+            'exit': []
+        },
+        4: {
+            'boolean': ['GS_469309921_b2'],
+            'saturation': ['GS_469309921_s2'],
+            'numerical': ['GS_469309921_n2'],
+            'exit': []
+        },
+    }
+
+    DETECTORS_469309961 = {
+        0: {
+            'boolean': ['469309961_b2', '469309961_b3'],
+            'saturation': ['469309961_s2', '469309961_s3'],
+            'numerical': ['469309961_n2', '469309961_n3', '469309961_n4'],
+            'exit': []
+        },
+        4: {
+            'boolean': ['469309961_b1'],
+            'saturation': ['469309961_s1'],
+            'numerical': ['469309961_n1'],
+            'exit': []
+        },
+    }
+
+    DETECTORS_471611509 = {
+        0: {
+            'boolean': ['471611509_b2'],
+            'saturation': ['471611509_s2'],
+            'numerical': ['471611509_n2'],
+            'exit': []
+        },
+        2: {
+            'boolean': ['471611509_b1'],
+            'saturation': ['471611509_s1'],
+            'numerical': ['471611509_n1'],
+            'exit': []
+        },
+    }
+
+    DETECTORS_GS_471611512 = {
+        0: {
+            'boolean': ['GS_471611512_b2'],
+            'saturation': ['GS_471611512_s2'],
+            'numerical': ['GS_471611512_n2'],
+            'exit': []
+        },
+        2: {
+            'boolean': ['GS_471611512_b1'],
+            'saturation': ['GS_471611512_s1'],
+            'numerical': ['GS_471611512_n1'],
+            'exit': []
+        },
+    }
+
+    DETECTORS_GS_471611514 = {
+        0: {
+            'boolean': ['GS_471611514_b1', 'GS_471611514_b3'],
+            'saturation': ['GS_471611514_s1', 'GS_471611514_s3'],
+            'numerical': ['GS_471611514_n1', 'GS_471611514_n3'],
+            'exit': []
+        },
+        4: {
+            'boolean': ['GS_471611514_b2'],
+            'saturation': ['GS_471611514_s2'],
+            'numerical': ['GS_471611514_n2'],
+            'exit': []
+        },
+    }
+
+    DETECTORS_471611519 = {
+        0: {
+            'boolean': ['471611519_b2', '471611519_b3'],
+            'saturation': ['471611519_s2', '471611519_s3'],
+            'numerical': ['471611519_n2', '471611519_n3'],
+            'exit': []
+        },
+        4: {
+            'boolean': ['471611519_b1'],
+            'saturation': ['471611519_s1'],
+            'numerical': ['471611519_n1'],
+            'exit': []
+        },
+    }
+
+    DETECTORS_GS_476281346 = {
+        0: {
+            'boolean': ['GS_476281346_b2'],
+            'saturation': ['GS_476281346_s2'],
+            'numerical': ['GS_476281346_n2'],
+            'exit': []
+        },
+        2: {
+            'boolean': ['GS_476281346_b1'],
+            'saturation': ['GS_476281346_s1'],
+            'numerical': ['GS_476281346_n1'],
+            'exit': []
+        },
+    }
+
+    DETECTORS_485133343 = {
+        0: {
+            'boolean': ['485133343_b1', '485133343_b2'],
+            'saturation': ['485133343_s1', '485133343_s2'],
+            'numerical': ['485133343_n1', '485133343_n2'],
+            'exit': []
+        },
+        4: {
+            'boolean': ['485133343_b3'],
+            'saturation': ['485133343_s3'],
+            'numerical': ['485133343_n3'],
+            'exit': []
+        },
+    }
+
+    DETECTORS_GS_485133383 = {
+        0: {
+            'boolean': ['GS_485133383_b2', 'GS_485133383_b3'],
+            'saturation': ['GS_485133383_s2', 'GS_485133383_s3'],
+            'numerical': ['GS_485133383_n2', 'GS_485133383_n3'],
+            'exit': []
+        },
+        4: {
+            'boolean': ['GS_485133383_b1'],
+            'saturation': ['GS_485133383_s1'],
+            'numerical': ['GS_485133383_n1'],
+            'exit': []
+        },
+    }
+
+    DETECTORS_GS_485133394 = {
+        0: {
+            'boolean': ['GS_485133394_b2'],
+            'saturation': ['GS_485133394_s2'],
+            'numerical': ['GS_485133394_n2'],
+            'exit': []
+        },
+        2: {
+            'boolean': ['GS_485133394_b3'],
+            'saturation': ['GS_485133394_s3'],
+            'numerical': ['GS_485133394_n3'],
+            'exit': []
+        },
+        4: {
+            'boolean': ['GS_485133394_b1'],
+            'saturation': ['GS_485133394_s1'],
+            'numerical': ['GS_485133394_n1'],
+            'exit': []
+        },
+    }
+
+    DETECTORS_485133399 = {
+        0: {
+            'boolean': ['485133399_b2'],
+            'saturation': ['485133399_s2'],
+            'numerical': ['485133399_n2'],
+            'exit': []
+        },
+        2: {
+            'boolean': ['485133399_b1'],
+            'saturation': ['485133399_s1'],
+            'numerical': ['485133399_n1'],
+            'exit': []
+        },
+    }
+
+    DETECTORS_489576842 = {
+        0: {
+            'boolean': ['489576842_b1', '489576842_b3'],
+            'saturation': ['489576842_s1', '489576842_s3'],
+            'numerical': ['489576842_n1', '489576842_n3'],
+            'exit': []
+        },
+        4: {
+            'boolean': ['489576842_b2', '489576842_b4'],
+            'saturation': ['489576842_s2', '489576842_s4'],
+            'numerical': ['489576842_n2', '489576842_n4'],
+            'exit': []
+        },
+    }
+
+    DETECTORS_GS_492092314 = {
+        0: {
+            'boolean': ['GS_492092314_b1', 'GS_492092314_b3'],
+            'saturation': ['GS_492092314_s1', 'GS_492092314_s3'],
+            'numerical': ['GS_492092314_n1', 'GS_492092314_n3'],
+            'exit': []
+        },
+        4: {
+            'boolean': ['GS_492092314_b2'],
+            'saturation': ['GS_492092314_s2'],
+            'numerical': ['GS_492092314_n2'],
+            'exit': []
+        },
+    }
+
+    DETECTORS_492204162 = {
+        0: {
+            'boolean': ['492204162_b3'],
+            'saturation': ['492204162_s3'],
+            'numerical': ['492204162_n3'],
+            'exit': []
+        },
+        2: {
+            'boolean': ['492204162_b2'],
+            'saturation': ['492204162_s2'],
+            'numerical': ['492204162_n2'],
+            'exit': []
+        },
+        4: {
+            'boolean': ['492204162_b1'],
+            'saturation': ['492204162_s1'],
+            'numerical': ['492204162_n1'],
+            'exit': []
+        },
+    }
+
+    DETECTORS_492204171 = {
+        0: {
+            'boolean': ['492204171_b2'],
+            'saturation': ['492204171_s2'],
+            'numerical': ['492204171_n2'],
+            'exit': []
+        },
+        2: {
+            'boolean': ['492204171_b1'],
+            'saturation': ['492204171_s1'],
+            'numerical': ['492204171_n1'],
+            'exit': []
+        },
+    }
+
+    DETECTORS_493138763 = {
+        0: {
+            'boolean': ['493138763_b1'],
+            'saturation': ['493138763_s1'],
+            'numerical': ['493138763_n1'],
+            'exit': []
+        },
+        2: {
+            'boolean': ['493138763_b2', '493138763_b3'],
+            'saturation': ['493138763_s2'],
+            'numerical': ['493138763_n2', '493138763_n3', '493138763_n4'],
+            'exit': []
+        },
+    }
+
+    DETECTORS_GS_494986735 = {
+        0: {
+            'boolean': ['GS_494986735_b3'],
+            'saturation': ['GS_494986735_s3'],
+            'numerical': ['GS_494986735_n3'],
+            'exit': []
+        },
+        2: {
+            'boolean': ['GS_494986735_b1', 'GS_494986735_b2'],
+            'saturation': ['GS_494986735_s1', 'GS_494986735_s2'],
+            'numerical': ['GS_494986735_n1', 'GS_494986735_n2'],
+            'exit': []
+        },
+    }
+
+    DETECTORS_494986738 = {
+        0: {
+            'boolean': ['494986738_b1', '494986738_b3'],
+            'saturation': ['494986738_s1', '494986738_s3'],
+            'numerical': ['494986738_n1', '494986738_n3'],
+            'exit': []
+        },
+        2: {
+            'boolean': ['494986738_b2', '494986738_b4'],
+            'saturation': ['494986738_s2', '494986738_s4'],
+            'numerical': ['494986738_n2', '494986738_n4'],
+            'exit': []
+        },
+    }
+
+    DETECTORS_496978290 = {
+        0: {
+            'boolean': ['496978290_b1', '496978290_b3'],
+            'saturation': ['496978290_s1', '496978290_s3'],
+            'numerical': ['496978290_n1', '496978290_n3'],
+            'exit': []
+        },
+        4: {
+            'boolean': ['496978290_b2'],
+            'saturation': ['496978290_s2'],
+            'numerical': ['496978290_n2'],
+            'exit': []
+        },
+    }
+
+    DETECTORS_497394917 = {
+        0: {
+            'boolean': ['497394917_b1', '497394917_b3'],
+            'saturation': ['497394917_s1', '497394917_s3'],
+            'numerical': ['497394917_n1', '497394917_n3'],
+            'exit': []
+        },
+        2: {
+            'boolean': ['497394917_b2'],
+            'saturation': ['497394917_s2'],
+            'numerical': ['497394917_n2'],
+            'exit': []
+        },
+    }
+
+    DETECTORS_GS_498476334 = {
+        0: {
+            'boolean': ['GS_498476334_b1', 'GS_498476334_b2'],
+            'saturation': ['GS_498476334_s1', 'GS_498476334_s2'],
+            'numerical': ['GS_498476334_n1', 'GS_498476334_n2'],
+            'exit': []
+        },
+        4: {
+            'boolean': ['GS_498476334_b3'],
+            'saturation': ['GS_498476334_s3'],
+            'numerical': ['GS_498476334_n3'],
+            'exit': []
+        },
+    }
+
+    DETECTORS_GS_506774198 = {
+        0: {
+            'boolean': ['GS_506774198_b1', 'GS_506774198_b3'],
+            'saturation': ['GS_506774198_s1', 'GS_506774198_s3'],
+            'numerical': ['GS_506774198_n1', 'GS_506774198_n3'],
+            'exit': []
+        },
+        4: {
+            'boolean': ['GS_506774198_b2'],
+            'saturation': ['GS_506774198_s2'],
+            'numerical': ['GS_506774198_n2'],
+            'exit': []
+        },
+    }
+
+    DETECTORS_joinedS_16 = {
+        0: {
+            'boolean': ['joinedS_16_b1', 'joinedS_16_b2', 'joinedS_16_b3', 'joinedS_16_b4', 'joinedS_16_b7', 'joinedS_16_b8', 'joinedS_16_b9'],
+            'saturation': ['joinedS_16_s1', 'joinedS_16_s3', 'joinedS_16_s4', 'joinedS_16_s5'],
+            'numerical': ['joinedS_16_n1', 'joinedS_16_n2', 'joinedS_16_n3', 'joinedS_16_n4', 'joinedS_16_n7', 'joinedS_16_n8', 'joinedS_16_n9'],
+            'exit': []
+        },
+        2: {
+            'boolean': ['joinedS_16_b5', 'joinedS_16_b6', 'joinedS_16_b10', 'joinedS_16_b11', 'joinedS_16_b12'],
+            'saturation': ['joinedS_16_s2', 'joinedS_16_s6'],
+            'numerical': ['joinedS_16_n5', 'joinedS_16_n6', 'joinedS_16_n10', 'joinedS_16_n11', 'joinedS_16_n12'],
+            'exit': []
+        },
+    }
+
+    DETECTORS_GS_508063549 = {
+        0: {
+            'boolean': ['GS_508063549_b1'],
+            'saturation': ['GS_508063549_s1'],
+            'numerical': ['GS_508063549_n1'],
+            'exit': []
+        },
+        2: {
+            'boolean': ['GS_508063549_b2'],
+            'saturation': ['GS_508063549_s2'],
+            'numerical': ['GS_508063549_n2', 'GS_508063549_n3'],
+            'exit': []
+        },
+    }
+
+    DETECTORS_517340666 = {
+        0: {
+            'boolean': ['517340666_b2'],
+            'saturation': ['517340666_s2'],
+            'numerical': ['517340666_n2'],
+            'exit': []
+        },
+        2: {
+            'boolean': ['517340666_b1'],
+            'saturation': ['517340666_s1'],
+            'numerical': ['517340666_n1'],
+            'exit': []
+        },
+    }
+
+    DETECTORS_517340669 = {
+        0: {
+            'boolean': ['517340669_b2'],
+            'saturation': ['517340669_s2'],
+            'numerical': ['517340669_n2'],
+            'exit': []
+        },
+        2: {
+            'boolean': ['517340669_b1'],
+            'saturation': ['517340669_s1'],
+            'numerical': ['517340669_n1'],
+            'exit': []
+        },
+    }
+
+    DETECTORS_517340672 = {
+        0: {
+            'boolean': ['517340672_b1', '517340672_b2'],
+            'saturation': ['517340672_s1', '517340672_s2'],
+            'numerical': ['517340672_n1', '517340672_n2'],
+            'exit': []
+        },
+        2: {
+            'boolean': ['517340672_b3'],
+            'saturation': ['517340672_s3'],
+            'numerical': ['517340672_n3'],
+            'exit': []
+        },
+    }
+
+    DETECTORS_530710713 = {
+        0: {
+            'boolean': ['530710713_b1'],
+            'saturation': ['530710713_s1'],
+            'numerical': ['530710713_n1'],
+            'exit': []
+        },
+        2: {
+            'boolean': ['530710713_b2'],
+            'saturation': ['530710713_s2'],
+            'numerical': ['530710713_n2'],
+            'exit': []
+        },
+    }
+
+    DETECTORS_GS_6257632307 = {
+        0: {
+            'boolean': ['GS_6257632307_b4', 'GS_6257632307_b5', 'GS_6257632307_b6'],
+            'saturation': ['GS_6257632307_s4', 'GS_6257632307_s5', 'GS_6257632307_s6'],
+            'numerical': ['GS_6257632307_n4', 'GS_6257632307_n5', 'GS_6257632307_n6'],
+            'exit': []
+        },
+        2: {
+            'boolean': ['GS_6257632307_b1', 'GS_6257632307_b2', 'GS_6257632307_b3'],
+            'saturation': ['GS_6257632307_s1', 'GS_6257632307_s2', 'GS_6257632307_s3'],
+            'numerical': ['GS_6257632307_n1', 'GS_6257632307_n2', 'GS_6257632307_n3'],
+            'exit': []
+        },
+    }
+
+    DETECTORS_GS_6286429547 = {
+        0: {
+            'boolean': ['GS_6286429547_b1', 'GS_6286429547_b2'],
+            'saturation': ['GS_6286429547_s1', 'GS_6286429547_s2'],
+            'numerical': ['GS_6286429547_n1', 'GS_6286429547_n2'],
+            'exit': []
+        },
+        2: {
+            'boolean': ['GS_6286429547_b3', 'GS_6286429547_b4', 'GS_6286429547_b5', 'GS_6286429547_b6'],
+            'saturation': ['GS_6286429547_s3', 'GS_6286429547_s4'],
+            'numerical': ['GS_6286429547_n3', 'GS_6286429547_n4', 'GS_6286429547_n5', 'GS_6286429547_n6'],
+            'exit': []
+        },
+    }
+
+    DETECTORS_GS_8983324940 = {
+        0: {
+            'boolean': ['GS_8983324940_b2'],
+            'saturation': ['GS_8983324940_s2'],
+            'numerical': ['GS_8983324940_n2'],
+            'exit': []
+        },
+        2: {
+            'boolean': ['GS_8983324940_b1'],
+            'saturation': ['GS_8983324940_s1'],
+            'numerical': ['GS_8983324940_n1'],
+            'exit': []
+        },
+    }
+
+    DETECTORS_GS_9160219128 = {
+        0: {
+            'boolean': ['GS_9160219128_b2', 'GS_9160219128_b3'],
+            'saturation': ['GS_9160219128_s2', 'GS_9160219128_s3'],
+            'numerical': ['GS_9160219128_n2', 'GS_9160219128_n3'],
+            'exit': []
+        },
+        4: {
+            'boolean': ['GS_9160219128_b1'],
+            'saturation': ['GS_9160219128_s1'],
+            'numerical': ['GS_9160219128_n1'],
+            'exit': []
+        },
+    }
+
+    DETECTORS_cluster1638013968_cluster_1638013992_1656149900_4052112289 = {
+        0: {
+            'boolean': ['cluster1638013968_b1', 'cluster1638013968_b2', 'cluster1638013968_b5', 'cluster1638013968_b6'],
+            'saturation': ['cluster1638013968_s1', 'cluster1638013968_s2', 'cluster1638013968_s4', 'cluster1638013968_s5'],
+            'numerical': ['cluster1638013968_n1', 'cluster1638013968_n2', 'cluster1638013968_n6', 'cluster1638013968_n7'],
+            'exit': []
+        },
+        4: {
+            'boolean': ['cluster1638013968_b3', 'cluster1638013968_b4'],
+            'saturation': ['cluster1638013968_s3'],
+            'numerical': ['cluster1638013968_n3', 'cluster1638013968_n4', 'cluster1638013968_n5'],
+            'exit': []
+        },
+    }
+
+    DETECTORS_cluster_10861016298_1299481357_1299481366_164480282_849010069 = {
+        0: {
+            'boolean': ['cluster_10861016298_b1', 'cluster_10861016298_b4', 'cluster_10861016298_b5', 'cluster_10861016298_b6'],
+            'saturation': ['cluster_10861016298_s1', 'cluster_10861016298_s4', 'cluster_10861016298_s5'],
+            'numerical': ['cluster_10861016298_n1', 'cluster_10861016298_n4', 'cluster_10861016298_n5', 'cluster_10861016298_n6', 'cluster_10861016298_n7', 'cluster_10861016298_n8'],
+            'exit': []
+        },
+        4: {
+            'boolean': ['cluster_10861016298_b2', 'cluster_10861016298_b3'],
+            'saturation': ['cluster_10861016298_s2', 'cluster_10861016298_s3'],
+            'numerical': ['cluster_10861016298_n2', 'cluster_10861016298_n3'],
+            'exit': []
+        },
+    }
+
+    DETECTORS_GS_cluster_1302128722_3075924708_8674467625_8674467626 = {
+        0: {
+            'boolean': ['cluster_1302128722_b1', 'cluster_1302128722_b2', 'cluster_1302128722_b4'],
+            'saturation': ['cluster_1302128722_s1', 'cluster_1302128722_s2', 'cluster_1302128722_s4'],
+            'numerical': ['cluster_1302128722_n1', 'cluster_1302128722_n4', 'cluster_1302128722_n5'],
+            'exit': []
+        },
+        4: {
+            'boolean': ['cluster_1302128722_b2'],
+            'saturation': ['cluster_1302128722_s2'],
+            'numerical': ['cluster_1302128722_n2', 'cluster_1302128722_n3'],
+            'exit': []
+        },
+    }
+
+    DETECTORS_cluster_1499392862_393332459_5936292019 = {
+        0: {
+            'boolean': ['cluster_1499392862_b1', 'cluster_1499392862_b2', 'cluster_1499392862_b3'],
+            'saturation': ['cluster_1499392862_s1', 'cluster_1499392862_s2', 'cluster_1499392862_s3', 'cluster_1499392862_s4'],
+            'numerical': ['cluster_1499392862_n1', 'cluster_1499392862_n2', 'cluster_1499392862_n3', 'cluster_1499392862_n4', 'cluster_1499392862_n5', 'cluster_1499392862_n6'],
+            'exit': []
+        },
+        2: {
+            'boolean': ['cluster_1499392862_b4'],
+            'saturation': ['cluster_1499392862_s5'],
+            'numerical': ['cluster_1499392862_n7'],
+            'exit': []
+        },
+    }
+
+    DETECTORS_cluster_1575153557_260469525 = {
+        0: {
+            'boolean': ['cluster_1575153557_b2', 'cluster_1575153557_b4'],
+            'saturation': ['cluster_1575153557_s2', 'cluster_1575153557_s4'],
+            'numerical': ['cluster_1575153557_n2', 'cluster_1575153557_n4'],
+            'exit': []
+        },
+        4: {
+            'boolean': ['cluster_1575153557_b1', 'cluster_1575153557_b3'],
+            'saturation': ['cluster_1575153557_s1', 'cluster_1575153557_s3'],
+            'numerical': ['cluster_1575153557_n1', 'cluster_1575153557_n3'],
+            'exit': []
+        },
+    }
+
+    DETECTORS_GS_cluster_1628579789_243072201 = {
+        0: {
+            'boolean': ['GS_cluster_1628579789_b1', 'GS_cluster_1628579789_b3'],
+            'saturation': ['GS_cluster_1628579789_s1', 'GS_cluster_1628579789_s3'],
+            'numerical': ['GS_cluster_1628579789_n1', 'GS_cluster_1628579789_n3'],
+            'exit': []
+        },
+        2: {
+            'boolean': ['GS_cluster_1628579789_b2'],
+            'saturation': ['GS_cluster_1628579789_s2'],
+            'numerical': ['GS_cluster_1628579789_n2'],
+            'exit': []
+        },
+    }
+
+    DETECTORS_GS_cluster_1635333815_251056169_252192622_6233070869_6233070871_6233070875_6233070881_6304582153 = {
+        0: {
+            'boolean': ['GS_cluster_1635333815_b2', 'GS_cluster_1635333815_b5', 'GS_cluster_1635333815_b6'],
+            'saturation': ['GS_cluster_1635333815_s2', 'GS_cluster_1635333815_s5'],
+            'numerical': ['GS_cluster_1635333815_n2', 'GS_cluster_1635333815_n5', 'GS_cluster_1635333815_n6', 'GS_cluster_1635333815_n7'],
+            'exit': []
+        },
+        2: {
+            'boolean': ['GS_cluster_1635333815_b1', 'GS_cluster_1635333815_b3', 'GS_cluster_1635333815_b4'],
+            'saturation': ['GS_cluster_1635333815_s1', 'GS_cluster_1635333815_s3', 'GS_cluster_1635333815_s4'],
+            'numerical': ['GS_cluster_1635333815_n1', 'GS_cluster_1635333815_n3', 'GS_cluster_1635333815_n4'],
+            'exit': []
+        },
+    }
+
+    DETECTORS_joinedS_17 = {
+        0: {
+            'boolean': ['joinedS_17_b5', 'joinedS_17_b6', 'joinedS_17_b7', 'joinedS_17_b12', 'joinedS_17_b13'],
+            'saturation': ['joinedS_17_s2', 'joinedS_17_s3', 'joinedS_17_s4', 'joinedS_17_s6', 'joinedS_17_s7'],
+            'numerical': ['joinedS_17_n6', 'joinedS_17_n7', 'joinedS_17_n8', 'joinedS_17_n14', 'joinedS_17_n15', 'joinedS_17_n16', 'joinedS_17_n17'],
+            'exit': []
+        },
+        2: {
+            'boolean': ['joinedS_17_b1', 'joinedS_17_b2', 'joinedS_17_b3', 'joinedS_17_b4', 'joinedS_17_b8', 'joinedS_17_b9', 'joinedS_17_b10', 'joinedS_17_b11'],
+            'saturation': ['joinedS_17_s1', 'joinedS_17_s5'],
+            'numerical': ['joinedS_17_n1', 'joinedS_17_n2', 'joinedS_17_n3', 'joinedS_17_n4', 'joinedS_17_n8', 'joinedS_17_n9', 'joinedS_17_n10', 'joinedS_17_n11'],
+            'exit': []
+        },
+    }
+
+    DETECTORS_GS_cluster_1674605528_478487605 = {
+        0: {
+            'boolean': ['GS_cluster_1674605528_b1', 'GS_cluster_1674605528_b2'],
+            'saturation': ['GS_cluster_1674605528_s1', 'GS_cluster_1674605528_s2'],
+            'numerical': ['GS_cluster_1674605528_n1', 'GS_cluster_1674605528_n2', 'GS_cluster_1674605528_n3'],
+            'exit': []
+        },
+        2: {
+            'boolean': ['GS_cluster_1674605528_b3'],
+            'saturation': ['GS_cluster_1674605528_s3'],
+            'numerical': ['GS_cluster_1674605528_n4'],
+            'exit': []
+        },
+    }
+
+    DETECTORS_GS_cluster_1705440129_250883337_251056183 = {
+        0: {
+            'boolean': ['GS_cluster_1705440129_b2', 'GS_cluster_1705440129_b3'],
+            'saturation': ['GS_cluster_1705440129_s2', 'GS_cluster_1705440129_s3'],
+            'numerical': ['GS_cluster_1705440129_n3', 'GS_cluster_1705440129_n4'],
+            'exit': []
+        },
+        4: {
+            'boolean': ['GS_cluster_1705440129_b1'],
+            'saturation': ['GS_cluster_1705440129_s1'],
+            'numerical': ['GS_cluster_1705440129_n1', 'GS_cluster_1705440129_n2'],
+            'exit': []
+        },
+    }
+
+    DETECTORS_GS_cluster_1800186890_251997370 = {
+        0: {
+            'boolean': ['GS_cluster_1800186890_b3', 'GS_cluster_1800186890_b4', 'GS_cluster_1800186890_b5'],
+            'saturation': ['GS_cluster_1800186890_s3', 'GS_cluster_1800186890_s4'],
+            'numerical': ['GS_cluster_1800186890_b3', 'GS_cluster_1800186890_n4', 'GS_cluster_1800186890_n5', 'GS_cluster_1800186890_n6'],
+            'exit': []
+        },
+        4: {
+            'boolean': ['GS_cluster_1800186890_b1', 'GS_cluster_1800186890_b2'],
+            'saturation': ['GS_cluster_1800186890_s1', 'GS_cluster_1800186890_s2'],
+            'numerical': ['GS_cluster_1800186890_n1', 'GS_cluster_1800186890_n2'],
+            'exit': []
+        },
+    }
+
+    DETECTORS_cluster_198873054_3077077638 = {
+        0: {
+            'boolean': ['cluster_198873054_b2', 'cluster_198873054_b3', 'cluster_198873054_b4'],
+            'saturation': ['cluster_198873054_s2', 'cluster_198873054_s3'],
+            'numerical': ['cluster_198873054_n2', 'cluster_198873054_n3', 'cluster_198873054_n4', 'cluster_198873054_n5', 'cluster_198873054_n6', 'cluster_198873054_n7'],
+            'exit': []
+        },
+        2: {
+            'boolean': ['cluster_198873054_b1'],
+            'saturation': ['cluster_198873054_s1'],
+            'numerical': ['cluster_198873054_n1'],
+            'exit': []
+        },
+    }
+
+    DETECTORS_cluster_198873247_506774200 = {
+        0: {
+            'boolean': ['cluster_198873247_b1', 'cluster_198873247_b2'],
+            'saturation': ['cluster_198873247_s1', 'cluster_198873247_s2'],
+            'numerical': ['cluster_198873247_n1', 'cluster_198873247_n2'],
+            'exit': []
+        },
+        2: {
+            'boolean': ['cluster_198873247_b4'],
+            'saturation': ['cluster_198873247_s4'],
+            'numerical': ['cluster_198873247_n4'],
+            'exit': []
+        },
+        4: {
+            'boolean': ['cluster_198873247_b3'],
+            'saturation': ['cluster_198873247_s3'],
+            'numerical': ['cluster_198873247_n3'],
+            'exit': []
+        },
+    }
+
+    DETECTORS_GS_cluster_198873257_8568267658 = {
+        0: {
+            'boolean': ['GS_cluster_198873257_b3', 'GS_cluster_198873257_b4', 'GS_cluster_198873257_b6'],
+            'saturation': ['GS_cluster_198873257_s3', 'GS_cluster_198873257_s4', 'GS_cluster_198873257_s6'],
+            'numerical': ['GS_cluster_198873257_n3', 'GS_cluster_198873257_n4', 'GS_cluster_198873257_n6', 'GS_cluster_198873257_n7'],
+            'exit': []
+        },
+        2: {
+            'boolean': ['GS_cluster_198873257_b1', 'GS_cluster_198873257_b2', 'GS_cluster_198873257_b5'],
+            'saturation': ['GS_cluster_198873257_s1', 'GS_cluster_198873257_s2', 'GS_cluster_198873257_s5'],
+            'numerical': ['GS_cluster_198873257_n1', 'GS_cluster_198873257_n2', 'GS_cluster_198873257_n5'],
+            'exit': []
+        },
+    }
+
+    DETECTORS_cluster_2327596112_439772980_469309959 = {
+        0: {
+            'boolean': ['cluster_2327596112_b1', 'cluster_2327596112_b3'],
+            'saturation': ['cluster_2327596112_s1', 'cluster_2327596112_s3'],
+            'numerical': ['cluster_2327596112_n1', 'cluster_2327596112_n3'],
+            'exit': []
+        },
+        2: {
+            'boolean': ['cluster_2327596112_b2', 'cluster_2327596112_b4'],
+            'saturation': ['cluster_2327596112_s2', 'cluster_2327596112_s4'],
+            'numerical': ['cluster_2327596112_n2', 'cluster_2327596112_n4'],
+            'exit': []
+        },
+    }
+
+    DETECTORS_cluster_250883332_251056162 = {
+        0: {
+            'boolean': ['cluster_250883332_b1', 'cluster_250883332_b2', 'cluster_250883332_b4'],
+            'saturation': ['cluster_250883332_s1', 'cluster_250883332_s2', 'cluster_250883332_s4'],
+            'numerical': ['cluster_250883332_n1', 'cluster_250883332_n2', 'cluster_250883332_n4'],
+            'exit': []
+        },
+        2: {
+            'boolean': ['cluster_250883332_b3'],
+            'saturation': ['cluster_250883332_s3'],
+            'numerical': ['cluster_250883332_n3'],
+            'exit': []
+        },
+    }
+
+    DETECTORS_cluster_250889004_250896553_3076475495_3076475499 = {
+        0: {
+            'boolean': ['cluster_250889004_b1'],
+            'saturation': ['cluster_250889004_s1'],
+            'numerical': ['cluster_250889004_n1'],
+            'exit': []
+        },
+        2: {
+            'boolean': ['cluster_250889004_b2', 'cluster_250889004_b3'],
+            'saturation': ['cluster_250889004_s2', 'cluster_250889004_s3'],
+            'numerical': ['cluster_250889004_n2', 'cluster_250889004_n3'],
+            'exit': []
+        },
+    }
 
 
+    DETECTORS_GS_cluster_251997367_251997369_6525168932_6525168938_8666071616 = {
+        0: {
+            'boolean': ['GS_cluster_251997367_b4', 'GS_cluster_251997367_b5', 'GS_cluster_251997367_b6', 'GS_cluster_251997367_b7'],
+            'saturation': ['GS_cluster_251997367_s4'],
+            'numerical': ['GS_cluster_251997367_n4', 'GS_cluster_251997367_n5', 'GS_cluster_251997367_n6', 'GS_cluster_251997367_n7', 'GS_cluster_251997367_n8'],
+            'exit': []
+        },
+        2: {
+            'boolean': ['GS_cluster_251997367_b1', 'GS_cluster_251997367_b2', 'GS_cluster_251997367_b3'],
+            'saturation': ['GS_cluster_251997367_s1', 'GS_cluster_251997367_s2', 'GS_cluster_251997367_s3'],
+            'numerical': ['GS_cluster_251997367_n1', 'GS_cluster_251997367_n2', 'GS_cluster_251997367_n3'],
+            'exit': []
+        },
+    }
 
+    DETECTORS_joinedS_18 = {
+        0: {
+            'boolean': ['joinedS_18_b1'],
+            'saturation': ['joinedS_18_s1'],
+            'numerical': ['joinedS_18_n1', 'joinedS_18_n2', 'joinedS_18_n3'],
+            'exit': []
+        },
+        2: {
+            'boolean': ['joinedS_18_b2', 'joinedS_18_b3'],
+            'saturation': ['joinedS_18_s2', 'joinedS_18_s3'],
+            'numerical': ['joinedS_18_n4', 'joinedS_18_n5'],
+            'exit': []
+        },
+    }
 
+    DETECTORS_cluster_294326287_531028789_5343505332 = {
+        0: {
+            'boolean': ['cluster_294326287_b1', 'cluster_294326287_b2'],
+            'saturation': ['cluster_294326287_s1', 'cluster_294326287_s2'],
+            'numerical': ['cluster_294326287_n1', 'cluster_294326287_n2'],
+            'exit': []
+        },
+        2: {
+            'boolean': ['cluster_294326287_b3'],
+            'saturation': ['cluster_294326287_s3'],
+            'numerical': ['cluster_294326287_n3'],
+            'exit': []
+        },
+        4: {
+            'boolean': ['cluster_294326287_b4'],
+            'saturation': ['cluster_294326287_s4'],
+            'numerical': ['cluster_294326287_n4'],
+            'exit': []
+        },
+    }
+
+    DETECTORS_GS_cluster_408501435_6315125559 = {
+        0: {
+            'boolean': ['GS_cluster_408501435_b2', 'GS_cluster_408501435_b3', 'GS_cluster_408501435_b5', 'GS_cluster_408501435_b6'],
+            'saturation': ['GS_cluster_408501435_s2', 'GS_cluster_408501435_s4', 'GS_cluster_408501435_s5'],
+            'numerical': ['GS_cluster_408501435_n2', 'GS_cluster_408501435_n3', 'GS_cluster_408501435_n4', 'GS_cluster_408501435_n6', 'GS_cluster_408501435_n7'],
+            'exit': []
+        },
+        2: {
+            'boolean': ['GS_cluster_408501435_b1', 'GS_cluster_408501435_b4'],
+            'saturation': ['GS_cluster_408501435_s1', 'GS_cluster_408501435_s3'],
+            'numerical': ['GS_cluster_408501435_n1', 'GS_cluster_408501435_n5'],
+            'exit': []
+        },
+    }
+
+    DETECTORS_cluster_485133368_485133379 = {
+        0: {
+            'boolean': ['cluster_485133368_b1', 'cluster_485133368_b4'],
+            'saturation': ['cluster_485133368_s1', 'cluster_485133368_s4'],
+            'numerical': ['cluster_485133368_n1', 'cluster_485133368_n4'],
+            'exit': []
+        },
+        2: {
+            'boolean': ['cluster_485133368_b2', 'cluster_485133368_b3'],
+            'saturation': ['cluster_485133368_s2', 'cluster_485133368_s3'],
+            'numerical': ['cluster_485133368_n2', 'cluster_485133368_n3'],
+            'exit': []
+        },
+    }
+
+    DETECTORS_GS_cluster_488539561_8567356615 = {
+        0: {
+            'boolean': ['GS_cluster_488539561_b1', 'GS_cluster_488539561_b3'],
+            'saturation': ['GS_cluster_488539561_s1', 'GS_cluster_488539561_s3'],
+            'numerical': ['GS_cluster_488539561_n1', 'GS_cluster_488539561_n3'],
+            'exit': []
+        },
+        2: {
+            'boolean': ['GS_cluster_488539561_b2'],
+            'saturation': ['GS_cluster_488539561_s2'],
+            'numerical': ['GS_cluster_488539561_n2'],
+            'exit': []
+        },
+    }
+
+    DETECTORS_cluster_530710726_683650128 = {
+        0: {
+            'boolean': ['cluster_530710726_b1', 'cluster_530710726_b4'],
+            'saturation': ['cluster_530710726_s1', 'cluster_530710726_s4'],
+            'numerical': ['cluster_530710726_n1', 'cluster_530710726_n4'],
+            'exit': []
+        },
+        2: {
+            'boolean': ['cluster_530710726_b2'],
+            'saturation': ['cluster_530710726_s2'],
+            'numerical': ['cluster_530710726_n2'],
+            'exit': []
+        },
+        4: {
+            'boolean': ['cluster_530710726_b3'],
+            'saturation': ['cluster_530710726_s3'],
+            'numerical': ['cluster_530710726_n3'],
+            'exit': []
+        },
+    }
+
+    DETECTORS_GS_cluster_6286429546_6286429552 = {
+        0: {
+            'boolean': ['GS_cluster_6286429546_b2', 'GS_cluster_6286429546_b3'],
+            'saturation': ['GS_cluster_6286429546_s2', 'GS_cluster_6286429546_s3'],
+            'numerical': ['GS_cluster_6286429546_n2', 'GS_cluster_6286429546_n3', 'GS_cluster_6286429546_n4', 'GS_cluster_6286429546_n5'],
+            'exit': []
+        },
+        2: {
+            'boolean': ['GS_cluster_6286429546_b1', 'GS_cluster_6286429546_b4'],
+            'saturation': ['GS_cluster_6286429546_b1', 'GS_cluster_6286429546_b4'],
+            'numerical': ['GS_cluster_6286429546_n1', 'GS_cluster_6286429546_n6', 'GS_cluster_6286429546_n7'],
+            'exit': []
+        },
+    }
+
+    DETECTORS_cluster_6286429557_6990557731 = {
+        0: {
+            'boolean': ['cluster_6286429557_b2', 'cluster_6286429557_b3'],
+            'saturation': ['cluster_6286429557_s2'],
+            'numerical': ['cluster_6286429557_n2', 'cluster_6286429557_n3', 'cluster_6286429557_n4', 'cluster_6286429557_n5', 'cluster_6286429557_n6'],
+            'exit': []
+        },
+        2: {
+            'boolean': ['cluster_6286429557_b1'],
+            'saturation': ['cluster_6286429557_s1'],
+            'numerical': ['cluster_6286429557_n1'],
+            'exit': []
+        },
+    }
+
+    DETECTORS_J02 = {
+        0: {
+            'boolean': ['J02_b1', 'J02_b2'],
+            'saturation': ['J02_s1', 'J02_s2'],
+            'numerical': ['J02_n1', 'J02_n2', 'J02_n3', 'J02_n4'],
+            'exit': []
+        },
+        2: {
+            'boolean': ['J02_b3', 'J02_b4', 'J02_b5', 'J02_b6'],
+            'saturation': ['J02_s3', 'J02_s4', 'J02_s5', 'J02_s6'],
+            'numerical': ['J02_n5', 'J02_n6', 'J02_n7''J02_n8'],
+            'exit': []
+        },
+        4: {
+            'boolean': ['J02_b7', 'J02_b8', 'J02_b9'],
+            'saturation': ['J02_s7', 'J02_s8', 'J02_s9', 'J02_s10'],
+            'numerical': ['J02_n9', 'J02_n10', 'J02_n11', 'J02_n12', 'J02_n13', 'J02_n14', 'J02_n15'],
+            'exit': []
+        },
+        6: {
+            'boolean': ['J02_b10', 'J02_b11'],
+            'saturation': ['J02_s11', 'J02_s12'],
+            'numerical': ['J02_n16', 'J02_n17', 'J02_n18', 'J02_n19'],
+            'exit': []
+        }
+    }
 
 if __name__ == '__main__':
     lille = LilleNetwork()
