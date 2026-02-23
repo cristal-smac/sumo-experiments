@@ -60,6 +60,8 @@ class AcolightStrategy(Strategy):
         self.list_phases = {identifiant: [] for identifiant in network.TLS_DETECTORS}
         self.phases_durations = {identifiant: [] for identifiant in network.TLS_DETECTORS}
         self.current_phase_duration = {identifiant: 0 for identifiant in network.TLS_DETECTORS}
+        self.time_blocked = {identifiant: 0 for identifiant in network.TLS_DETECTORS}
+        self.time_no_vehicle = {identifiant: 0 for identifiant in network.TLS_DETECTORS}
         # Zeus for energy consumption
         self.zeus_monitor = ZeusMonitor()
         self.energy_consumption = 0
@@ -100,9 +102,19 @@ class AcolightStrategy(Strategy):
                         if self.time[id_tls] >= self.max_phase_durations[id_tls]:
                             self.switch_next_phase(id_tls)
                         elif not self.are_vehicles_passing(id_tls):
-                            self.switch_next_phase(id_tls)
+                            if self.time_no_vehicle[id_tls] >= 3:
+                                self.switch_next_phase(id_tls)
+                            else:
+                                self.time_no_vehicle[id_tls] += 1
                         elif self.blocked_vehicles(id_tls) and self.time[id_tls] > 3:
-                            self.switch_next_phase(id_tls)
+                            if self.time_blocked[id_tls] >= 3:
+                                self.time_blocked[id_tls] = 0
+                                self.switch_next_phase(id_tls)
+                            else:
+                                self.time_blocked[id_tls] += 1
+                        else:
+                            self.time_blocked[id_tls] = 0
+                            self.time_no_vehicle[id_tls] = 0
                     if len(self.priority_pile[id_tls]) == 0:
                         self.add_prio_phases(id_tls)
                     self.time[id_tls] += 1
