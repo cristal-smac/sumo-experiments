@@ -1,6 +1,4 @@
 # from sumo.tools.emissions.findMinDiffModel import model
-from zeus.monitor import ZeusMonitor
-
 from sumo_experiments.strategies import Strategy
 import numpy as np
 import torch
@@ -138,9 +136,6 @@ class IntellilightStrategy(Strategy):
         self.phases_occurences = {identifiant: {} for identifiant in network.TLS_DETECTORS}
         self.phases_durations = {identifiant: [] for identifiant in network.TLS_DETECTORS}
         self.current_phase_duration = {identifiant: 0 for identifiant in network.TLS_DETECTORS}
-        # Zeus for energy consumption
-        self.zeus_monitor = ZeusMonitor()
-        self.energy_consumption = 0
 
     def run_all_agents(self, traci):
         """
@@ -396,16 +391,6 @@ class IntellilightStrategy(Strategy):
                 if det not in detectors:
                     detectors.append(det)
         return detectors
-
-    def get_energy_consumption(self, measurements):
-        """
-        Get the total energy consumption of a measurement window
-        """
-        gpu_energy = sum([measurements.gpu_energy[key] for key in measurements.gpu_energy]) if measurements.gpu_energy is not None else 0
-        cpu_energy = sum([measurements.cpu_energy[key] for key in measurements.cpu_energy]) if measurements.cpu_energy is not None else 0
-        dram_energy = sum([measurements.dram_energy[key] for key in measurements.dram_energy]) if measurements.dram_energy is not None else 0
-        soc_energy = sum([measurements.soc_energy[key] for key in measurements.soc_energy]) if measurements.soc_energy is not None else 0
-        return sum([gpu_energy, cpu_energy, dram_energy, soc_energy])
 
     def _start_agent(self, tl_id):
         """

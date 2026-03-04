@@ -1,6 +1,5 @@
 from sumo_experiments.strategies import Strategy
 import operator
-from zeus.monitor import ZeusMonitor
 
 class MaxPressureStrategy(Strategy):
     """
@@ -41,10 +40,6 @@ class MaxPressureStrategy(Strategy):
             self.intelligent_intersections = network.TL_IDS
         else:
             self.intelligent_intersections = intelligent_intersections
-
-        # Zeus for energy consumption
-        self.zeus_monitor = ZeusMonitor()
-        self.energy_consumption = 0
 
     def run_all_agents(self, traci):
         """
@@ -154,13 +149,3 @@ class MaxPressureStrategy(Strategy):
             self.traci.trafficlight.setPhase(tl, 0)
             self.traci.trafficlight.setPhaseDuration(tl, 100000)
         self.started = True
-
-    def get_energy_consumption(self, measurements):
-        """
-        Get the total energy consumption of a measurement window
-        """
-        gpu_energy = sum([measurements.gpu_energy[key] for key in measurements.gpu_energy]) if measurements.gpu_energy is not None else 0
-        cpu_energy = sum([measurements.cpu_energy[key] for key in measurements.cpu_energy]) if measurements.cpu_energy is not None else 0
-        dram_energy = sum([measurements.dram_energy[key] for key in measurements.dram_energy]) if measurements.dram_energy is not None else 0
-        soc_energy = sum([measurements.soc_energy[key] for key in measurements.soc_energy]) if measurements.soc_energy is not None else 0
-        return sum([gpu_energy, cpu_energy, dram_energy, soc_energy])

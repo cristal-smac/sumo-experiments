@@ -1,6 +1,4 @@
 #from sumo.tools.emissions.findMinDiffModel import model
-from zeus.monitor import ZeusMonitor
-
 from sumo_experiments.strategies import Strategy
 import numpy as np
 import torch
@@ -54,7 +52,7 @@ class MADDPGStrategy(IntellilightStrategy):
         :param yellow_time: Yellow phases duration for all intersections (in seconds).
         :type yellow_time: int or dict
         """
-        # super().__init__()
+        Strategy.__init__(self)
         self.network = network
         if type(yellow_time) is dict:
             self.yellow_time = yellow_time
@@ -113,9 +111,6 @@ class MADDPGStrategy(IntellilightStrategy):
         self.phases_occurences = {identifiant: {} for identifiant in network.TLS_DETECTORS}
         self.phases_durations = {identifiant: [] for identifiant in network.TLS_DETECTORS}
         self.current_phase_duration = {identifiant: 0 for identifiant in network.TLS_DETECTORS}
-        # Zeus for energy consumption
-        self.zeus_monitor = ZeusMonitor()
-        self.energy_consumption = 0
 
 
     def run_all_agents(self, traci):
@@ -280,16 +275,6 @@ class MADDPGStrategy(IntellilightStrategy):
         pressure = MaxPressureStrategy._compute_pressure(self, self.network.TLS_DETECTORS[tl_id])
         return -np.nanmean(list(pressure.values()))/2000
 
-    def get_energy_consumption(self, measurements):
-        """
-        Get the total energy consumption of a measurement window
-        """
-        gpu_energy = sum([measurements.gpu_energy[key] for key in measurements.gpu_energy]) if measurements.gpu_energy is not None else 0
-        cpu_energy = sum([measurements.cpu_energy[key] for key in measurements.cpu_energy]) if measurements.cpu_energy is not None else 0
-        dram_energy = sum([measurements.dram_energy[key] for key in measurements.dram_energy]) if measurements.dram_energy is not None else 0
-        soc_energy = sum([measurements.soc_energy[key] for key in measurements.soc_energy]) if measurements.soc_energy is not None else 0
-        return sum([gpu_energy, cpu_energy, dram_energy, soc_energy])
-    
     def _start_agent(self, tl_id):
         """
         Start an agent at the beginning of the simulation.
@@ -330,11 +315,11 @@ class MADDPGStrategy(IntellilightStrategy):
                                  gamma=list(self.gamma.values())[0], # TODO: refactor?
                                  discrete_action=True,
                                  tau=self.tau)
-        self.maddpg.agents = torch.load(filepath, weights_only=False)
+        self.maddpg.agents = torch.load(filepath, map_location=self.device, weights_only=False)
 
 
 class DeepNN(nn.Module):
-    def __init__(self, input_dim, out_dim, hidden_dim=64, nonlin=nn.functional.relu, recurrent=True):
+    def __init__(self, input_dim, out_dim, hidden_dim=64, nonlin=nn.functional.relu, recurrent=False):
         super().__init__()
         self.recurrent = recurrent
         self.hidden_dim = hidden_dim
@@ -367,7 +352,7 @@ class DeepNN(nn.Module):
             use_hidden_state: If True and recurrent, use persistent hidden state (for rollouts).
                              If False, use fresh hidden state (for replay buffer training).
         """
-        if self.recurrent:
+        if False:
             # Ensure X has sequence dimension
             if X.dim() == 2:
                 X = X.unsqueeze(1)  # (batch_size, input_dim) -> (batch_size, 1, input_dim)
