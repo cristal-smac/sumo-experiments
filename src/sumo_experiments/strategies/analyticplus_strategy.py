@@ -287,9 +287,8 @@ class AnalyticPlusAgent():
             phase = self.sumo_phases[sumo_phase_id]
             Q = self.phase_stats[action_id]['arr_rate']
             Q_ave = self.phase_stats[action_id]['ave_arr_rate']
-            # Q = np.sum([self.movements[id].arr_rate for id in phase["movement_ids"]])
             Q_max = self.phase_saturations[action_id]
-            assert Q <= Q_max
+
             if phase == self.current_sumo_phase:  # currently active
                 # waiting_time = 0
                 continue
@@ -567,7 +566,6 @@ class AnalyticPlusAgent():
             stats = self.phase_stats[action_id]
             tracker = self.phase_tracker[action_id]
 
-            Q_max = self.phase_saturations[action_id]
             clearing_time = self.clearing_time[self.ID]
 
             # Arrival rate from last-complete + current-partial interval
@@ -578,9 +576,8 @@ class AnalyticPlusAgent():
             arr_rate = total_count / total_window if total_window > 0 else 0.0
             ave_arr_rate = tracker['total_arr'] / time if time > 0 else 0.0
 
-            # Clamp arrival rate below saturation
-            arr_rate = min(arr_rate, Q_max * 0.99)
-
+            self.phase_saturations[action_id] = max(self.phase_saturations[action_id], arr_rate * 1.1)
+            Q_max = self.phase_saturations[action_id]
             # Green time (Lämmer & Helbing): g = (λ·tc + queue) / (Q_max − λ)
             queue = tracker['queue']
             denom = Q_max - arr_rate
