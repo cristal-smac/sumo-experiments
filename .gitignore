@@ -2,3 +2,10 @@ dist
 .gitignore
 /test/
 *.pyc
+results_bologna
+plots
+figures
+*.csv
+detectors.out
+tripinfos.xml
+.DS_Store

@@ -73,7 +73,13 @@ class MADDPGStrategy(IntellilightStrategy):
             self.yellow_time = {tl_id: yellow_time for tl_id in network.TLS_DETECTORS}
         self.c1, self.c2, self.c3, self.c4 = reward_coeffs
 
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        # Try Metal (Apple Silicon), then CUDA, then CPU
+        if torch.backends.mps.is_available():
+            self.device = torch.device("mps")
+        elif torch.cuda.is_available():
+            self.device = torch.device("cuda")
+        else:
+            self.device = torch.device("cpu")
         self.rollout_device = torch.device('cpu')
 
         self.observation_sizes = {}
