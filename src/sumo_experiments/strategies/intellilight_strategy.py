@@ -264,8 +264,8 @@ class IntellilightStrategy(Strategy):
         batch = self._get_homogeneous_memory(tl_id, min(len(self.replay_buffer[tl_id]), self.batch_size[tl_id]))
         states, actions, rewards, next_states, phases, dones = zip(*batch)
 
-        states = torch.tensor(states, dtype=torch.float32).to(self.device)
-        next_states = torch.tensor(next_states, dtype=torch.float32).to(self.device)
+        states = torch.tensor(np.array(states), dtype=torch.float32).to(self.device)
+        next_states = torch.tensor(np.array(next_states), dtype=torch.float32).to(self.device)
         actions = torch.tensor(actions).unsqueeze(1).to(self.device)
         rewards = torch.tensor(rewards, dtype=torch.float32).unsqueeze(1).to(self.device)
         dones = torch.tensor(dones, dtype=torch.float32).unsqueeze(1).to(self.device)
