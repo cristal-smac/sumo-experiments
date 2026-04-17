@@ -104,6 +104,7 @@ class AnalyticPlusStrategy(Strategy):
             for id_tls in self.intelligent_intersections:
                 agent = self.agents[id_tls]
                 results = self.zeus_monitor.end_window("all_agents")
+                print(results)
                 self.energy_consumption += self.get_energy_consumption(results)
                 agent.update(lane_data)
                 self.zeus_monitor.begin_window("all_agents")
@@ -182,7 +183,7 @@ class AnalyticPlusStrategy(Strategy):
         """
         Start an agent at the beginning of the simulation.
         """
-        for id_tls in self.intelligent_intersections:
+        for tl in self.intelligent_intersections:
             tl_logic = self.traci.trafficlight.getAllProgramLogics(tl)[-1]
             nb_phase = 0
             for phase in tl_logic.phases:
