@@ -47,20 +47,20 @@ class AnalyticPlusStrategy(Strategy):
         self.step_length = 1
 
         # self.network.TL_IDS = ['221'] # For testing only one traffic light
-        self.time = {k: 0 for k in self.network.TL_IDS}
-        self.next_phase = {k: 0 for k in self.network.TL_IDS}
-        self.priority_pile = {k: [] for k in self.network.TL_IDS}
-        self.prio = {k: False for k in self.network.TL_IDS}
-        self.current_cycle = {k: [] for k in self.network.TL_IDS}
-        self.current_yellow_time = {k: 0 for k in self.network.TL_IDS}
-        self.is_phase = {k: True for k in self.network.TL_IDS}
-        self.nb_switch = {k: 0 for k in self.network.TL_IDS}
-        self.nb_phases = {k: 0 for k in self.network.TL_IDS}
-        self.phases_occurences = {k: {} for k in self.network.TL_IDS}
-        self.agents = {k: AnalyticPlusAgent(self, id_tls_program=k, T=T, T_max=T_max,
-                                            yellow_time=self.yellow_time, stabilization=stabilization) for k in self.network.TL_IDS}
-        self.phases_durations = {identifiant: [] for identifiant in network.TLS_DETECTORS}
-        self.current_phase_duration = {identifiant: 0 for identifiant in network.TLS_DETECTORS}
+        self.time = {tls_id: 0 for tls_id in self.network.TL_IDS}
+        self.next_phase = {tls_id: 0 for tls_id in self.network.TL_IDS}
+        self.priority_pile = {tls_id: [] for tls_id in self.network.TL_IDS}
+        self.prio = {tls_id: False for tls_id in self.network.TL_IDS}
+        self.current_cycle = {tls_id: [] for tls_id in self.network.TL_IDS}
+        self.current_yellow_time = {tls_id: 0 for tls_id in self.network.TL_IDS}
+        self.is_phase = {tls_id: True for tls_id in self.network.TL_IDS}
+        self.nb_switch = {tls_id: 0 for tls_id in self.network.TL_IDS}
+        self.nb_phases = {tls_id: 0 for tls_id in self.network.TL_IDS}
+        self.phases_occurences = {tls_id: {} for tls_id in self.network.TL_IDS}
+        self.agents = {tls_id: AnalyticPlusAgent(self, id_tls_program=tls_id, T=T, T_max=T_max,
+                                            yellow_time=self.yellow_time, stabilization=stabilization) for tls_id in self.network.TL_IDS}
+        self.phases_durations = {identifier: [] for identifier in network.TLS_DETECTORS}
+        self.current_phase_duration = {identifier: 0 for identifier in network.TLS_DETECTORS}
         if intelligent_intersections is None:
             self.intelligent_intersections = network.TL_IDS
         else:
@@ -69,7 +69,7 @@ class AnalyticPlusStrategy(Strategy):
 
     def switch_yellow(self, agent):
         """
-        Switch the traffic light id_tls to yellow
+        Switch the traffic light tls_id to yellow
         """
         num_phases = len(agent.sumo_phases)
         self.traci.trafficlight.setPhase(agent.ID, (self.traci.trafficlight.getPhase(agent.ID) + 1) % num_phases)
@@ -86,52 +86,52 @@ class AnalyticPlusStrategy(Strategy):
         else:
             det_data = self.traci.lanearea.getAllSubscriptionResults()
             self.zeus_monitor.begin_window("all_agents")
-            for id_tls in self.intelligent_intersections:
-                agent = self.agents[id_tls]
+            for tls_id in self.intelligent_intersections:
+                agent = self.agents[tls_id]
                 agent.update(det_data)
-                current_phase = self.traci.trafficlight.getPhase(id_tls)
-                current_state = self.traci.trafficlight.getRedYellowGreenState(id_tls)
-                # if current_phase not in self.TLS_DETECTORS[id_tls]: # Handle the yellow phases
+                current_phase = self.traci.trafficlight.getPhase(tls_id)
+                current_state = self.traci.trafficlight.getRedYellowGreenState(tls_id)
+                # if current_phase not in self.TLS_DETECTORS[tls_id]: # Handle the yellow phases
                 if 'y' in current_state:
-                    if self.yellow_time[id_tls] - self.current_yellow_time[id_tls] <= 0:
+                    if self.yellow_time[tls_id] - self.current_yellow_time[tls_id] <= 0:
                         # maybe there is a second yellow phase
                         self.switch_yellow(agent)
-                        assert self.traci.trafficlight.getPhase(id_tls) != current_phase
-                        # print(current_phase, current_state, id_tls, self.next_phase[id_tls])
-                        if not agent.sumo_phases.get(self.traci.trafficlight.getPhase(id_tls), {'isYellow': False})['isYellow']:  # not a yellow phase, switch to next green
-                            self.traci.trafficlight.setPhase(id_tls, self.next_phase[id_tls])
-                            agent.current_sumo_phase = agent.sumo_phases[self.next_phase[id_tls]]
-                            self.current_cycle[id_tls].append(self.next_phase[id_tls])
-                        self.current_yellow_time[id_tls] = 0
+                        assert self.traci.trafficlight.getPhase(tls_id) != current_phase
+                        # print(current_phase, current_state, tls_id, self.next_phase[tls_id])
+                        if not agent.sumo_phases.get(self.traci.trafficlight.getPhase(tls_id), {'isYellow': False})['isYellow']:  # not a yellow phase, switch to next green
+                            self.traci.trafficlight.setPhase(tls_id, self.next_phase[tls_id])
+                            agent.current_sumo_phase = agent.sumo_phases[self.next_phase[tls_id]]
+                            self.current_cycle[tls_id].append(self.next_phase[tls_id])
+                        self.current_yellow_time[tls_id] = 0
                     else:
-                        self.current_yellow_time[id_tls] += 1
+                        self.current_yellow_time[tls_id] += 1
                 else:
-                    assert current_phase == self.next_phase[id_tls]
-                    if current_phase not in self.phases_occurences[id_tls]:
-                        self.phases_occurences[id_tls][current_phase] = 1
+                    assert current_phase == self.next_phase[tls_id]
+                    if current_phase not in self.phases_occurences[tls_id]:
+                        self.phases_occurences[tls_id][current_phase] = 1
                     else:
-                        self.phases_occurences[id_tls][current_phase] += 1
+                        self.phases_occurences[tls_id][current_phase] += 1
 
-                    if self.time[id_tls] >= self.min_phase_durations[id_tls]:
+                    if self.time[tls_id] >= self.min_phase_durations[tls_id]:
                         # start logic here
-                        self.analyticplus_logic(id_tls)
-                    self.time[id_tls] += 1
-                    self.current_phase_duration[id_tls] += 1
+                        self.analyticplus_logic(tls_id)
+                    self.time[tls_id] += 1
+                    self.current_phase_duration[tls_id] += 1
             results = self.zeus_monitor.end_window("all_agents")
             self.energy_consumption += self.get_energy_consumption(results)
 
-    def analyticplus_logic(self, id_tls):
-        agent = self.agents[id_tls]
-        if self.time[id_tls] >= agent.green_duration:
-            self.switch_next_phase(id_tls)
+    def analyticplus_logic(self, tls_id):
+        agent = self.agents[tls_id]
+        if self.time[tls_id] >= agent.green_duration:
+            self.switch_next_phase(tls_id)
 
-    def switch_next_phase(self, id_tls):
+    def switch_next_phase(self, tls_id):
         """
-        Switch the traffic light id_tls to the next
+        Switch the traffic light tls_id to the next
         """
-        agent = self.agents[id_tls]
-        self.nb_switch[id_tls] += 1
-        current_phase = self.traci.trafficlight.getPhase(id_tls)
+        agent = self.agents[tls_id]
+        self.nb_switch[tls_id] += 1
+        current_phase = self.traci.trafficlight.getPhase(tls_id)
         time = self.traci.simulation.getTime()
 
         action_id, green_time = agent.choose_action(time)
@@ -139,36 +139,36 @@ class AnalyticPlusStrategy(Strategy):
         agent.green_duration = green_time
 
         if next_phase != current_phase: # switch
-            self.next_phase[id_tls] = next_phase
+            self.next_phase[tls_id] = next_phase
             agent.update_last_on(agent.sumo_phases[next_phase], agent.sumo_phases[current_phase], time)
             assert not agent.sumo_phases[next_phase]['isYellow']
             # switch to hopefully the next yellow phase
-            # print(self.traci.trafficlight.getRedYellowGreenState(id_tls), id_tls)
+            # print(self.traci.trafficlight.getRedYellowGreenState(tls_id), tls_id)
             self.switch_yellow(agent)
-            assert agent.sumo_phases[self.traci.trafficlight.getPhase(id_tls)]['isYellow']
-            self.time[id_tls] = 0
-            if self.current_phase_duration[id_tls] > 2:
-                self.phases_durations[id_tls].append((current_phase, self.current_phase_duration[id_tls]))
-            self.current_phase_duration[id_tls] = 0
+            assert agent.sumo_phases[self.traci.trafficlight.getPhase(tls_id)]['isYellow']
+            self.time[tls_id] = 0
+            if self.current_phase_duration[tls_id] > 2:
+                self.phases_durations[tls_id].append((current_phase, self.current_phase_duration[tls_id]))
+            self.current_phase_duration[tls_id] = 0
 
 
     def _start_agents(self):
         """
         Start an agent at the beginning of the simulation.
         """
-        for id_tls in self.intelligent_intersections:
-            tl_logic = self.traci.trafficlight.getAllProgramLogics(id_tls)[-1]
+        for tls_id in self.intelligent_intersections:
+            tl_logic = self.traci.trafficlight.getAllProgramLogics(tls_id)[-1]
             nb_phase = 0
             for phase in tl_logic.phases:
                 phase.duration = 10000
                 phase.maxDur = 10000
                 phase.minDur = 10000
                 nb_phase += 1
-            self.nb_phases[id_tls] = nb_phase
-            self.traci.trafficlight.setProgramLogic(id_tls, tl_logic)
-            self.traci.trafficlight.setPhase(id_tls, 0)
-            self.traci.trafficlight.setPhaseDuration(id_tls, 10000)
-            self.agents[id_tls].reset(self.traci)
+            self.nb_phases[tls_id] = nb_phase
+            self.traci.trafficlight.setProgramLogic(tls_id, tl_logic)
+            self.traci.trafficlight.setPhase(tls_id, 0)
+            self.traci.trafficlight.setPhaseDuration(tls_id, 10000)
+            self.agents[tls_id].reset(self.traci)
         # Subscribe to all lane area detectors for batch reading
         sub_vars = [
             tc.LAST_STEP_VEHICLE_NUMBER,  # current vehicles on detector (queue)
@@ -176,8 +176,8 @@ class AnalyticPlusStrategy(Strategy):
             tc.VAR_LAST_INTERVAL_NUMBER,   # vehicles passed in last complete interval
         ]
         subscribed = set()
-        for id_tls in self.intelligent_intersections:
-            tls_dets = self.network.TLS_DETECTORS[id_tls]
+        for tls_id in self.intelligent_intersections:
+            tls_dets = self.network.TLS_DETECTORS[tls_id]
             for phase_id, det_groups in tls_dets.items():
                 for det in det_groups.get('numerical', []):
                     if det not in subscribed:
