@@ -280,28 +280,22 @@ class IntellilightStrategy(Strategy):
         self.target_model[tl_id].eval()
 
         batch = self._get_homogeneous_memory(tl_id, min(len(self.replay_buffer[tl_id]), self.batch_size[tl_id]))
+        if not batch:
+            return
         states, actions, rewards, next_states, phases, dones = zip(*batch)
 
-        states = torch.tensor(np.array(states), dtype=torch.float32).to(self.device)
-        next_states = torch.tensor(np.array(next_states), dtype=torch.float32).to(self.device)
-        actions = torch.tensor(actions).unsqueeze(1).to(self.device)
-        rewards = torch.tensor(rewards, dtype=torch.float32).unsqueeze(1).to(self.device)
-        dones = torch.tensor(dones, dtype=torch.float32).unsqueeze(1).to(self.device)
-
-        # Create a mapping from action names to indices
-        action_to_index = {action: idx for idx, action in enumerate(self.action_space[tl_id])}
-
-        # Vectorized conversion of actions to indices
-        # action_indices = torch.tensor([action_to_index[action[0].item()] for action in actions], dtype=torch.long).unsqueeze(1).to(self.device)
-        # action_indices = torch.tensor(actions, dtype=torch.long).unsqueeze(1).to(self.device)
-        # print(action_indices.size())
+        states = torch.from_numpy(np.stack(states)).to(self.device, dtype=torch.float32)
+        next_states = torch.from_numpy(np.stack(next_states)).to(self.device, dtype=torch.float32)
+        actions = torch.as_tensor(actions, device=self.device, dtype=torch.long).view(-1, 1)
+        rewards = torch.as_tensor(rewards, device=self.device, dtype=torch.float32).view(-1, 1)
+        dones = torch.as_tensor(dones, device=self.device, dtype=torch.float32).view(-1, 1)
 
         # Compute target Q-values
         with torch.no_grad():
             # next_q_values = torch.stack([self.target_model[tl_id](next_states, phase) for phase in phases])  # [batch_size, output_dim]
-            next_q_values = self.target_model[tl_id](states, phases)  # [batch_size, output_dim]
-            max_next_q_values = next_q_values.max(dim=1, keepdim=True)[0]  # [batch_size, 1]
-            targets = rewards + self.gamma[tl_id] * max_next_q_values * (1 - dones)  # [batch_size, 1]
+            next_q_values = self.target_model[tl_id](next_states, phases)  # [batch_size, output_dim]
+            max_next_q_values = next_q_values.max(dim=1, keepdim=True).values  # [batch_size, 1]
+            targets = rewards + self.gamma[tl_id] * max_next_q_values * (1.0 - dones)  # [batch_size, 1]
 
         # Compute current Q-values
         # current_q_values = torch.stack([self.model[tl_id](states, phase) for phase in phases])  # [batch_size, output_dim]

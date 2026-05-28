@@ -258,10 +258,10 @@ class MADDPGStrategy(IntellilightStrategy):
                 self.rewards.append(rewards[0])
                 self.times.append(self.traci.simulation.getTime())
             self.scores.append(np.mean(scores))
-        state_tensor = [torch.tensor(n_s, dtype=torch.float32).unsqueeze(0).to(self.rollout_device) for n_s in next_states]
+        state_tensor = [torch.from_numpy(n_s).unsqueeze(0).to(self.rollout_device) for n_s in next_states]
         with torch.no_grad():
             torch_action_indices = self.maddpg.step(state_tensor, explore=True) # exploration handled by softmax
-            action_indices = [ac.data.cpu().numpy() for ac in torch_action_indices]
+            action_indices = [ac.detach().cpu().numpy() for ac in torch_action_indices]
             # DEBUG: force an action
             # s = 1 if self.traci.simulation.getTime() // 100 % 2 == 0 else -1
             # action_indices = [np.array([1,0])[::s]]
@@ -324,17 +324,19 @@ class MADDPGStrategy(IntellilightStrategy):
         self.traci.trafficlight.setPhase(tl_id, 0)
         self.traci.trafficlight.setPhaseDuration(tl_id, 10000)
 
-        # DEFER INITIALIZATION OF DDPG AGENTS TO HERE
-        input_dims = {tl_id: len(self.get_state(tl_id)) for tl_id in self.intelligent_intersections}
-        critic_dim = sum(input_dims.values())
-        critic_dim += sum(len(self.action_space[tl_id]) for tl_id in self.intelligent_intersections)
+        # Compute global dimensions once to avoid repeated O(n_agents^2) startup work.
+        if not self.observation_sizes:
+            for obs_tl_id in self.intelligent_intersections:
+                self.observation_sizes[obs_tl_id] = len(self.get_state(obs_tl_id))
+            self._critic_input_dim = sum(self.observation_sizes.values())
+            self._critic_input_dim += sum(len(self.action_space[obs_tl_id]) for obs_tl_id in self.intelligent_intersections)
+
         self.agents[tl_id] = DDPGAgent(num_out_pol=len(self.action_space[tl_id]), 
-                                       num_in_pol=input_dims[tl_id], 
-                                       num_in_critic=critic_dim, 
+                                       num_in_pol=self.observation_sizes[tl_id], 
+                                       num_in_critic=self._critic_input_dim, 
                                        hidden_dim=self.hidden_layer_size[tl_id],
                                        lr=self.learning_rate[tl_id],
                                        discrete_action=True).to(self.rollout_device)
-        self.observation_sizes[tl_id] = input_dims[tl_id]
 
     def _share_policies(self):
         """
@@ -789,11 +791,11 @@ class ReplayBuffer:
         self.next_obs_buffs = []
         self.done_buffs = []
         for odim, adim in zip(obs_dims, ac_dims):
-            self.obs_buffs.append(np.zeros((max_steps, odim)))
-            self.ac_buffs.append(np.zeros((max_steps, adim)))
-            self.rew_buffs.append(np.zeros(max_steps))
-            self.next_obs_buffs.append(np.zeros((max_steps, odim)))
-            self.done_buffs.append(np.zeros(max_steps))
+            self.obs_buffs.append(np.zeros((max_steps, odim), dtype=np.float32))
+            self.ac_buffs.append(np.zeros((max_steps, adim), dtype=np.float32))
+            self.rew_buffs.append(np.zeros(max_steps, dtype=np.float32))
+            self.next_obs_buffs.append(np.zeros((max_steps, odim), dtype=np.float32))
+            self.done_buffs.append(np.zeros(max_steps, dtype=np.float32))
 
 
         self.filled_i = 0  # index of first empty location in buffer (last index when full)
@@ -833,14 +835,16 @@ class ReplayBuffer:
             self.curr_i = 0
 
     def sample(self, N, device='cpu', norm_rews=False):
-        inds = np.random.choice(np.arange(self.filled_i), size=N,
-                                replace=False)
-        cast = lambda x: torch.tensor(x, dtype=torch.float32).to(device)
+        inds = np.random.choice(self.filled_i, size=N, replace=False)
+        cast = lambda x: torch.from_numpy(x).to(device=device, dtype=torch.float32)
         if norm_rews:
-            ret_rews = [cast((self.rew_buffs[i][inds] -
-                              self.rew_buffs[i][:self.filled_i].mean()) /
-                             self.rew_buffs[i][:self.filled_i].std())
-                        for i in range(self.num_agents)]
+            ret_rews = []
+            for i in range(self.num_agents):
+                rew_window = self.rew_buffs[i][:self.filled_i]
+                rew_std = rew_window.std()
+                if rew_std < 1e-6:
+                    rew_std = 1e-6
+                ret_rews.append(cast((self.rew_buffs[i][inds] - rew_window.mean()) / rew_std))
         else:
             ret_rews = [cast(self.rew_buffs[i][inds]) for i in range(self.num_agents)]
         return ([cast(self.obs_buffs[i][inds]) for i in range(self.num_agents)],
