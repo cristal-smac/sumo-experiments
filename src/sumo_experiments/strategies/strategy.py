@@ -1,4 +1,6 @@
 from abc import ABC, abstractmethod
+from itertools import count
+from threading import Lock
 from zeus.monitor import ZeusMonitor
 
 # Fix zeus v0.15.0 bug: AppleSiliconMeasurement defines zero_all_fields but
@@ -20,9 +22,42 @@ class Strategy(ABC):
     Abstract class to create control strategies for all the traffic lights in a network.
     """
 
+    _zeus_monitor_id_counter = count()
+    _zeus_monitor_id_lock = Lock()
+
     def __init__(self):
-        self.zeus_monitor = ZeusMonitor()
+        self.zeus_monitor_id = self._next_zeus_monitor_id()
+        self.zeus_monitor = self._create_zeus_monitor(self.zeus_monitor_id)
         self.energy_consumption = 0
+
+    @classmethod
+    def _next_zeus_monitor_id(cls):
+        # Assign IDs under a lock so concurrent strategy creation remains collision-free.
+        with cls._zeus_monitor_id_lock:
+            return next(cls._zeus_monitor_id_counter)
+
+    @staticmethod
+    def _create_zeus_monitor(monitor_id):
+        monitor = ZeusMonitor()
+        monitor_prefix = f"monitor-{monitor_id}"
+        monitor_lock = Lock()
+
+        raw_begin_window = monitor.begin_window
+        raw_end_window = monitor.end_window
+
+        def _begin_window_with_monitor_id(key, *args, **kwargs):
+            with monitor_lock:
+                return raw_begin_window(f"{monitor_prefix}:{key}", *args, **kwargs)
+
+        def _end_window_with_monitor_id(key, *args, **kwargs):
+            with monitor_lock:
+                return raw_end_window(f"{monitor_prefix}:{key}", *args, **kwargs)
+
+        # Namespace window keys per monitor to avoid collisions across concurrent monitors.
+        monitor.begin_window = _begin_window_with_monitor_id
+        monitor.end_window = _end_window_with_monitor_id
+        setattr(monitor, "monitor_id", monitor_id)
+        return monitor
 
     @abstractmethod
     def run_all_agents(self, traci):
