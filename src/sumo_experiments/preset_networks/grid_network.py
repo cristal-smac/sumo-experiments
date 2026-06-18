@@ -232,20 +232,20 @@ class GridNetwork(ArtificialNetwork):
             for y in range(1, self.height + 1):
                 if number_of_phases == 2:
                     net.add_traffic_light_program(id=f'x{x}-y{y}', phases=[
-                        {'duration': 1000, 'state': 'rrrGGGrrrGGG'},
-                        {'duration': 1000, 'state': 'rrryyyrrryyy'},
-                        {'duration': 1000, 'state': 'GGGrrrGGGrrr'},
-                        {'duration': 1000, 'state': 'yyyrrryyyrrr'}])
+                        {'duration': 60, 'state': 'rrrGGGrrrGGG'},
+                        {'duration': 3, 'state': 'rrryyyrrryyy'},
+                        {'duration': 60, 'state': 'GGGrrrGGGrrr'},
+                        {'duration': 3, 'state': 'yyyrrryyyrrr'}])
                 elif number_of_phases == 4:
                     net.add_traffic_light_program(id=f'x{x}-y{y}', phases=[
-                        {'duration': 1000, 'state': 'GGGrrrrrrrrr'},
-                        {'duration': 1000, 'state': 'yyyrrrrrrrrr'},
-                        {'duration': 1000, 'state': 'rrrGGGrrrrrr'},
-                        {'duration': 1000, 'state': 'rrryyyrrrrrr'},
-                        {'duration': 1000, 'state': 'rrrrrrGGGrrr'},
-                        {'duration': 1000, 'state': 'rrrrrryyyrrr'},
-                        {'duration': 1000, 'state': 'rrrrrrrrrGGG'},
-                        {'duration': 1000, 'state': 'rrrrrrrrryyy'},
+                        {'duration': 30, 'state': 'GGGrrrrrrrrr'},
+                        {'duration': 3, 'state': 'yyyrrrrrrrrr'},
+                        {'duration': 30, 'state': 'rrrGGGrrrrrr'},
+                        {'duration': 3, 'state': 'rrryyyrrrrrr'},
+                        {'duration': 30, 'state': 'rrrrrrGGGrrr'},
+                        {'duration': 3, 'state': 'rrrrrryyyrrr'},
+                        {'duration': 30, 'state': 'rrrrrrrrrGGG'},
+                        {'duration': 3, 'state': 'rrrrrrrrryyy'},
                     ])
 
         return net
@@ -431,7 +431,6 @@ class GridNetwork(ArtificialNetwork):
                                         v_type='car0',
                                         distribution=distribution)
                         compteur += 1
-
         return routes
 
 

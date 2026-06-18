@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- generated on 2026-06-18T09:22:20.541315+01:00 by Eclipse SUMO libsumo 1.27.0
+<libsumoConfiguration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/libsumoConfiguration.xsd">
+
+    <input>
+        <net-file value="/home/julesbompard/Documents/Projets/sumo-experiments/src/sumo_experiments/preset_networks/champs_elysees/champs_elysees.net.xml"/>
+        <route-files value="/home/julesbompard/Documents/Projets/sumo-experiments/src/sumo_experiments/preset_networks/champs_elysees/champs_elysees_52606.rou.xml"/>
+        <additional-files value="/home/julesbompard/Documents/Projets/sumo-experiments/src/sumo_experiments/preset_networks/champs_elysees/champs_elysees_detectors.add.xml"/>
+    </input>
+
+    <processing>
+        <threads value="1"/>
+        <time-to-teleport value="10000"/>
+    </processing>
+
+    <report>
+        <no-warnings value="true"/>
+    </report>
+
+    <random_number>
+        <seed value="42"/>
+    </random_number>
+
+    <gui_only>
+        <gui-settings-file value="/home/julesbompard/Documents/Projets/sumo-experiments/src/sumo_experiments/preset_networks/champs_elysees/settings.gui.xml"/>
+    </gui_only>
+
+</libsumoConfiguration>

@@ -91,6 +91,8 @@ class TraciWrapper:
         edges = traci.edge.getIDList()
         for edge in edges:
             if traci.edge.getFromJunction(edge) != traci.edge.getToJunction(edge):
+                # if traci.edge.getToJunction(edge) == '202818248#6-AddedOffRampNode'
+                #     print(traci.edge.getToJunction(edge))
                 G.add_edge(traci.edge.getFromJunction(edge), traci.edge.getToJunction(edge))
         return G, pos
 
@@ -147,6 +149,7 @@ class TraciWrapper:
 
         if self.graph_representation:
             G, pos = self.net_to_graph(traci)
+            nx.write_adjlist(G, path="lille_graph_adjacency.txt")
 
         if self.save_phases:
             for tl in traci.trafficlight.getIDList():
@@ -156,6 +159,19 @@ class TraciWrapper:
             resume = traci.simulation.getMinExpectedNumber() > 0
         else:
             resume = (step < self.simulation_duration) and (traci.simulation.getMinExpectedNumber()>0)
+
+        # if self.get_flows:
+        flows = {}
+        for edge in traci.edge.getIDList():
+            #if '_' not in edge:
+            from_junction = traci.edge.getFromJunction(edge)
+            if '#' in from_junction:
+                from_junction = from_junction.split('#')[0]
+            to_junction = traci.edge.getToJunction(edge)
+            if '#' in to_junction:
+                to_junction = to_junction.split('#')[0]
+            #flows[(from_junction, to_junction, edge)] = []
+            flows[(from_junction, to_junction, edge)] = set()
 
         while resume:
 
@@ -168,18 +184,18 @@ class TraciWrapper:
                     traci.simulation.setScale(factor)
 
             # Store the current state network as a graph
-            if self.graph_representation:
-                plt.clf()
-                arc_rad = 0.25
-                colors = self.update_colors(G, traci)
-                sizes = []
-                for color in colors:
-                    if color == "green":
-                        sizes.append(3)
-                    else:
-                        sizes.append(1)
-                nx.draw(G, pos, connectionstyle=f'arc3, rad = {arc_rad}', node_size=100, edge_color=colors, width=sizes)
-                plt.savefig(f'./Graphs/{step}.png')
+            # if self.graph_representation:
+            #     plt.clf()
+            #     arc_rad = 0.25
+            #     colors = self.update_colors(G, traci)
+            #     sizes = []
+            #     for color in colors:
+            #         if color == "green":
+            #             sizes.append(3)
+            #         else:
+            #             sizes.append(1)
+            #     nx.draw(G, pos, connectionstyle=f'arc3, rad = {arc_rad}', node_size=100, edge_color=colors, width=sizes)
+            #     plt.savefig(f'./Graphs/{step}.png')
 
 
             
@@ -265,6 +281,12 @@ class TraciWrapper:
                 for tl in traci.trafficlight.getIDList():
                     self.tl_phases[tl].append(traci.trafficlight.getPhase(tl))
 
+            #if self.get_flows:
+            for flow in flows:
+                edge = flow[2]
+                #flows[flow].append(traci.edge.getLastStepOccupancy(edge))
+                flows[flow].update(traci.edge.getLastStepVehicleIDs(edge))
+
             step += 1
 
             if self.simulation_duration is None:
@@ -274,6 +296,28 @@ class TraciWrapper:
 
         if self.save_phases:
             pd.DataFrame(self.tl_phases).to_csv(self.phases_file)
+
+        #if self.get_flows:
+        flow_values = {}
+        for flow in flows:
+            flows[flow] = len(flows[flow])
+            flow_values[(flow[0], flow[1])] = flows[flow]
+        #print(flow_values)
+
+        with open("occupancies.txt", "w") as f:
+            f.write(str(flows))
+
+        tl_nodes = {}
+        for tl in traci.trafficlight.getIDList():
+            lanes = traci.trafficlight.getControlledLanes(tl)
+            edges = set([traci.lane.getEdgeID(l) for l in lanes])
+            nodes = set([traci.edge.getToJunction(e) for e in edges])
+            tl_nodes[tl] = list(nodes)
+        #print(tl_nodes)
+
+
+
         return pd.DataFrame.from_dict(self.data)
+        #return flow_values
 
 
