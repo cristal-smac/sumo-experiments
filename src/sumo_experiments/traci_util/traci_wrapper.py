@@ -318,5 +318,6 @@ class TraciWrapper:
 
 
         return pd.DataFrame.from_dict(self.data)
+        #return flow_values
 
 
