@@ -1,6 +1,4 @@
 #from sumo.tools.emissions.findMinDiffModel import model
-from zeus.monitor import ZeusMonitor
-
 from sumo_experiments.strategies import Strategy
 import numpy as np
 import torch
@@ -26,7 +24,7 @@ class MADDPGStrategy(IntellilightStrategy):
 
     def __init__(self, network, period=10, episode_duration=300, reward_coeffs=(1, 1, 1, 1), gamma=0.99, buffer_size=10000, batch_size=32, 
                  steps_per_update=10, samples_before_update=1024, 
-                 learning_rate=1e-2, tau=0.01, hidden_layer_size=64, yellow_time=3, intelligent_intersections=None):
+                 learning_rate=1e-2, tau=0.01, hidden_layer_size=64, yellow_time=3, intelligent_intersections=None, shared_policy=False):
         """
         Init of class.
         :param network: The network to deploy the strategy
@@ -53,8 +51,11 @@ class MADDPGStrategy(IntellilightStrategy):
         :type hidden_layer_size: int or dict
         :param yellow_time: Yellow phases duration for all intersections (in seconds).
         :type yellow_time: int or dict
+        :param shared_policy: If True, identical agents share policy/target_policy networks, improving sample efficiency for homogeneous intersections.
+        :type shared_policy: bool
         """
-        # super().__init__()
+        Strategy.__init__(self)
+        self.shared_policy = shared_policy
         self.network = network
         if type(yellow_time) is dict:
             self.yellow_time = yellow_time
@@ -75,7 +76,13 @@ class MADDPGStrategy(IntellilightStrategy):
             self.yellow_time = {tl_id: yellow_time for tl_id in network.TLS_DETECTORS}
         self.c1, self.c2, self.c3, self.c4 = reward_coeffs
 
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        # Try Metal (Apple Silicon), then CUDA, then CPU
+        if torch.backends.mps.is_available():
+            self.device = torch.device("mps")
+        elif torch.cuda.is_available():
+            self.device = torch.device("cuda")
+        else:
+            self.device = torch.device("cpu")
         self.rollout_device = torch.device('cpu')
 
         self.observation_sizes = {}
@@ -113,9 +120,6 @@ class MADDPGStrategy(IntellilightStrategy):
         self.phases_occurences = {identifiant: {} for identifiant in network.TLS_DETECTORS}
         self.phases_durations = {identifiant: [] for identifiant in network.TLS_DETECTORS}
         self.current_phase_duration = {identifiant: 0 for identifiant in network.TLS_DETECTORS}
-        # Zeus for energy consumption
-        self.zeus_monitor = ZeusMonitor()
-        self.energy_consumption = 0
 
 
     def run_all_agents(self, traci):
@@ -135,6 +139,8 @@ class MADDPGStrategy(IntellilightStrategy):
                                     gamma=self.gamma[tl_id],
                                     discrete_action=True,
                                     tau=self.tau)
+            if self.shared_policy:
+                self._share_policies()
             self.replay_buffer = ReplayBuffer(max_steps=self.buffer_size, num_agents=self.maddpg.nagents, obs_dims=list(self.observation_sizes.values()),
                                                ac_dims=[len(self.action_space[tl_id]) for tl_id in self.intelligent_intersections])
             self.started = True
@@ -154,10 +160,17 @@ class MADDPGStrategy(IntellilightStrategy):
                 # reset states and action
                 self.states = None
                 self.action_indices = None
-                self.changed_phase = [None for _ in self.network.TLS_DETECTORS]
-                if self.network.TL_IDS:#[0] == "c":
-                    plt.plot(range(len(self.mean_scores)), self.mean_scores)
-                    plt.savefig('strategy_debug.png')
+                self.changed_phase = [None for _ in self.intelligent_intersections]
+                if self.network.TL_IDS:
+                    if not hasattr(self, '_debug_fig'):
+                        self._debug_fig, self._debug_ax = plt.subplots()
+                        self._debug_line, = self._debug_ax.plot([], [])
+                        self._debug_ax.set_xlabel('Episode')
+                        self._debug_ax.set_ylabel('Mean Score')
+                    self._debug_line.set_data(range(len(self.mean_scores)), self.mean_scores)
+                    self._debug_ax.relim()
+                    self._debug_ax.autoscale_view()
+                    self._debug_fig.savefig('strategy_debug.png')
             for tl_id in self.intelligent_intersections:
                 # assert self.time_step == self.traci.simulation.getTime(), print(self.time_step, self.traci.simulation.getTime())
                 if 'y' in self.traci.trafficlight.getRedYellowGreenState(tl_id):
@@ -224,7 +237,7 @@ class MADDPGStrategy(IntellilightStrategy):
         Get the next phase for the controller using MADDPG.
         """
         # Store experience in replay buffer
-        next_states = [self.get_state(tl_id) for tl_id in self.network.TLS_DETECTORS]
+        next_states = [self.get_state(tl_id) for tl_id in self.intelligent_intersections]
         rewards = [self.get_reward(tl_id, self.changed_phase[i]) for i, tl_id in enumerate(self.intelligent_intersections)]
         dones = [(self.traci.simulation.getTime()%self.episode_duration)==0 for _ in self.intelligent_intersections]
         scores = [self.get_score(tl_id, self.changed_phase[i]) for i, tl_id in enumerate(self.intelligent_intersections)]
@@ -245,10 +258,10 @@ class MADDPGStrategy(IntellilightStrategy):
                 self.rewards.append(rewards[0])
                 self.times.append(self.traci.simulation.getTime())
             self.scores.append(np.mean(scores))
-        state_tensor = [torch.tensor(n_s, dtype=torch.float32).unsqueeze(0).to(self.rollout_device) for n_s in next_states]
+        state_tensor = [torch.from_numpy(n_s).unsqueeze(0).to(self.rollout_device) for n_s in next_states]
         with torch.no_grad():
             torch_action_indices = self.maddpg.step(state_tensor, explore=True) # exploration handled by softmax
-            action_indices = [ac.data.cpu().numpy() for ac in torch_action_indices]
+            action_indices = [ac.detach().cpu().numpy() for ac in torch_action_indices]
             # DEBUG: force an action
             # s = 1 if self.traci.simulation.getTime() // 100 % 2 == 0 else -1
             # action_indices = [np.array([1,0])[::s]]
@@ -267,12 +280,25 @@ class MADDPGStrategy(IntellilightStrategy):
         self.maddpg.prep_training(device=self.device)
         for tl_id in self.intelligent_intersections:
             self.number_of_trainings[tl_id] += 1
-        for a_i in range(self.maddpg.nagents):
+        if self.shared_policy:
+            # Phase 1: Update all critics independently
+            for a_i in range(self.maddpg.nagents):
+                sample = self.replay_buffer.sample(self.batch_size,
+                                            device=self.device, norm_rews=False)
+                val_loss = self.maddpg.update_critic(sample, a_i)
+                self.val_losses.append(val_loss)
+            # Phase 2: Accumulate policy gradients from all critics, step once
             sample = self.replay_buffer.sample(self.batch_size,
                                         device=self.device, norm_rews=False)
-            val_loss, pol_loss = self.maddpg.update(sample, a_i)
-            self.val_losses.append(val_loss)
+            pol_loss = self.maddpg.update_shared_policy(sample)
             self.pol_losses.append(pol_loss)
+        else:
+            for a_i in range(self.maddpg.nagents):
+                sample = self.replay_buffer.sample(self.batch_size,
+                                            device=self.device, norm_rews=False)
+                val_loss, pol_loss = self.maddpg.update(sample, a_i)
+                self.val_losses.append(val_loss)
+                self.pol_losses.append(pol_loss)
         self.maddpg.update_all_targets()
         self.maddpg.prep_rollouts(device=self.rollout_device)
 
@@ -280,16 +306,6 @@ class MADDPGStrategy(IntellilightStrategy):
         pressure = MaxPressureStrategy._compute_pressure(self, self.network.TLS_DETECTORS[tl_id])
         return -np.nanmean(list(pressure.values()))/2000
 
-    def get_energy_consumption(self, measurements):
-        """
-        Get the total energy consumption of a measurement window
-        """
-        gpu_energy = sum([measurements.gpu_energy[key] for key in measurements.gpu_energy]) if measurements.gpu_energy is not None else 0
-        cpu_energy = sum([measurements.cpu_energy[key] for key in measurements.cpu_energy]) if measurements.cpu_energy is not None else 0
-        dram_energy = sum([measurements.dram_energy[key] for key in measurements.dram_energy]) if measurements.dram_energy is not None else 0
-        soc_energy = sum([measurements.soc_energy[key] for key in measurements.soc_energy]) if measurements.soc_energy is not None else 0
-        return sum([gpu_energy, cpu_energy, dram_energy, soc_energy])
-    
     def _start_agent(self, tl_id):
         """
         Start an agent at the beginning of the simulation.
@@ -308,17 +324,37 @@ class MADDPGStrategy(IntellilightStrategy):
         self.traci.trafficlight.setPhase(tl_id, 0)
         self.traci.trafficlight.setPhaseDuration(tl_id, 10000)
 
-        # DEFER INITIALIZATION OF DDPG AGENTS TO HERE
-        input_dims = {tl_id: len(self.get_state(tl_id)) for tl_id in self.intelligent_intersections}
-        critic_dim = sum(input_dims.values())
-        critic_dim += sum(len(self.action_space[tl_id]) for tl_id in self.intelligent_intersections)
+        # Compute global dimensions once to avoid repeated O(n_agents^2) startup work.
+        if not self.observation_sizes:
+            for obs_tl_id in self.intelligent_intersections:
+                self.observation_sizes[obs_tl_id] = len(self.get_state(obs_tl_id))
+            self._critic_input_dim = sum(self.observation_sizes.values())
+            self._critic_input_dim += sum(len(self.action_space[obs_tl_id]) for obs_tl_id in self.intelligent_intersections)
+
         self.agents[tl_id] = DDPGAgent(num_out_pol=len(self.action_space[tl_id]), 
-                                       num_in_pol=input_dims[tl_id], 
-                                       num_in_critic=critic_dim, 
+                                       num_in_pol=self.observation_sizes[tl_id], 
+                                       num_in_critic=self._critic_input_dim, 
                                        hidden_dim=self.hidden_layer_size[tl_id],
                                        lr=self.learning_rate[tl_id],
                                        discrete_action=True).to(self.rollout_device)
-        self.observation_sizes[tl_id] = input_dims[tl_id]
+
+    def _share_policies(self):
+        """
+        Make agents with identical architectures share the same policy,
+        target_policy, and policy_optimizer. Each agent keeps its own critic.
+        Operates on self.maddpg.agents after MADDPG is initialized.
+        """
+        agents = self.maddpg.agents
+        if len(agents) <= 1:
+            return
+        primary = agents[0]
+        for agent in agents[1:]:
+            if (agent.policy.fc1.in_features == primary.policy.fc1.in_features and
+                agent.policy.fc3.out_features == primary.policy.fc3.out_features and
+                agent.policy.fc1.out_features == primary.policy.fc1.out_features):
+                agent.policy = primary.policy
+                agent.target_policy = primary.target_policy
+                agent.policy_optimizer = primary.policy_optimizer
 
     def save_model(self, filepath):
         torch.save(self.maddpg.agents, filepath)
@@ -330,11 +366,11 @@ class MADDPGStrategy(IntellilightStrategy):
                                  gamma=list(self.gamma.values())[0], # TODO: refactor?
                                  discrete_action=True,
                                  tau=self.tau)
-        self.maddpg.agents = torch.load(filepath, weights_only=False)
+        self.maddpg.agents = torch.load(filepath, map_location=self.device, weights_only=False)
 
 
 class DeepNN(nn.Module):
-    def __init__(self, input_dim, out_dim, hidden_dim=64, nonlin=nn.functional.relu, recurrent=True):
+    def __init__(self, input_dim, out_dim, hidden_dim=64, nonlin=nn.functional.relu, recurrent=False):
         super().__init__()
         self.recurrent = recurrent
         self.hidden_dim = hidden_dim
@@ -367,7 +403,7 @@ class DeepNN(nn.Module):
             use_hidden_state: If True and recurrent, use persistent hidden state (for rollouts).
                              If False, use fresh hidden state (for replay buffer training).
         """
-        if self.recurrent:
+        if False:
             # Ensure X has sequence dimension
             if X.dim() == 2:
                 X = X.unsqueeze(1)  # (batch_size, input_dim) -> (batch_size, 1, input_dim)
@@ -529,14 +565,80 @@ class MADDPG(object):
                                self.niter)
         return vf_loss.cpu().detach().numpy(), pol_loss.cpu().detach().numpy()
 
+    def update_critic(self, sample, agent_i):
+        """
+        Update only the critic for agent_i (used with shared policies).
+        """
+        obs, acs, rews, next_obs, dones = sample
+        curr_agent = self.agents[agent_i]
+        curr_agent.critic_optimizer.zero_grad()
+        if self.discrete_action:
+            all_trgt_acs = [nn.functional.gumbel_softmax(pi(nobs), hard=True) for pi, nobs in
+                            zip(self.target_policies, next_obs)]
+        else:
+            all_trgt_acs = [pi(nobs) for pi, nobs in zip(self.target_policies, next_obs)]
+        trgt_vf_in = torch.cat((*next_obs, *all_trgt_acs), dim=1)
+        target_value = (rews[agent_i].view(-1, 1) + self.gamma *
+                        curr_agent.target_critic(trgt_vf_in) *
+                        (1 - dones[agent_i].view(-1, 1)))
+        vf_in = torch.cat((*obs, *acs), dim=1)
+        actual_value = curr_agent.critic(vf_in)
+        vf_loss = loss_fn(actual_value, target_value.detach())
+        vf_loss.backward()
+        torch.nn.utils.clip_grad_norm_(curr_agent.critic.parameters(), 0.5)
+        curr_agent.critic_optimizer.step()
+        return vf_loss.cpu().detach().numpy()
+
+    def update_shared_policy(self, sample):
+        """
+        Accumulate policy gradients from all agents' critics into the shared
+        policy, then step once.  Each critic provides a different gradient
+        signal, giving the shared policy diverse learning signal.
+        """
+        obs, acs, rews, next_obs, dones = sample
+        # All agents share the same policy optimizer
+        self.agents[0].policy_optimizer.zero_grad()
+
+        total_pol_loss = torch.tensor(0.0, device=obs[0].device)
+        for agent_i in range(self.nagents):
+            curr_agent = self.agents[agent_i]
+            if self.discrete_action:
+                curr_pol_out = curr_agent.policy(obs[agent_i])
+                curr_pol_vf_in = nn.functional.gumbel_softmax(curr_pol_out, hard=False)
+            else:
+                curr_pol_out = curr_agent.policy(obs[agent_i])
+                curr_pol_vf_in = curr_pol_out
+
+            all_pol_acs = []
+            for i, pi, ob in zip(range(self.nagents), self.policies, obs):
+                if i == agent_i:
+                    all_pol_acs.append(curr_pol_vf_in)
+                else:
+                    all_pol_acs.append(onehot_from_logits(pi(ob)))
+
+            vf_in = torch.cat((*obs, *all_pol_acs), dim=1)
+            pol_loss = -curr_agent.critic(vf_in).mean()
+            pol_loss += (curr_pol_out**2).mean() * 1e-3
+            total_pol_loss = total_pol_loss + pol_loss
+
+        avg_pol_loss = total_pol_loss / self.nagents
+        avg_pol_loss.backward()
+        torch.nn.utils.clip_grad_norm_(self.agents[0].policy.parameters(), 0.5)
+        self.agents[0].policy_optimizer.step()
+        return avg_pol_loss.cpu().detach().numpy()
+
     def update_all_targets(self):
         """
         Update all target networks (called after normal updates have been
         performed for each agent)
         """
+        seen_policies = set()
         for a in self.agents:
             soft_update(a.target_critic, a.critic, self.tau)
-            soft_update(a.target_policy, a.policy, self.tau)
+            pol_id = id(a.policy)
+            if pol_id not in seen_policies:
+                soft_update(a.target_policy, a.policy, self.tau)
+                seen_policies.add(pol_id)
         self.niter += 1
 
     def prep_training(self, device='gpu'):
@@ -634,6 +736,7 @@ class DDPGAgent(nn.Module):
         Outputs:
             action (PyTorch Variable): Actions for this agent
         """
+        obs = obs.to(next(self.policy.parameters()).device)
         action = self.policy(obs)
         if self.discrete_action:
             if explore:
@@ -688,11 +791,11 @@ class ReplayBuffer:
         self.next_obs_buffs = []
         self.done_buffs = []
         for odim, adim in zip(obs_dims, ac_dims):
-            self.obs_buffs.append(np.zeros((max_steps, odim)))
-            self.ac_buffs.append(np.zeros((max_steps, adim)))
-            self.rew_buffs.append(np.zeros(max_steps))
-            self.next_obs_buffs.append(np.zeros((max_steps, odim)))
-            self.done_buffs.append(np.zeros(max_steps))
+            self.obs_buffs.append(np.zeros((max_steps, odim), dtype=np.float32))
+            self.ac_buffs.append(np.zeros((max_steps, adim), dtype=np.float32))
+            self.rew_buffs.append(np.zeros(max_steps, dtype=np.float32))
+            self.next_obs_buffs.append(np.zeros((max_steps, odim), dtype=np.float32))
+            self.done_buffs.append(np.zeros(max_steps, dtype=np.float32))
 
 
         self.filled_i = 0  # index of first empty location in buffer (last index when full)
@@ -732,14 +835,16 @@ class ReplayBuffer:
             self.curr_i = 0
 
     def sample(self, N, device='cpu', norm_rews=False):
-        inds = np.random.choice(np.arange(self.filled_i), size=N,
-                                replace=False)
-        cast = lambda x: torch.tensor(x, dtype=torch.float32).to(device)
+        inds = np.random.choice(self.filled_i, size=N, replace=False)
+        cast = lambda x: torch.from_numpy(x).to(device=device, dtype=torch.float32)
         if norm_rews:
-            ret_rews = [cast((self.rew_buffs[i][inds] -
-                              self.rew_buffs[i][:self.filled_i].mean()) /
-                             self.rew_buffs[i][:self.filled_i].std())
-                        for i in range(self.num_agents)]
+            ret_rews = []
+            for i in range(self.num_agents):
+                rew_window = self.rew_buffs[i][:self.filled_i]
+                rew_std = rew_window.std()
+                if rew_std < 1e-6:
+                    rew_std = 1e-6
+                ret_rews.append(cast((self.rew_buffs[i][inds] - rew_window.mean()) / rew_std))
         else:
             ret_rews = [cast(self.rew_buffs[i][inds]) for i in range(self.num_agents)]
         return ([cast(self.obs_buffs[i][inds]) for i in range(self.num_agents)],

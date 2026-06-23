@@ -43,6 +43,7 @@ class BolognaNetwork(Network):
             '273': self.DETECTORS_273
         }
         self.TL_IDS = ['209', '210', '219', '220', '221', '235', '273']
+        self.detector_period = 600  # seconds — aggregation window for interval-based TraCI queries
 
 
     def run(self, traci_function, gui=False, seed=None, no_warnings=True, nb_threads=1, time_to_teleport=150):
@@ -197,7 +198,7 @@ class BolognaNetwork(Network):
         :return: The detectors of the network
         :rtype: DetectorBuilder
         """
-        det = DetectorBuilder()
+        det = DetectorBuilder(default_freq=self.detector_period)
         # Intersection 34-27
         det.add_lane_area_detector(id='34_1', edge='43[0]', lane=2, end_pos=20, type='boolean')
         det.add_lane_area_detector(id='34_2', edge='117', lane=0, pos=108, end_pos=128, type='boolean')

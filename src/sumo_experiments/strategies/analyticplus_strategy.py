@@ -1,16 +1,13 @@
 from __future__ import annotations
 
-import numpy as np
 import re
 from collections import deque
 from typing import TypedDict, Optional, Union, TypeAlias
 from math import ceil
-from zeus.monitor import ZeusMonitor
+import traci.constants as tc
 
 
 from sumo_experiments.strategies import Strategy
-
-import traci.constants as tc
 
 DEBUG = False
 
@@ -22,7 +19,7 @@ class AnalyticPlusStrategy(Strategy):
     Lämmer, S., & Helbing, D. (2008). Self-control of traffic lights and vehicle flows in urban road networks. Journal of Statistical Mechanics: Theory and Experiment, 2008(04), P04019.
     """
 
-    def __init__(self, network, min_phase_duration=3, T=150, T_max=180, yellow_time=3, intelligent_intersections=None):
+    def __init__(self, network, min_phase_duration=3, T=150, T_max=180, yellow_time=3, intelligent_intersections=None, stabilization=True):
         """
         Init of class
         :param network: The network to deploy the strategy
@@ -50,32 +47,29 @@ class AnalyticPlusStrategy(Strategy):
         self.step_length = 1
 
         # self.network.TL_IDS = ['221'] # For testing only one traffic light
-        self.time = {k: 0 for k in self.network.TL_IDS}
-        self.next_phase = {k: 0 for k in self.network.TL_IDS}
-        self.priority_pile = {k: [] for k in self.network.TL_IDS}
-        self.prio = {k: False for k in self.network.TL_IDS}
-        self.current_cycle = {k: [] for k in self.network.TL_IDS}
-        self.current_yellow_time = {k: 0 for k in self.network.TL_IDS}
-        self.is_phase = {k: True for k in self.network.TL_IDS}
-        self.nb_switch = {k: 0 for k in self.network.TL_IDS}
-        self.nb_phases = {k: 0 for k in self.network.TL_IDS}
-        self.phases_occurences = {k: {} for k in self.network.TL_IDS}
-        self.agents = {k: AnalyticPlusAgent(self, id_tls_program=k, T=T, T_max=T_max,
-                                            yellow_time=self.yellow_time) for k in self.network.TL_IDS}
-        self.phases_durations = {identifiant: [] for identifiant in network.TLS_DETECTORS}
-        self.current_phase_duration = {identifiant: 0 for identifiant in network.TLS_DETECTORS}
+        self.time = {tls_id: 0 for tls_id in self.network.TL_IDS}
+        self.next_phase = {tls_id: 0 for tls_id in self.network.TL_IDS}
+        self.priority_pile = {tls_id: [] for tls_id in self.network.TL_IDS}
+        self.prio = {tls_id: False for tls_id in self.network.TL_IDS}
+        self.current_cycle = {tls_id: [] for tls_id in self.network.TL_IDS}
+        self.current_yellow_time = {tls_id: 0 for tls_id in self.network.TL_IDS}
+        self.is_phase = {tls_id: True for tls_id in self.network.TL_IDS}
+        self.nb_switch = {tls_id: 0 for tls_id in self.network.TL_IDS}
+        self.nb_phases = {tls_id: 0 for tls_id in self.network.TL_IDS}
+        self.phases_occurences = {tls_id: {} for tls_id in self.network.TL_IDS}
+        self.agents = {tls_id: AnalyticPlusAgent(self, id_tls_program=tls_id, T=T, T_max=T_max,
+                                            yellow_time=self.yellow_time, stabilization=stabilization) for tls_id in self.network.TL_IDS}
+        self.phases_durations = {identifier: [] for identifier in network.TLS_DETECTORS}
+        self.current_phase_duration = {identifier: 0 for identifier in network.TLS_DETECTORS}
         if intelligent_intersections is None:
             self.intelligent_intersections = network.TL_IDS
         else:
             self.intelligent_intersections = intelligent_intersections
-        # Zeus for energy consumption
-        self.zeus_monitor = ZeusMonitor()
-        self.energy_consumption = 0
         self.exclude_consumption = 0
 
     def switch_yellow(self, agent):
         """
-        Switch the traffic light id_tls to yellow
+        Switch the traffic light tls_id to yellow
         """
         num_phases = len(agent.sumo_phases)
         self.traci.trafficlight.setPhase(agent.ID, (self.traci.trafficlight.getPhase(agent.ID) + 1) % num_phases)
@@ -88,121 +82,111 @@ class AnalyticPlusStrategy(Strategy):
         if not self.started:
             self.traci = traci
             self._start_agents()
-            # god mode data subscription
-            varIDs_lane = [tc.LAST_STEP_VEHICLE_NUMBER, tc.LAST_STEP_VEHICLE_ID_LIST]
-            for lane_id in self.traci.lane.getIDList():
-                if lane_id[0] == ':':  # skip internal lanes
-                    continue
-                self.traci.lane.subscribe(lane_id, varIDs=varIDs_lane)
             return True
         else:
-            self.zeus_monitor.begin_window('traci_call')
-            lane_data = self.traci.lane.getAllSubscriptionResults()
-            traci_energy = self.zeus_monitor.end_window('traci_call')
-            self.exclude_consumption += self.get_energy_consumption(traci_energy)
+            det_data = self.traci.lanearea.getAllSubscriptionResults()
             self.zeus_monitor.begin_window("all_agents")
-            for id_tls in self.intelligent_intersections:
-                agent = self.agents[id_tls]
-                results = self.zeus_monitor.end_window("all_agents")
-                print(results)
-                self.energy_consumption += self.get_energy_consumption(results)
-                agent.update(lane_data)
-                self.zeus_monitor.begin_window("all_agents")
-                current_phase = self.traci.trafficlight.getPhase(id_tls)
-                current_state = self.traci.trafficlight.getRedYellowGreenState(id_tls)
-                # if current_phase not in self.TLS_DETECTORS[id_tls]: # Handle the yellow phases
+            for tls_id in self.intelligent_intersections:
+                agent = self.agents[tls_id]
+                agent.update(det_data)
+                current_phase = self.traci.trafficlight.getPhase(tls_id)
+                current_state = self.traci.trafficlight.getRedYellowGreenState(tls_id)
+                # if current_phase not in self.TLS_DETECTORS[tls_id]: # Handle the yellow phases
                 if 'y' in current_state:
-                    if self.yellow_time[id_tls] - self.current_yellow_time[id_tls] <= 0:
+                    if self.yellow_time[tls_id] - self.current_yellow_time[tls_id] <= 0:
                         # maybe there is a second yellow phase
                         self.switch_yellow(agent)
-                        assert self.traci.trafficlight.getPhase(id_tls) != current_phase
-                        if not agent.sumo_phases[self.traci.trafficlight.getPhase(id_tls)]['isYellow']:  # not a yellow phase, switch to next green
-                            self.traci.trafficlight.setPhase(id_tls, self.next_phase[id_tls])
-                            agent.current_sumo_phase = agent.sumo_phases[self.next_phase[id_tls]]
-                            self.current_cycle[id_tls].append(self.next_phase[id_tls])
-                        self.current_yellow_time[id_tls] = 0
+                        assert self.traci.trafficlight.getPhase(tls_id) != current_phase
+                        # print(current_phase, current_state, tls_id, self.next_phase[tls_id])
+                        if not agent.sumo_phases.get(self.traci.trafficlight.getPhase(tls_id), {'isYellow': False})['isYellow']:  # not a yellow phase, switch to next green
+                            self.traci.trafficlight.setPhase(tls_id, self.next_phase[tls_id])
+                            agent.current_sumo_phase = agent.sumo_phases[self.next_phase[tls_id]]
+                            self.current_cycle[tls_id].append(self.next_phase[tls_id])
+                        self.current_yellow_time[tls_id] = 0
                     else:
-                        self.current_yellow_time[id_tls] += 1
+                        self.current_yellow_time[tls_id] += 1
                 else:
-                    assert current_phase == self.next_phase[id_tls]
-                    if current_phase not in self.phases_occurences[id_tls]:
-                        self.phases_occurences[id_tls][current_phase] = 1
+                    assert current_phase == self.next_phase[tls_id]
+                    if current_phase not in self.phases_occurences[tls_id]:
+                        self.phases_occurences[tls_id][current_phase] = 1
                     else:
-                        self.phases_occurences[id_tls][current_phase] += 1
+                        self.phases_occurences[tls_id][current_phase] += 1
 
-                    if self.time[id_tls] >= self.min_phase_durations[id_tls]:
+                    if self.time[tls_id] >= self.min_phase_durations[tls_id]:
                         # start logic here
-                        self.analyticplus_logic(id_tls)
-                    self.time[id_tls] += 1
-                    self.current_phase_duration[id_tls] += 1
+                        self.analyticplus_logic(tls_id)
+                    self.time[tls_id] += 1
+                    self.current_phase_duration[tls_id] += 1
             results = self.zeus_monitor.end_window("all_agents")
             self.energy_consumption += self.get_energy_consumption(results)
 
-    def analyticplus_logic(self, id_tls):
-        agent = self.agents[id_tls]
-        if self.time[id_tls] >= agent.green_duration:
-            self.switch_next_phase(id_tls)
+    def analyticplus_logic(self, tls_id):
+        agent = self.agents[tls_id]
+        if self.time[tls_id] >= agent.green_duration:
+            self.switch_next_phase(tls_id)
 
-    def switch_next_phase(self, id_tls):
+    def switch_next_phase(self, tls_id):
         """
-        Switch the traffic light id_tls to the next
+        Switch the traffic light tls_id to the next
         """
-        agent = self.agents[id_tls]
-        self.nb_switch[id_tls] += 1
-        current_phase = self.traci.trafficlight.getPhase(id_tls)
+        agent = self.agents[tls_id]
+        self.nb_switch[tls_id] += 1
+        current_phase = self.traci.trafficlight.getPhase(tls_id)
         time = self.traci.simulation.getTime()
 
         action_id, green_time = agent.choose_action(time)
         next_phase = agent.action_phases[action_id]
         agent.green_duration = green_time
 
-        if next_phase != current_phase:
-            self.next_phase[id_tls] = next_phase
+        if next_phase != current_phase: # switch
+            self.next_phase[tls_id] = next_phase
             agent.update_last_on(agent.sumo_phases[next_phase], agent.sumo_phases[current_phase], time)
             assert not agent.sumo_phases[next_phase]['isYellow']
             # switch to hopefully the next yellow phase
+            # print(self.traci.trafficlight.getRedYellowGreenState(tls_id), tls_id)
             self.switch_yellow(agent)
-            assert agent.sumo_phases[self.traci.trafficlight.getPhase(id_tls)]['isYellow']
-            self.time[id_tls] = 0
-            if self.current_phase_duration[id_tls] > 2:
-                self.phases_durations[id_tls].append((current_phase, self.current_phase_duration[id_tls]))
-            self.current_phase_duration[id_tls] = 0
+            assert agent.sumo_phases[self.traci.trafficlight.getPhase(tls_id)]['isYellow']
+            self.time[tls_id] = 0
+            if self.current_phase_duration[tls_id] > 2:
+                self.phases_durations[tls_id].append((current_phase, self.current_phase_duration[tls_id]))
+            self.current_phase_duration[tls_id] = 0
 
-
-    def get_energy_consumption(self, measurements):
-        """
-        Get the total energy consumption of a measurement window
-        """
-        gpu_energy = sum([measurements.gpu_energy[key] for key in measurements.gpu_energy]) if measurements.gpu_energy is not None else 0
-        cpu_energy = sum([measurements.cpu_energy[key] for key in measurements.cpu_energy]) if measurements.cpu_energy is not None else 0
-        dram_energy = sum([measurements.dram_energy[key] for key in measurements.dram_energy]) if measurements.dram_energy is not None else 0
-        soc_energy = sum([measurements.soc_energy[key] for key in measurements.soc_energy]) if measurements.soc_energy is not None else 0
-        return sum([gpu_energy, cpu_energy, dram_energy, soc_energy])
 
     def _start_agents(self):
         """
         Start an agent at the beginning of the simulation.
         """
-        for tl in self.intelligent_intersections:
-            tl_logic = self.traci.trafficlight.getAllProgramLogics(tl)[-1]
+        for tls_id in self.intelligent_intersections:
+            tl_logic = self.traci.trafficlight.getAllProgramLogics(tls_id)[-1]
             nb_phase = 0
             for phase in tl_logic.phases:
                 phase.duration = 10000
                 phase.maxDur = 10000
                 phase.minDur = 10000
                 nb_phase += 1
-            self.nb_phases[tl] = nb_phase
-            self.traci.trafficlight.setProgramLogic(tl, tl_logic)
-            self.traci.trafficlight.setPhase(tl, 0)
-            self.traci.trafficlight.setPhaseDuration(tl, 10000)
-            self.agents[tl].reset(self.traci)
+            self.nb_phases[tls_id] = nb_phase
+            self.traci.trafficlight.setProgramLogic(tls_id, tl_logic)
+            self.traci.trafficlight.setPhase(tls_id, 0)
+            self.traci.trafficlight.setPhaseDuration(tls_id, 10000)
+            self.agents[tls_id].reset(self.traci)
+        # Subscribe to all lane area detectors for batch reading
+        sub_vars = [
+            tc.LAST_STEP_VEHICLE_NUMBER,  # current vehicles on detector (queue)
+            tc.VAR_INTERVAL_NUMBER,        # vehicles passed in current (partial) interval
+            tc.VAR_LAST_INTERVAL_NUMBER,   # vehicles passed in last complete interval
+        ]
+        subscribed = set()
+        for tls_id in self.intelligent_intersections:
+            tls_dets = self.network.TLS_DETECTORS[tls_id]
+            for phase_id, det_groups in tls_dets.items():
+                for det in det_groups.get('numerical', []):
+                    if det not in subscribed:
+                        self.traci.lanearea.subscribe(det, sub_vars)
+                        subscribed.add(det)
         self.started = True
 
 
-LaneData: TypeAlias = dict[str, dict[int, Union[float, list[str]]]]
 actionID: TypeAlias = int
-VEH_NUM = tc.LAST_STEP_VEHICLE_NUMBER
-VEH_LIST = tc.LAST_STEP_VEHICLE_ID_LIST
 
 
 class sumoPhase(TypedDict):
@@ -218,11 +202,12 @@ class sumoPhase(TypedDict):
 
 class AnalyticPlusAgent():
     def __init__(self,
-                 env,  # strategy environment
+                 env: AnalyticPlusStrategy,  # strategy environment
                  id_tls_program,
                  T=150,
                  T_max=180,
-                 yellow_time=None):
+                 yellow_time=None,
+                 stabilization=True):
         self.ID = id_tls_program
         self.env = env
         self.step_length = 1
@@ -236,13 +221,14 @@ class AnalyticPlusAgent():
         self.last_act_time: float = -1
         self.clearing_time: float = yellow_time
         self.interval_length = 600
+        self.stabilization = stabilization
         # assert self.action_interval % self.env.step_length == 0
 
     def choose_action(self, time) -> tuple[actionID, float]:
         """Returns the `action_phase_id` of the next action."""
         self.update_clear_green_time(time)
 
-        if all([np.isclose(x.green_time, 0) for x in self.movements.values()]):
+        if all(stats['green_time'] == 0 for stats in self.phase_stats.values()):
             sumo_phase_id = self.current_sumo_phase['id']
             action = self._sumo2action_phases[sumo_phase_id]
             green_time = self.minimum_green
@@ -254,7 +240,7 @@ class AnalyticPlusAgent():
 
             for action_phase_id, sumo_phase_id in self.action_phases.items():
                 phase = self.sumo_phases[sumo_phase_id]
-                priority, phase_green = self.get_priority(phase)
+                priority, phase_green = self.get_priority(phase, action_phase_id)
                 phases_priority[action_phase_id]['priority'] = priority
                 phases_priority[action_phase_id]['green_time'] = phase_green
 
@@ -268,7 +254,8 @@ class AnalyticPlusAgent():
 
             assert green_time > 0
 
-        self.stabilise(time, ghat=green_time)  # updates action queue
+        if self.stabilization:
+            self.stabilise(time, ghat=green_time)  # updates action queue
         if len(self.action_queue):
             action_phase_id, green_time = self.action_queue.popleft()
             assert green_time > 0
@@ -276,14 +263,9 @@ class AnalyticPlusAgent():
 
         return action, green_time
 
-    def get_priority(self, phase):
-        phase_green = 0
-        phase_saturations = 0
-        for move_id in phase['movement_ids']:
-            move = self.movements[move_id]
-            phase_green = max(phase_green, move.green_time)
-            phase_saturations += move.max_saturation
-            # penalties += 0 if move_id in self.current_sumo_phase['movement_ids'] else self.clearing_time
+    def get_priority(self, phase, action_id):
+        phase_green = self.phase_stats[action_id]['green_time']
+        phase_saturations = self.phase_saturations[action_id]
         penalties = self.clearing_time[self.ID] * (self.current_sumo_phase['id'] != phase['id'])
         nhat = phase_saturations * phase_green
         priority = nhat / (penalties + phase_green + self.clearing_time[self.ID])
@@ -296,7 +278,7 @@ class AnalyticPlusAgent():
         T = self.T  # seconds
         T_max = self.T_max  # seconds
         # max_arr_rate = max([x.arr_rate for x in self.movements.values()])
-        sum_Qphase = sum([stats['ave_arr_rate'] / self.phase_saturations[action_idx] for action_idx, stats in self.phase_stats.items()])
+        sum_Qphase = sum(stats['ave_arr_rate'] / self.phase_saturations[action_idx] for action_idx, stats in self.phase_stats.items())
         T_res = T * (1 - sum_Qphase) - self.clearing_time[self.ID] * len(self.action_phases)
 
         phase_priority_list: list[tuple[sumoPhase, float]] = []
@@ -305,17 +287,15 @@ class AnalyticPlusAgent():
             phase = self.sumo_phases[sumo_phase_id]
             Q = self.phase_stats[action_id]['arr_rate']
             Q_ave = self.phase_stats[action_id]['ave_arr_rate']
-            # Q = np.sum([self.movements[id].arr_rate for id in phase["movement_ids"]])
             Q_max = self.phase_saturations[action_id]
-            assert Q <= Q_max
+
             if phase == self.current_sumo_phase:  # currently active
                 # waiting_time = 0
                 continue
             else:
                 waiting_time = time - phase["last_on_time"]
 
-            phase_green = max([self.movements[id].green_time for id in phase["movement_ids"]])
-            assert phase_green == self.phase_stats[action_id]['green_time'], (self.phase_stats[action_id]['green_time'], phase_green)
+            phase_green = self.phase_stats[action_id]['green_time']
             z = waiting_time + self.clearing_time[self.ID] + ghat
             n_crit = Q_ave * T * ((T_max - z) / (T_max - T))
             # n_crit = max(n_crit, 0) # n_crit can be negative when z>T_max, which should ideally never happen
@@ -327,7 +307,7 @@ class AnalyticPlusAgent():
                 #     print(f"id: {action_id}, ghat: {ghat}, phase_green: {phase_green}, waiting_time: {waiting_time:.2f}, waiting: {waiting:.2f}, n_crit: {n_crit:.2f}, Q: {Q}, Q_max: {Q_max}")
                 green_max = (Q_ave / Q_max) * T + (Q_max / self.sum_Qmax) * T_res
                 green_max = green_max - (green_max % self.env.step_length)
-                priority, _ = self.get_priority(phase)
+                priority, _ = self.get_priority(phase, action_id)
                 # green_time = min(phase_green,green_max)
                 green_time = green_max
                 phase_priority_list.append((action_id, priority, green_time))
@@ -415,9 +395,9 @@ class AnalyticPlusAgent():
             # isYellow = str(ohe)==prev_ohe # True
             isYellow = 'y' in sumo_phase.state
             if sum(ohe) == len(ohe):  # all red phase
-                raise NotImplementedError('All red phase not implemented')
-                sumo_idx = -1
-                continue
+                # raise NotImplementedError('All red phase not implemented')
+                # sumo_idx = -1
+                pass
             # elif not isYellow and sumo_phase.minDur==sumo_phase.maxDur and sumo_phase.minDur<=3:
             #     continue # simplifies phases loaded in analytic agent.
 
@@ -433,6 +413,7 @@ class AnalyticPlusAgent():
             if isYellow:  # assumes phases are in consecutive order
                 self.sumo_phases[sumo_idx - 1]['yellowPhase'] = sumo_idx
                 continue  # skip the next line
+            if sum(ohe) == len(ohe): continue # do not build action phase for all red
             self.action_phases[phase_idx] = sumo_idx
             phase_idx += 1
             prev_ohe = str(ohe)
@@ -452,38 +433,44 @@ class AnalyticPlusAgent():
         self.traci.trafficlight.setPhaseDuration(self.ID, duration)  # sets phase to an arbitrarily long duration
         self.current_sumo_phase = self.sumo_phases[sumo_phase_id]
 
-    def update_arr_dep_veh_num(self, lane_data: LaneData):
+    def update_arr_dep_veh_num(self, det_data):
         """
-        Updates the number of vehicles that arrived and departed, aggregated at the phase level.
-
-        Parameters
-        ----------
-        lane_data : dict[str, dict[int, Union[float, list[str]]]]
-            Data output from SUMO aggregated at the lane level.
+        Updates arrival counts and queue from pre-fetched subscription data.
+        Uses SUMO's interval counters instead of Python-side sliding windows.
         """
-        for movement in self.movements.values():
-            movement.update_arr_dep_veh_num(lane_data)
-        # for action_id, sumo_phase_id in self.phases.items():
-        #     print(self.phases, self.sumo_phases.keys(), self.env.TLS_DETECTORS[self.ID].keys(), self.ID)
-        #     phase = self.sumo_phases[sumo_phase_id]
-        #     current_vehs = set()
+        VEH_NUM = tc.LAST_STEP_VEHICLE_NUMBER
+        CUR_INT = tc.VAR_INTERVAL_NUMBER
+        LAST_INT = tc.VAR_LAST_INTERVAL_NUMBER
+        tls_detectors = self.env.network.TLS_DETECTORS[self.ID]
 
-        #     # Collect vehicles detected by numerical detectors for the current phase
-        #     detectors = self.env.TLS_DETECTORS[self.ID][sumo_phase_id]['numerical']
-        #     for det in detectors:
-        #         current_vehs.update(self.traci.lanearea.getLastStepVehicleIDs(det))
+        for action_id, sumo_phase_id in self.action_phases.items():
+            if sumo_phase_id not in tls_detectors:
+                continue
 
-        #     # Calculate arrivals and departures
-        #     prev_vehs = phase.get('prev_vehs', set())
-        #     dep_vehs = len(prev_vehs - current_vehs)
-        #     arr_vehs = len(current_vehs - prev_vehs)
+            dets = tls_detectors[sumo_phase_id]
+            tracker = self.phase_tracker[action_id]
+            num_dets = dets.get('numerical', ())
 
-        #     # Update phase-level statistics
-        #     phase['arr_vehs_num'] = phase.get('arr_vehs_num', deque([0] * self.interval_length, maxlen=self.interval_length))
-        #     phase['arr_vehs_num'].append(arr_vehs)
-        #     phase['total_dep'] = phase.get('total_dep', 0) + dep_vehs
-        #     phase['total_arr'] = phase.get('total_arr', 0) + arr_vehs
-        #     phase['prev_vehs'] = current_vehs
+            # All values come from a single batch dict lookup — no TraCI calls
+            queue = 0
+            interval_count = 0
+            last_interval_count = 0
+            for d in num_dets:
+                if d in det_data:
+                    dd = det_data[d]
+                    queue += dd[VEH_NUM]
+                    interval_count += dd[CUR_INT]
+                    last_interval_count += dd[LAST_INT]
+
+            # Maintain cumulative total via interval-count delta (O(1))
+            prev = tracker['prev_interval_count']
+            delta = interval_count - prev if interval_count >= prev else interval_count
+            tracker['total_arr'] += delta
+            tracker['prev_interval_count'] = interval_count
+
+            tracker['queue'] = queue
+            tracker['interval_count'] = interval_count
+            tracker['last_interval_count'] = last_interval_count
 
     def update_last_on(self, action: sumoPhase, phase: sumoPhase, time: float):
         """
@@ -536,9 +523,20 @@ class AnalyticPlusAgent():
         self.phase_saturations = {}
         for action_id, sumo_phase_id in self.action_phases.items():
             phase = self.sumo_phases[sumo_phase_id]
-            saturations = [self.movements[id].max_saturation for id in phase["movement_ids"]]
-            self.phase_saturations[action_id] = np.sum(saturations)
+            self.phase_saturations[action_id] = sum(self.movements[mid].max_saturation for mid in phase["movement_ids"])
         self.sum_Qmax = sum(self.phase_saturations.values())
+
+        # Phase-level detector tracking (interval-based, no Python-side sliding windows)
+        self.det_interval_window = getattr(self.env.network, 'detector_period', self.interval_length)
+        self.phase_tracker = {}
+        for action_id in self.action_phases:
+            self.phase_tracker[action_id] = {
+                'prev_interval_count': 0,   # for cumulative delta tracking
+                'total_arr': 0,             # cumulative arrivals since sim start
+                'queue': 0,                 # vehicles currently on numerical detectors
+                'interval_count': 0,        # vehicles passed in current interval
+                'last_interval_count': 0,   # vehicles passed in last complete interval
+            }
 
     def update_priority_idx(self):
         """
@@ -555,24 +553,43 @@ class AnalyticPlusAgent():
 
     def update_clear_green_time(self, time):
         """
-        Updates the green times of the movements of the intersection
-        :param time: the time in the simulation, at this moment only integer values are supported
+        Updates the green times at the phase level using SUMO interval-based
+        detector data.  All heavy counting is done in SUMO's C++ engine;
+        Python only reads integers and does arithmetic.
+        :param time: the time in the simulation
         """
-        for movement in self.movements.values():
-            green_time = movement.get_green_time(time)
-            movement.green_time = green_time
-        for action_id, sumo_id in self.action_phases.items():
-            phase = self.sumo_phases[sumo_id]
+        P = self.det_interval_window  # detector period (seconds)
+        time_in_interval = time % P if P > 0 else 0
+        step = self.env.step_length
+
+        for action_id in self.action_phases:
             stats = self.phase_stats[action_id]
-            arr_rates = []
-            ave_arr_rate = []
-            stats['green_time'] = 0
-            for move_id in phase['movement_ids']:
-                stats['green_time'] = max(stats['green_time'], self.movements[move_id].green_time)
-                arr_rates.append(self.movements[move_id].arr_rate)
-                ave_arr_rate.append(self.movements[move_id].ave_arr_rate)
-            stats['arr_rate'] = sum(arr_rates)
-            stats['ave_arr_rate'] = sum(ave_arr_rate)
+            tracker = self.phase_tracker[action_id]
+
+            clearing_time = self.clearing_time[self.ID]
+
+            # Arrival rate from last-complete + current-partial interval
+            total_count = tracker['last_interval_count'] + tracker['interval_count']
+            total_window = min(P + time_in_interval, max(time, step))
+
+            # Plain Python division — total_window is always > 0
+            arr_rate = total_count / total_window if total_window > 0 else 0.0
+            ave_arr_rate = tracker['total_arr'] / time if time > 0 else 0.0
+
+            self.phase_saturations[action_id] = max(self.phase_saturations[action_id], arr_rate * 1.1)
+            Q_max = self.phase_saturations[action_id]
+            # Green time (Lämmer & Helbing): g = (λ·tc + queue) / (Q_max − λ)
+            queue = tracker['queue']
+            denom = Q_max - arr_rate
+            if denom > 0:
+                green_time = (arr_rate * clearing_time + queue) / denom
+                green_time = max(0.0, green_time - (green_time % step))
+            else:
+                green_time = 0.0
+
+            stats['green_time'] = green_time
+            stats['arr_rate'] = arr_rate
+            stats['ave_arr_rate'] = ave_arr_rate
 
     # def apply_action(self, api, action: tuple[int, Union[float, None]], lane_data: LaneData):
     #     """Converts the RL action into its implementation in the TRACI api.
@@ -604,8 +621,8 @@ class AnalyticPlusAgent():
     #         else:
     #             self.next_act_time = self.env.time + self.green_time
 
-    def update(self, lane_data):
-        self.update_arr_dep_veh_num(lane_data)  # lane data not needed for arrival rates
+    def update(self, det_data):
+        self.update_arr_dep_veh_num(det_data)
         # if (self.action_type == 'update' and
         #         isclose(self.env.time,(self.last_act_time+self.clearing_time))):
         #     self.set_phase(self.chosen_phase['id'])
@@ -627,7 +644,7 @@ class Movement:
     """Helper class to contain attributes of movements
     """
 
-    def __init__(self, id, intersection: Agent, in_lane_length: float, out_lane_length: float,
+    def __init__(self, id, intersection: AnalyticPlusAgent, in_lane_length: float, out_lane_length: float,
                  max_speed: float):
         self.ID = id
         # sumo does not group movements, but in principle this can be a set of lane pairs
@@ -637,6 +654,7 @@ class Movement:
         self.in_length = in_lane_length
         self.out_length = out_lane_length
         self._intersection = intersection
+        self.traci = intersection.env.traci
         self._step_length = self._intersection.env.step_length
         self.phases: set[actionID] = set()
 
@@ -653,27 +671,7 @@ class Movement:
         self.reset()
 
     def reset(self):
-        self.interval_window: float = 150  # seconds
-        self.interval_length: int = int(self.interval_window / self._step_length)
-        self._min_interval_length: int = ceil(self.pass_time / self._step_length)  # ceil handles cases of short roads
-        self.interval_length = max(self.interval_length, self._min_interval_length)
-        self.ave_interval_length = self.interval_length * 10
-
-        self.interval_window = self.interval_length * self._step_length
-        self.ave_interval_window = self.ave_interval_length * self._step_length
-        self.prev_vehs = set()
-        # initialize to small arrival rates
-        self.arr_vehs_num: deque[int] = deque([0 for i in range(self.interval_length)], maxlen=self.interval_length)  # type: ignore
-        self.ave_arr_vehs_num: deque[int] = deque([0 for i in range(self.ave_interval_length)], maxlen=self.ave_interval_length)  # type: ignore
-        # self.dep_vehs_num: deque[int] = deque([0 for i in range(len(self.interval_length))], maxlen=self.interval_length) # type: ignore
-        self.total_dep = 0
-        self.total_delayed_arr = 0  # FIXME: unused for now
-        self.total_arr = 0
         self.last_on_time = 0
-        # self.waiting_time = 0 # red time
-        # self.max_waiting_time = 0
-        # self.waiting_time_list = []
-        self.arr_rate: float = 0
         self.priority: float = 0
         self.green_time: float = 0
 
@@ -683,70 +681,4 @@ class Movement:
         elif self.ID in action['movement_ids'] and self.ID not in phase['movement_ids']:  # will be deactivated
             self.last_on_time = -1  # currently active
 
-    def get_green_time(self, time):
-        """
-        Gets the predicted green time needed to clear the movement
-        :param time: the current timestep
-        :param current_movements: a list of movements that are currently enabled
-        :returns: the predicted green time of the movement
 
-        http://dx.doi.org/10.1088/1742-5468/2008/04/P04019
-        """
-        if len(self.arr_vehs_num) >= self.interval_length:
-            arrivals = self.arr_vehs_num
-            interval_window = self.interval_window
-
-
-        with np.errstate(divide='ignore', invalid='ignore'):
-            self.arr_rate = (np.nan_to_num(np.divide(sum(arrivals), interval_window), nan=0))
-            self.ave_arr_rate = np.nan_to_num(np.divide(self.total_arr, time), nan=0)
-            # self.ave_arr_rate = np.nan_to_num(np.divide(sum(self.ave_arr_vehs_num), self.ave_interval_window), nan=0)
-            # len(self.in_lanes))
-            assert self.arr_rate < self.max_saturation, (self.arr_rate, self.max_saturation)
-        # self.arr_rate = np.nan_to_num(np.divide(self.total_arr,
-        #                                         self._intersection.env.time),
-        #                               nan=0)/len(self.in_lanes) # FIXME: adapt to surges in Qarr
-        # dep = sum(self.dep_vehs_num)/len(self.in_lanes)
-        dep = self.total_dep  # /len(self.in_lanes)
-        arr = self.total_delayed_arr  # /len(self.in_lanes)
-        assert self.total_arr + sum(arrivals) >= dep, (self.total_arr, dep)
-        clearing_time = self.clearing_time
-
-        green_time = (self.arr_rate * clearing_time + arr - dep) / (self.max_saturation - self.arr_rate)
-        if (self.max_saturation - self.arr_rate) == 0:
-            print(f'WARNING: unhandled possible infinite green_time: {green_time, self._intersection.env.sumoCMD}')
-
-        # assert green_time >= 0, f'green time calculated is {green_time}'
-
-        green_time = max(0, green_time - (green_time % self._step_length))  # round down
-
-        return green_time
-
-    def update_arr_dep_veh_num(self, lane_data: LaneData):
-        """
-        Updates the list containing the number vehicles that arrived and departed
-        :param lanes_vehs: a dictionary with lane ids as keys and number of vehicles as values
-        """
-        current_vehs = set()
-
-        for lane_id in self.in_lanes:
-            current_vehs.update(lane_data[lane_id][VEH_LIST])
-
-        # detectors = self._intersection.env.TLS_DETECTORS[self._intersection.ID][self.current_sumo_phase]['numerical']
-        # for det in detectors:
-        #     current_vehs.update(self.traci.lanearea.getLastStepVehicleIDs(det))
-
-        dep_vehs = len(self.prev_vehs - current_vehs)
-        arr_vehs = len(current_vehs - self.prev_vehs)
-        self.arr_vehs_num.append(arr_vehs)
-        self.ave_arr_vehs_num.append(arr_vehs)
-        if len(self.arr_vehs_num) >= self._min_interval_length:
-            # self.total_delayed_arr += self.arr_vehs_num[-self._min_interval_length]
-            self.total_delayed_arr += self.arr_vehs_num[-self._min_interval_length]
-        # self.dep_vehs_num.append(dep_vehs)
-        self.prev_vehs = current_vehs
-        self.total_dep += dep_vehs
-        self.total_arr += arr_vehs
-
-        # b = self.total_delayed_arr + sum(list(self.arr_vehs_num)[-self._min_interval_length:])
-        # assert self.total_arr == b, (self.total_arr, b)

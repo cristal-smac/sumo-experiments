@@ -1,6 +1,4 @@
 # from sumo.tools.emissions.findMinDiffModel import model
-from zeus.monitor import ZeusMonitor
-
 from sumo_experiments.strategies import Strategy
 import numpy as np
 import torch
@@ -23,7 +21,7 @@ class IntellilightStrategy(Strategy):
     """
     DEBUG_REWARD = 10000  # ridiculously large value for debugging
 
-    def __init__(self, network, period=10, reward_coeffs=(1, 1, 1, 1), gamma=0.99, episode_duration=300, batch_size=64, buffer_size=1000, update_target_frequency=10, learning_rate=1 * 10 ** -2, exploration_prob=1, cooling_rate=10 ** -3, hidden_layer_size=64, yellow_time=3, intelligent_intersections=None):
+    def __init__(self, network, period=10, reward_coeffs=(1, 1, 1, 1), gamma=0.99, episode_duration=300, batch_size=64, buffer_size=1000, update_target_frequency=10, learning_rate=1 * 10 ** -2, exploration_prob=1, cooling_rate=10 ** -3, hidden_layer_size=64, yellow_time=3, intelligent_intersections=None, shared_network=False):
         """
         Init of class.
         :param network: The network to deploy the strategy
@@ -48,8 +46,12 @@ class IntellilightStrategy(Strategy):
         :type hidden_layer_size: int or dict
         :param yellow_time: Yellow phases duration for all intersections
         :type yellow_time: int or dict
+        :param shared_network: If True, identical intersections (same state dim, action space, hidden size) share a single neural network and replay buffer, improving sample efficiency.
+        :type shared_network: bool
         """
         super().__init__()
+        self.shared_network = shared_network
+        self._trained_this_step = set()
         self.network = network
         if type(yellow_time) is dict:
             self.yellow_time = yellow_time
@@ -138,9 +140,6 @@ class IntellilightStrategy(Strategy):
         self.phases_occurences = {identifiant: {} for identifiant in network.TLS_DETECTORS}
         self.phases_durations = {identifiant: [] for identifiant in network.TLS_DETECTORS}
         self.current_phase_duration = {identifiant: 0 for identifiant in network.TLS_DETECTORS}
-        # Zeus for energy consumption
-        self.zeus_monitor = ZeusMonitor()
-        self.energy_consumption = 0
 
     def run_all_agents(self, traci):
         """
@@ -153,8 +152,11 @@ class IntellilightStrategy(Strategy):
             self.traci = traci
             for tl_id in self.intelligent_intersections:
                 self._start_agent(tl_id)
+            if self.shared_network:
+                self._init_shared_networks()
             self.started = True
         else:
+            self._trained_this_step = set()
             self.zeus_monitor.begin_window("all_agents")
             timestep = self.traci.simulation.getTime()
             tl_id = self.network.TL_IDS[0]
@@ -163,13 +165,18 @@ class IntellilightStrategy(Strategy):
                 self.scores = []
             for tl_id in self.intelligent_intersections:
                 if timestep % self.episode_duration[tl_id] == 0 and self.trainnn[tl_id]:
-                    if tl_id == "c":
+                    if tl_id == self.network.TL_IDS[0]:
                         self.mean_rewards.append(np.mean(self.rewards))
                         self.rewards = []
-                        plt.plot(range(len(self.mean_rewards)), self.mean_rewards)
-                        plt.xlabel("Episode")
-                        plt.ylabel("Mean Reward")
-                        plt.savefig('strategy_debug.png')
+                        if not hasattr(self, '_debug_fig'):
+                            self._debug_fig, self._debug_ax = plt.subplots()
+                            self._debug_line, = self._debug_ax.plot([], [])
+                            self._debug_ax.set_xlabel('Episode')
+                            self._debug_ax.set_ylabel('Mean Reward')
+                        self._debug_line.set_data(range(len(self.mean_rewards)), self.mean_rewards)
+                        self._debug_ax.relim()
+                        self._debug_ax.autoscale_view()
+                        self._debug_fig.savefig('strategy_debug.png')
                     self.exploration_prob[tl_id] = self.exploration_prob[tl_id] - (self.exploration_prob[tl_id] * self.cooling_rate[tl_id])
                     self.last_state[tl_id] = None
                     self.last_action[tl_id] = None
@@ -250,7 +257,7 @@ class IntellilightStrategy(Strategy):
         if self.last_state[tl_id] is not None and self.last_action[tl_id] is not None and not done:
             #assert reward > -self.c4 * self.DEBUG_REWARD
             self.replay_buffer[tl_id].append((self.last_state[tl_id], self.last_action[tl_id], reward, state, phase, done))
-            if tl_id == "c":  # debugging for single intersection
+            if tl_id == self.network.TL_IDS[0]:  # debugging for anchor intersection
                 self.rewards.append(reward)
                 self.times.append(self.traci.simulation.getTime())
             self.scores = [self.get_score(tl_id, self.last_action[tl_id]) for i, tl_id in enumerate(self.network.TLS_DETECTORS)]
@@ -263,32 +270,32 @@ class IntellilightStrategy(Strategy):
         """
 
         """
+        if self.shared_network:
+            model_id = id(self.model[tl_id])
+            if model_id in self._trained_this_step:
+                return
+            self._trained_this_step.add(model_id)
+
         self.model[tl_id].train()
         self.target_model[tl_id].eval()
 
         batch = self._get_homogeneous_memory(tl_id, min(len(self.replay_buffer[tl_id]), self.batch_size[tl_id]))
+        if not batch:
+            return
         states, actions, rewards, next_states, phases, dones = zip(*batch)
 
-        states = torch.tensor(states, dtype=torch.float32).to(self.device)
-        next_states = torch.tensor(next_states, dtype=torch.float32).to(self.device)
-        actions = torch.tensor(actions).unsqueeze(1).to(self.device)
-        rewards = torch.tensor(rewards, dtype=torch.float32).unsqueeze(1).to(self.device)
-        dones = torch.tensor(dones, dtype=torch.float32).unsqueeze(1).to(self.device)
-
-        # Create a mapping from action names to indices
-        action_to_index = {action: idx for idx, action in enumerate(self.action_space[tl_id])}
-
-        # Vectorized conversion of actions to indices
-        # action_indices = torch.tensor([action_to_index[action[0].item()] for action in actions], dtype=torch.long).unsqueeze(1).to(self.device)
-        # action_indices = torch.tensor(actions, dtype=torch.long).unsqueeze(1).to(self.device)
-        # print(action_indices.size())
+        states = torch.from_numpy(np.stack(states)).to(self.device, dtype=torch.float32)
+        next_states = torch.from_numpy(np.stack(next_states)).to(self.device, dtype=torch.float32)
+        actions = torch.as_tensor(actions, device=self.device, dtype=torch.long).view(-1, 1)
+        rewards = torch.as_tensor(rewards, device=self.device, dtype=torch.float32).view(-1, 1)
+        dones = torch.as_tensor(dones, device=self.device, dtype=torch.float32).view(-1, 1)
 
         # Compute target Q-values
         with torch.no_grad():
             # next_q_values = torch.stack([self.target_model[tl_id](next_states, phase) for phase in phases])  # [batch_size, output_dim]
-            next_q_values = self.target_model[tl_id](states, phases)  # [batch_size, output_dim]
-            max_next_q_values = next_q_values.max(dim=1, keepdim=True)[0]  # [batch_size, 1]
-            targets = rewards + self.gamma[tl_id] * max_next_q_values * (1 - dones)  # [batch_size, 1]
+            next_q_values = self.target_model[tl_id](next_states, phases)  # [batch_size, output_dim]
+            max_next_q_values = next_q_values.max(dim=1, keepdim=True).values  # [batch_size, 1]
+            targets = rewards + self.gamma[tl_id] * max_next_q_values * (1.0 - dones)  # [batch_size, 1]
 
         # Compute current Q-values
         # current_q_values = torch.stack([self.model[tl_id](states, phase) for phase in phases])  # [batch_size, output_dim]
@@ -397,16 +404,6 @@ class IntellilightStrategy(Strategy):
                     detectors.append(det)
         return detectors
 
-    def get_energy_consumption(self, measurements):
-        """
-        Get the total energy consumption of a measurement window
-        """
-        gpu_energy = sum([measurements.gpu_energy[key] for key in measurements.gpu_energy]) if measurements.gpu_energy is not None else 0
-        cpu_energy = sum([measurements.cpu_energy[key] for key in measurements.cpu_energy]) if measurements.cpu_energy is not None else 0
-        dram_energy = sum([measurements.dram_energy[key] for key in measurements.dram_energy]) if measurements.dram_energy is not None else 0
-        soc_energy = sum([measurements.soc_energy[key] for key in measurements.soc_energy]) if measurements.soc_energy is not None else 0
-        return sum([gpu_energy, cpu_energy, dram_energy, soc_energy])
-
     def _start_agent(self, tl_id):
         """
         Start an agent at the beginning of the simulation.
@@ -431,6 +428,39 @@ class IntellilightStrategy(Strategy):
             self.model[tl_id] = QNetwork(action_space=self.action_space[tl_id], input_dim=input_dim, hidden_dim=self.hidden_layer_size[tl_id], output_dim=2).to(self.device)
             self.target_model[tl_id] = QNetwork(action_space=self.action_space[tl_id], input_dim=input_dim, hidden_dim=self.hidden_layer_size[tl_id], output_dim=2).to(self.device)
         self.optimizer[tl_id] = optim.Adam(self.model[tl_id].parameters(), lr=self.learning_rate[tl_id])
+
+    def _init_shared_networks(self):
+        """
+        Group identical intersections by (input_dim, action_space, hidden_dim)
+        and make them share the same model, target model, optimizer, and replay buffer.
+        """
+        groups = {}
+        for tl_id in self.intelligent_intersections:
+            input_dim = len(self.get_state(tl_id))
+            action_key = tuple(self.action_space[tl_id])
+            hidden = self.hidden_layer_size[tl_id]
+            sig = (input_dim, action_key, hidden)
+            groups.setdefault(sig, []).append(tl_id)
+
+        self._network_groups = groups
+
+        for sig, tl_ids in groups.items():
+            if len(tl_ids) <= 1:
+                continue
+
+            primary = tl_ids[0]
+            shared_model = self.model[primary]
+            shared_target = self.target_model[primary]
+            shared_buffer = deque(maxlen=self.buffer_size[primary])
+            shared_optimizer = optim.Adam(shared_model.parameters(), lr=self.learning_rate[primary])
+            shared_loss_history = self.loss_history[primary]
+
+            for tl_id in tl_ids:
+                self.model[tl_id] = shared_model
+                self.target_model[tl_id] = shared_target
+                self.replay_buffer[tl_id] = shared_buffer
+                self.optimizer[tl_id] = shared_optimizer
+                self.loss_history[tl_id] = shared_loss_history
 
     def save_model(self, filepath):
         torch.save(self.model, filepath)

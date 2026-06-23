@@ -12,11 +12,14 @@ class DetectorBuilder:
     object beforehand. The build function generates the XML file.
     """
 
-    def __init__(self):
+    def __init__(self, default_freq=100000):
         """
         Init of class.
+        :param default_freq: Default aggregation period (seconds) for detectors that don't specify one.
+        :type default_freq: int
         """
         self.laneAreaDetectors = {}
+        self.default_freq = default_freq
 
     def build(self, filenames):
         """
@@ -30,7 +33,7 @@ class DetectorBuilder:
         ET.indent(tree, space="  ", level=0) # pretty print for debugging
         tree.write(filenames['detectors'])
 
-    def add_lane_area_detector(self, id, edge, lane, type, pos=0, end_pos=-0.1, freq=100000, target_tlid=None):
+    def add_lane_area_detector(self, id, edge, lane, type, pos=0, end_pos=-0.1, freq=None, target_tlid=None):
         """
         Add a E2 detector to the object.
         :param id: ID of detector
@@ -52,6 +55,8 @@ class DetectorBuilder:
         :param file: The file where the detector will be saved
         :type file: str
         """
+        if freq is None:
+            freq = self.default_freq
         self.laneAreaDetectors[id] = LaneAreaDetector(id, edge, lane, type, pos, end_pos, freq, target_tlid, 'detectors.out')
 
     def build_lane_area_detectors(self, xml):

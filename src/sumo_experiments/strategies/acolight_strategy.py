@@ -1,7 +1,4 @@
-from zeus.monitor import ZeusMonitor
-
 from sumo_experiments.strategies import Strategy
-
 
 
 class AcolightStrategy(Strategy):
@@ -62,9 +59,6 @@ class AcolightStrategy(Strategy):
         self.current_phase_duration = {identifiant: 0 for identifiant in network.TLS_DETECTORS}
         self.time_blocked = {identifiant: 0 for identifiant in network.TLS_DETECTORS}
         self.time_no_vehicle = {identifiant: 0 for identifiant in network.TLS_DETECTORS}
-        # Zeus for energy consumption
-        self.zeus_monitor = ZeusMonitor()
-        self.energy_consumption = 0
 
 
     def run_all_agents(self, traci):
@@ -251,17 +245,6 @@ class AcolightStrategy(Strategy):
                     if self.traci.lanearea.getLastStepVehicleNumber(det) > 0:
                         return phase
         return self.traci.trafficlight.getPhase(id_tls) # Current phase
-
-
-    def get_energy_consumption(self, measurements):
-        """
-        Get the total energy consumption of a measurement window
-        """
-        gpu_energy = sum([measurements.gpu_energy[key] for key in measurements.gpu_energy]) if measurements.gpu_energy is not None else 0
-        cpu_energy = sum([measurements.cpu_energy[key] for key in measurements.cpu_energy]) if measurements.cpu_energy is not None else 0
-        dram_energy = sum([measurements.dram_energy[key] for key in measurements.dram_energy]) if measurements.dram_energy is not None else 0
-        soc_energy = sum([measurements.soc_energy[key] for key in measurements.soc_energy]) if measurements.soc_energy is not None else 0
-        return sum([gpu_energy, cpu_energy, dram_energy, soc_energy])
 
 
     def _start_agents(self):
