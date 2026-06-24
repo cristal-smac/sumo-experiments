@@ -163,20 +163,19 @@ class IntellilightStrategy(Strategy):
             if timestep % self.episode_duration[tl_id] == 0 and self.trainnn[tl_id]:
                 self.mean_scores.append(np.mean(self.scores))
                 self.scores = []
+
+                if self.network.TL_IDS:
+                    if not hasattr(self, '_debug_fig'):
+                        self._debug_fig, self._debug_ax = plt.subplots()
+                        self._debug_line, = self._debug_ax.plot([], [])
+                        self._debug_ax.set_xlabel('Episode')
+                        self._debug_ax.set_ylabel('Mean Score')
+                    self._debug_line.set_data(range(len(self.mean_rewards)), self.mean_rewards)
+                    self._debug_ax.relim()
+                    self._debug_ax.autoscale_view()
+                    self._debug_fig.savefig('strategy_debug.png')
             for tl_id in self.intelligent_intersections:
                 if timestep % self.episode_duration[tl_id] == 0 and self.trainnn[tl_id]:
-                    if tl_id == self.network.TL_IDS[0]:
-                        self.mean_rewards.append(np.mean(self.rewards))
-                        self.rewards = []
-                        if not hasattr(self, '_debug_fig'):
-                            self._debug_fig, self._debug_ax = plt.subplots()
-                            self._debug_line, = self._debug_ax.plot([], [])
-                            self._debug_ax.set_xlabel('Episode')
-                            self._debug_ax.set_ylabel('Mean Reward')
-                        self._debug_line.set_data(range(len(self.mean_rewards)), self.mean_rewards)
-                        self._debug_ax.relim()
-                        self._debug_ax.autoscale_view()
-                        self._debug_fig.savefig('strategy_debug.png')
                     self.exploration_prob[tl_id] = self.exploration_prob[tl_id] - (self.exploration_prob[tl_id] * self.cooling_rate[tl_id])
                     self.last_state[tl_id] = None
                     self.last_action[tl_id] = None
