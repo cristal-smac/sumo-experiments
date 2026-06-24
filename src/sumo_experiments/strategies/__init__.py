@@ -7,4 +7,7 @@ from .sotl_strategy import SotlStrategy
 from .actuated_strategy import ActuatedStrategy
 from.lqf_strategy import LongestQueueFirstStrategy
 from .intellilight_strategy import IntellilightStrategy
+from .DQN_strategy import DQNStrategy
 from .maddpg_strategy import MADDPGStrategy
+from .transformerDQN_strategy import TransformerDQNStrategy
+from .scoot_strategy import ScootScatsStrategy
