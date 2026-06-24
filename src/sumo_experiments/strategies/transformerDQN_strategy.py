@@ -47,6 +47,7 @@ class TransformerDQNStrategy(DQNStrategy):
         self._joint_cache_actions = {}
 
         self.last_global_state = {tl_id: None for tl_id in self.network.TLS_DETECTORS}
+        self._padding_buffer = None
 
     def _to_tls_dict(self, value, cast_fn):
         if isinstance(value, dict):
@@ -199,27 +200,23 @@ class TransformerDQNStrategy(DQNStrategy):
         relation_bucket_count = span * span * self.connectivity_buckets
         return torch.tensor(relation_index, dtype=torch.long, device=self.device), relation_bucket_count
 
-    def _validate_and_cast_state(self, state, tl_id):
+    def _validate_and_cast_state(self, state, tl_id, out_row):
         arr = np.asarray(state, dtype=np.float32).reshape(-1)
         expected_dim = self.state_dims[tl_id]
         if len(arr) != expected_dim:
             raise ValueError(
                 f"State size mismatch for TLS '{tl_id}': expected {expected_dim}, got {len(arr)}"
             )
-        if self.global_state_dim is None or len(arr) == self.global_state_dim:
-            return arr
-
-        # Pad shorter TLS state vectors so a shared model can process heterogeneous dimensions.
-        padded = np.zeros(self.global_state_dim, dtype=np.float32)
-        padded[:len(arr)] = arr
-        return padded
+        
+        # Directly slice out target memory space from the pre-allocated batch view
+        out_row[:len(arr)] = arr
 
     def _collect_global_state(self):
-        global_state = []
-        for tl_id in self.tls_ids:
+        self._padding_buffer.fill(0.0)
+        for idx, tl_id in enumerate(self.tls_ids):
             state = self.get_state(tl_id)
-            global_state.append(self._validate_and_cast_state(state, tl_id))
-        return np.asarray(global_state, dtype=np.float32)
+            self._validate_and_cast_state(state, tl_id, self._padding_buffer[idx])
+        return self._padding_buffer
 
     def _compute_joint_actions(self, train=True):
         sim_time = int(self.traci.simulation.getTime())
@@ -245,7 +242,7 @@ class TransformerDQNStrategy(DQNStrategy):
                 self.exploration_prob[tl_id] = max(float(self.epsilon_min[tl_id]), decayed)
 
         self._joint_cache_time = sim_time
-        self._joint_cache_state = global_state
+        self._joint_cache_state = global_state.copy()  # Clone state array safely
         self._joint_cache_actions = actions
 
     def _start_agent(self, tl_id):
@@ -264,6 +261,7 @@ class TransformerDQNStrategy(DQNStrategy):
         if self.global_state_dim is None:
             self.state_dims = {tls_id: len(self.get_state(tls_id)) for tls_id in self.tls_ids}
             self.global_state_dim = int(max(self.state_dims.values()))
+            self._padding_buffer = np.zeros((len(self.tls_ids), self.global_state_dim), dtype=np.float32)
 
         if self.relation_index is None:
             self.relation_index, relation_bucket_count = self._build_relative_position_index()
@@ -340,7 +338,7 @@ class TransformerDQNStrategy(DQNStrategy):
         if not non_empty_buffers:
             return []
 
-        total_samples = int(np.sum(sizes))
+        total_samples = sum(sizes)
         max_batch = self.batch_size[self.tls_ids[0]]
         batch_size = min(total_samples, max_batch)
 
@@ -354,7 +352,7 @@ class TransformerDQNStrategy(DQNStrategy):
             sampled_elements = random.sample(buf, count)
             batch.extend(sampled_elements)
 
-        np.random.shuffle(batch)
+        random.shuffle(batch)
         return batch
 
     def train(self, tl_id):
