@@ -170,7 +170,7 @@ class IntellilightStrategy(Strategy):
                         self._debug_line, = self._debug_ax.plot([], [])
                         self._debug_ax.set_xlabel('Episode')
                         self._debug_ax.set_ylabel('Mean Score')
-                    self._debug_line.set_data(range(len(self.mean_rewards)), self.mean_rewards)
+                    self._debug_line.set_data(range(len(self.mean_scores)), self.mean_scores)
                     self._debug_ax.relim()
                     self._debug_ax.autoscale_view()
                     self._debug_fig.savefig('strategy_debug.png')
