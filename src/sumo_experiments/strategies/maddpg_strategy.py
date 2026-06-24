@@ -1,15 +1,42 @@
 #from sumo.tools.emissions.findMinDiffModel import model
-from sumo_experiments.strategies import Strategy
+from . import Strategy
 import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
 from collections import deque
 import random
-from sumo_experiments.strategies.maxpressure_strategy import MaxPressureStrategy
-from sumo_experiments.strategies import IntellilightStrategy
+from .maxpressure_strategy import MaxPressureStrategy
+from .intellilight_strategy import IntellilightStrategy
 import matplotlib.pyplot as plt
 import collections
+
+from .rl_networks import *
+from .rl_agents import *
+from .rl_networks import *
+
+import torch
+import torch.distributed as dist
+from typing import List
+loss_fn = torch.nn.HuberLoss()
+
+
+def _move_optimizer_state(optimizer, device):
+    """Move tensor values inside an optimizer.state to `device`.
+
+    This is needed when the model parameters are moved to a new device but
+    the optimizer (created earlier) still has its state tensors on the old
+    device (e.g. CPU). Call after moving modules to ensure optimizer state
+    and parameters share the same device.
+    """
+    if optimizer is None:
+        return
+
+    tgt = device
+    for state in optimizer.state.values():
+        for k, v in list(state.items()):
+            if torch.is_tensor(v):
+                state[k] = v.to(tgt)
 
 
 
@@ -21,10 +48,11 @@ class MADDPGStrategy(IntellilightStrategy):
     - https://github.com/shariqiqbal2810/maddpg-pytorch/blob/master/algorithms/maddpg.py#L143
     - Lowe, R., Wu, Y. I., Tamar, A., Harb, J., Pieter Abbeel, O., & Mordatch, I. (2017). Multi-agent actor-critic for mixed cooperative-competitive environments. Advances in neural information processing systems, 30.
     """
+    REWARD_REFERENCE_EPISODE_DURATION = 1000.0
 
     def __init__(self, network, period=10, episode_duration=300, reward_coeffs=(1, 1, 1, 1), gamma=0.99, buffer_size=10000, batch_size=32, 
                  steps_per_update=10, samples_before_update=1024, 
-                 learning_rate=1e-2, tau=0.01, hidden_layer_size=64, yellow_time=3, intelligent_intersections=None, shared_policy=False):
+                 learning_rate=1e-2, tau=0.01, hidden_layer_size=64, yellow_time=3, intelligent_intersections=None, shared_policy=False, recurrent_policy=True):
         """
         Init of class.
         :param network: The network to deploy the strategy
@@ -120,6 +148,17 @@ class MADDPGStrategy(IntellilightStrategy):
         self.phases_occurences = {identifiant: {} for identifiant in network.TLS_DETECTORS}
         self.phases_durations = {identifiant: [] for identifiant in network.TLS_DETECTORS}
         self.current_phase_duration = {identifiant: 0 for identifiant in network.TLS_DETECTORS}
+        self.recurrent_policy = recurrent_policy
+        if self.recurrent_policy:
+            self.__name__ = "MARDDPGStrategy"
+
+    def reset_recurrent_states(self):
+        if self.maddpg is None:
+            return
+        for agent in self.maddpg.agents:
+            reset_fn = getattr(agent, 'reset_recurrent_state', None)
+            if callable(reset_fn):
+                reset_fn()
 
 
     def run_all_agents(self, traci):
@@ -233,50 +272,46 @@ class MADDPGStrategy(IntellilightStrategy):
         return np.array(L + W + V + P, dtype=np.float32)  # concatenate all values into a single array
     
     def get_next_phases(self, train=True):
-        """
-        Get the next phase for the controller using MADDPG.
-        """
-        # Store experience in replay buffer
+        """Base MADDPG action loop with recurrent-state resets at episode boundaries."""
+        sim_time = int(self.traci.simulation.getTime())
         next_states = [self.get_state(tl_id) for tl_id in self.intelligent_intersections]
         rewards = [self.get_reward(tl_id, self.changed_phase[i]) for i, tl_id in enumerate(self.intelligent_intersections)]
-        dones = [(self.traci.simulation.getTime()%self.episode_duration)==0 for _ in self.intelligent_intersections]
+        dones = [(sim_time % self.episode_duration) == 0 for _ in self.intelligent_intersections]
         scores = [self.get_score(tl_id, self.changed_phase[i]) for i, tl_id in enumerate(self.intelligent_intersections)]
-        # if dones[0]:
-        #     print(f"Rewards at time {self.traci.simulation.getTime()}: {rewards}")
-        # if self.states is not None and self.action_indices is not None:
-        #     with np.printoptions(precision=2, suppress=True):
-        #         print(self.states[0], self.action_indices[0], rewards[0])
 
-        # Global rewards for coordinating MADDPG
         rewards = np.ones_like(rewards) * np.mean(rewards)
 
-        # Update buffer from previous action step
         if self.states is not None and self.action_indices is not None and not dones[0]:
             self.replay_buffer.push(self.states, self.action_indices, rewards, next_states, dones=dones)
-            if "c" in self.network.TL_IDS:  # debugging for single intersection
-                assert rewards[0]>-(self.c4*self.DEBUG_REWARD), (rewards, self.changed_phase)
+            if "c" in self.network.TL_IDS:
+                assert rewards[0] > -(self.c4 * self.DEBUG_REWARD), (rewards, self.changed_phase)
                 self.rewards.append(rewards[0])
-                self.times.append(self.traci.simulation.getTime())
+                self.times.append(sim_time)
             self.scores.append(np.mean(scores))
-        state_tensor = [torch.from_numpy(n_s).unsqueeze(0).to(self.rollout_device) for n_s in next_states]
+
+        if dones[0]:
+            self.reset_recurrent_states()
+
+        state_tensor = [torch.as_tensor(n_s, dtype=torch.float32, device=self.rollout_device).unsqueeze(0) for n_s in next_states]
         with torch.no_grad():
-            torch_action_indices = self.maddpg.step(state_tensor, explore=True) # exploration handled by softmax
-            action_indices = [ac.detach().cpu().numpy() for ac in torch_action_indices]
-            # DEBUG: force an action
-            # s = 1 if self.traci.simulation.getTime() // 100 % 2 == 0 else -1
-            # action_indices = [np.array([1,0])[::s]]
+            torch_action_indices = self.maddpg.step(state_tensor, explore=True)
+            action_indices = [ac.data.cpu().numpy() for ac in torch_action_indices]
 
         if self.action_indices is None:
             self.changed_phase = [False for _ in self.intelligent_intersections]
         else:
-            self.changed_phase = [np.argmax(action_indices[i]) != np.argmax(self.action_indices[i]) for i, tl_id in enumerate(self.intelligent_intersections)]
+            self.changed_phase = [
+                np.argmax(action_indices[i]) != np.argmax(self.action_indices[i])
+                for i, tl_id in enumerate(self.intelligent_intersections)
+            ]
         self.states = next_states
-        self.action_indices = action_indices     
+        self.action_indices = action_indices
 
         return {tl_id: self.action_space[tl_id][action_indices[i].argmax()] for i, tl_id in enumerate(self.intelligent_intersections)}
 
     def train(self):
         # Train the MADDPG model once buffer reaches minimum size
+        self.replay_buffer.update_reward_statistics() # do once for all 
         self.maddpg.prep_training(device=self.device)
         for tl_id in self.intelligent_intersections:
             self.number_of_trainings[tl_id] += 1
@@ -304,39 +339,53 @@ class MADDPGStrategy(IntellilightStrategy):
 
     def get_reward(self, tl_id, change_phase=None):
         pressure = MaxPressureStrategy._compute_pressure(self, self.network.TLS_DETECTORS[tl_id])
-        return -np.nanmean(list(pressure.values()))/2000
+        base_reward = -np.nanmean(list(pressure.values())) / 2000
+        scale = episode_reward_scale(
+            self.episode_duration,
+            tl_id=tl_id,
+            reference_duration=self.REWARD_REFERENCE_EPISODE_DURATION,
+        )
+        return base_reward * scale
 
     def _start_agent(self, tl_id):
-        """
-        Start an agent at the beginning of the simulation.
-        :param tl_id: The id of the TL
-        :type tl_id: str
-        """
+        """Create recurrent MADDPG agents while keeping base strategy behavior."""
+        #from src.sumo_experiments.strategies import maddpg_strategy as maddpg_module
+
         self.nb_phases[tl_id] = len(self.traci.trafficlight.getAllProgramLogics(tl_id)[0].phases)
         tl_logic = self.traci.trafficlight.getAllProgramLogics(tl_id)[0]
-        phase_index = 0
         for phase in tl_logic.phases:
             phase.duration = 10000
             phase.maxDur = 10000
             phase.minDur = 10000
-            phase_index += 1
         self.traci.trafficlight.setProgramLogic(tl_id, tl_logic)
         self.traci.trafficlight.setPhase(tl_id, 0)
         self.traci.trafficlight.setPhaseDuration(tl_id, 10000)
 
-        # Compute global dimensions once to avoid repeated O(n_agents^2) startup work.
-        if not self.observation_sizes:
-            for obs_tl_id in self.intelligent_intersections:
-                self.observation_sizes[obs_tl_id] = len(self.get_state(obs_tl_id))
-            self._critic_input_dim = sum(self.observation_sizes.values())
-            self._critic_input_dim += sum(len(self.action_space[obs_tl_id]) for obs_tl_id in self.intelligent_intersections)
+        input_dims = {tls_id: len(self.get_state(tls_id)) for tls_id in self.intelligent_intersections}
+        critic_dim = sum(input_dims.values())
+        critic_dim += sum(len(self.action_space[tls_id]) for tls_id in self.intelligent_intersections)
 
-        self.agents[tl_id] = DDPGAgent(num_out_pol=len(self.action_space[tl_id]), 
-                                       num_in_pol=self.observation_sizes[tl_id], 
-                                       num_in_critic=self._critic_input_dim, 
-                                       hidden_dim=self.hidden_layer_size[tl_id],
-                                       lr=self.learning_rate[tl_id],
-                                       discrete_action=True).to(self.rollout_device)
+        if self.recurrent_policy:
+            agent = RecurrentDDPGAgent(
+                num_out_pol=len(self.action_space[tl_id]),
+                num_in_pol=input_dims[tl_id],
+                num_in_critic=critic_dim,
+                hidden_dim=self.hidden_layer_size[tl_id],
+                lr=self.learning_rate[tl_id],
+                discrete_action=True,
+            )
+        else:
+            agent = DDPGAgent(
+                num_out_pol=len(self.action_space[tl_id]),
+                num_in_pol=input_dims[tl_id],
+                num_in_critic=critic_dim,
+                hidden_dim=self.hidden_layer_size[tl_id],
+                lr=self.learning_rate[tl_id],
+                discrete_action=True,
+            )
+
+        self.agents[tl_id] = agent.to(self.rollout_device)
+        self.observation_sizes[tl_id] = input_dims[tl_id]
 
     def _share_policies(self):
         """
@@ -360,78 +409,31 @@ class MADDPGStrategy(IntellilightStrategy):
         torch.save(self.maddpg.agents, filepath)
 
     def load_model(self, filepath):
-        torch.serialization.add_safe_globals([DDPGAgent, DeepNN, nn.Linear, nn.functional.relu, optim.Adam, collections.defaultdict, dict])
+        torch.serialization.add_safe_globals([
+            DDPGAgent,
+            DeepNN,
+            RecurrentDDPGAgent,
+            RecurrentPolicyNetwork,
+            nn.Linear,
+            nn.LSTM,
+            nn.functional.relu,
+            optim.Adam,
+            collections.defaultdict,
+            dict,
+        ])
         if self.maddpg is None:
             self.maddpg = MADDPG(agents=[], alg_types=['MADDPG' for _ in self.intelligent_intersections],
                                  gamma=list(self.gamma.values())[0], # TODO: refactor?
                                  discrete_action=True,
                                  tau=self.tau)
-        self.maddpg.agents = torch.load(filepath, map_location=self.device, weights_only=False)
+        self.maddpg.agents = torch.load(filepath, map_location=self.rollout_device, weights_only=False)
+        self.recurrent_policy = any(getattr(agent, 'recurrent_policy', False) for agent in self.maddpg.agents)
+        self.reset_recurrent_states()
 
 
-class DeepNN(nn.Module):
-    def __init__(self, input_dim, out_dim, hidden_dim=64, nonlin=nn.functional.relu, recurrent=False):
-        super().__init__()
-        self.recurrent = recurrent
-        self.hidden_dim = hidden_dim
-        self.device = None
-        if not recurrent:
-            self.fc1 = nn.Linear(input_dim, hidden_dim)
-        else:
-            self.fc1 = nn.LSTM(input_size=input_dim, hidden_size=hidden_dim, batch_first=True)
-        self.fc2 = nn.Linear(hidden_dim, hidden_dim)
-        self.fc3 = nn.Linear(hidden_dim, out_dim)
-        self.nonlin = nonlin
-        
-        # Persistent hidden state for recurrent networks (maintained across timesteps in rollouts)
-        self.h_n = None
-        self.c_n = None
-
-    def reset_hidden_state(self, batch_size=1):
-        """Reset LSTM hidden state. Call this at episode start or when needed."""
-        if self.recurrent:
-            device = next(self.parameters()).device
-            self.h_n = torch.zeros(1, batch_size, self.hidden_dim, device=device)
-            self.c_n = torch.zeros(1, batch_size, self.hidden_dim, device=device)
-
-    def forward(self, X, use_hidden_state=False):
-        """
-        Forward pass.
-        
-        Args:
-            X: Input tensor, shape (batch_size, input_dim) or (batch_size, seq_len, input_dim)
-            use_hidden_state: If True and recurrent, use persistent hidden state (for rollouts).
-                             If False, use fresh hidden state (for replay buffer training).
-        """
-        if False:
-            # Ensure X has sequence dimension
-            if X.dim() == 2:
-                X = X.unsqueeze(1)  # (batch_size, input_dim) -> (batch_size, 1, input_dim)
-            
-            if use_hidden_state and self.h_n is not None:
-                # Use persistent hidden state from previous timestep
-                lstm_out, (self.h_n, self.c_n) = self.fc1(X, (self.h_n, self.c_n))
-            else:
-                # Fresh hidden state (for training on replay buffer)
-                lstm_out, (self.h_n, self.c_n) = self.fc1(X)
-            
-            h = self.nonlin(lstm_out[:, -1])  # take last timestep
-        else: # not used as of now.
-            # Remove sequence dimension if present for linear networks
-            if X.dim() == 3:
-                X = X.squeeze(1)
-            h = self.nonlin(self.fc1(X))
-        
-        h = self.nonlin(self.fc2(h))
-        out = self.fc3(h)
-        return out
     
 
 ## MADDPG Algorithm
-import torch
-import torch.distributed as dist
-from typing import List
-loss_fn = torch.nn.HuberLoss()
 
 
 class MADDPG(object):
@@ -664,6 +666,13 @@ class MADDPG(object):
             for a in self.agents:
                 a.target_critic = fn(a.target_critic)
             self.trgt_critic_dev = device
+        # Ensure optimizer state tensors are on the same device as the
+        # corresponding module parameters. This handles checkpoints loaded on
+        # CPU that are later trained on GPU/MPS.
+        for a in self.agents:
+            _move_optimizer_state(getattr(a, 'policy_optimizer', None), device)
+            _move_optimizer_state(getattr(a, 'critic_optimizer', None), device)
+
 
     def prep_rollouts(self, device='cpu'):
         for a in self.agents:
@@ -696,155 +705,91 @@ class MADDPG(object):
             a.load_params(params)
         return instance
 
-class DDPGAgent(nn.Module):
-    """
-    General class for DDPG agents (policy, critic, target policy, target
-    critic, exploration noise)
-    """
-    def __init__(self, num_in_pol, num_out_pol, num_in_critic, hidden_dim=64,
-                 lr=0.01, discrete_action=True):
-        """
-        Inputs:
-            num_in_pol (int): number of dimensions for policy input
-            num_out_pol (int): number of dimensions for policy output
-            num_in_critic (int): number of dimensions for critic input
-        """
-        super().__init__()
-        self.policy = DeepNN(num_in_pol, num_out_pol,
-                                 hidden_dim=hidden_dim)
-        self.critic = DeepNN(num_in_critic, 1,
-                                 hidden_dim=hidden_dim)
-        self.target_policy = DeepNN(num_in_pol, num_out_pol,
-                                        hidden_dim=hidden_dim)
-        self.target_critic = DeepNN(num_in_critic, 1,
-                                        hidden_dim=hidden_dim)
-        hard_update(self.target_policy, self.policy)
-        hard_update(self.target_critic, self.critic)
-        self.policy_optimizer = optim.Adam(self.policy.parameters(), lr=lr/10)
-        self.critic_optimizer = optim.Adam(self.critic.parameters(), lr=lr)
-
-        self.exploration = 0.3  # epsilon for eps-greedy, unused
-        self.discrete_action = discrete_action
-
-
-    def step(self, obs, explore=False):
-        """
-        Take a step forward in environment for a minibatch of observations
-        Inputs:
-            obs (PyTorch Variable): Observations for this agent
-            explore (boolean): Whether or not to add exploration noise
-        Outputs:
-            action (PyTorch Variable): Actions for this agent
-        """
-        obs = obs.to(next(self.policy.parameters()).device)
-        action = self.policy(obs)
-        if self.discrete_action:
-            if explore:
-                # note: for MADDPG step, we should output onehot vectors
-                action = nn.functional.gumbel_softmax(action, hard=True) # consider replacing with other estimators from https://github.com/uoe-agents/revisiting-maddpg
-            else:
-                action = onehot_from_logits(action)
-        return action
-
-    def get_params(self):
-        return {'policy': self.policy.state_dict(),
-                'critic': self.critic.state_dict(),
-                'target_policy': self.target_policy.state_dict(),
-                'target_critic': self.target_critic.state_dict(),
-                'policy_optimizer': self.policy_optimizer.state_dict(),
-                'critic_optimizer': self.critic_optimizer.state_dict()}
-
-    def load_params(self, params):
-        self.policy.load_state_dict(params['policy'])
-        self.critic.load_state_dict(params['critic'])
-        self.target_policy.load_state_dict(params['target_policy'])
-        self.target_critic.load_state_dict(params['target_critic'])
-        self.policy_optimizer.load_state_dict(params['policy_optimizer'])
-        self.critic_optimizer.load_state_dict(params['critic_optimizer'])
-
-    def to(self, device):
-        self.policy.to(device)
-        self.critic.to(device)
-        self.target_policy.to(device)
-        self.target_critic.to(device)
-        return self
-
 class ReplayBuffer:
     """
-    Replay Buffer for multi-agent RL with parallel rollouts
+    Optimized Multi-Agent Replay Buffer using a circular pointer and 
+    epoch-cached reward statistics to avoid whole-buffer recalculation overhead.
     """
     def __init__(self, max_steps, num_agents, obs_dims, ac_dims):
-        """
-        Inputs:
-            max_steps (int): Maximum number of timepoints to store in buffer
-            num_agents (int): Number of agents in environment
-            obs_dims (list of ints): number of obervation dimensions for each
-                                     agent
-            ac_dims (list of ints): number of action dimensions for each agent
-        """
-        max_steps = int(max_steps)
-        self.max_steps = max_steps
+        self.max_steps = int(max_steps)
         self.num_agents = num_agents
+        
         self.obs_buffs = []
         self.ac_buffs = []
         self.rew_buffs = []
         self.next_obs_buffs = []
         self.done_buffs = []
+
+        # Allocate contiguous arrays upfront using specified dtypes
         for odim, adim in zip(obs_dims, ac_dims):
-            self.obs_buffs.append(np.zeros((max_steps, odim), dtype=np.float32))
-            self.ac_buffs.append(np.zeros((max_steps, adim), dtype=np.float32))
-            self.rew_buffs.append(np.zeros(max_steps, dtype=np.float32))
-            self.next_obs_buffs.append(np.zeros((max_steps, odim), dtype=np.float32))
-            self.done_buffs.append(np.zeros(max_steps, dtype=np.float32))
+            self.obs_buffs.append(np.zeros((self.max_steps, odim), dtype=np.float32))
+            self.ac_buffs.append(np.zeros((self.max_steps, adim), dtype=np.float32))
+            self.rew_buffs.append(np.zeros(self.max_steps, dtype=np.float32))
+            self.next_obs_buffs.append(np.zeros((self.max_steps, odim), dtype=np.float32))
+            self.done_buffs.append(np.zeros(self.max_steps, dtype=np.float32))
 
+        self.filled_i = 0  # Number of valid slots currently in the buffer
+        self.curr_i = 0    # Circular pointer tracking where to write next
 
-        self.filled_i = 0  # index of first empty location in buffer (last index when full)
-        self.curr_i = 0  # current index to write to (ovewrite oldest data)
+        # Lazy epoch caching for O(1) batch normalization
+        self._cached_means = np.zeros(num_agents, dtype=np.float32)
+        self._cached_stds = np.ones(num_agents, dtype=np.float32)
 
     def __len__(self):
         return self.filled_i
 
     def push(self, observations, actions, rewards, next_observations, dones):
-        nentries = 1  # single environment at a time
-        if self.curr_i + nentries > self.max_steps:
-            rollover = self.max_steps - self.curr_i # num of indices to roll over
-            for agent_i in range(self.num_agents):
-                self.obs_buffs[agent_i] = np.roll(self.obs_buffs[agent_i],
-                                                  rollover, axis=0)
-                self.ac_buffs[agent_i] = np.roll(self.ac_buffs[agent_i],
-                                                 rollover, axis=0)
-                self.rew_buffs[agent_i] = np.roll(self.rew_buffs[agent_i],
-                                                  rollover)
-                self.next_obs_buffs[agent_i] = np.roll(
-                    self.next_obs_buffs[agent_i], rollover, axis=0)
-                self.done_buffs[agent_i] = np.roll(self.done_buffs[agent_i],
-                                                   rollover)
-            self.curr_i = 0
-            self.filled_i = self.max_steps
+        """
+        Inserts data at the circular pointer in O(1) time without shifting arrays.
+        """
+        idx = self.curr_i
+        
         for agent_i in range(self.num_agents):
-            self.obs_buffs[agent_i][self.curr_i:self.curr_i + nentries] = observations[agent_i]
-            # actions are already batched by agent, so they are indexed differently
-            self.ac_buffs[agent_i][self.curr_i:self.curr_i + nentries] = actions[agent_i]
-            self.rew_buffs[agent_i][self.curr_i:self.curr_i + nentries] = rewards[agent_i]
-            self.next_obs_buffs[agent_i][self.curr_i:self.curr_i + nentries] = next_observations[agent_i]
-            self.done_buffs[agent_i][self.curr_i:self.curr_i + nentries] = dones[agent_i]
-        self.curr_i += nentries
+            self.obs_buffs[agent_i][idx] = observations[agent_i]
+            self.ac_buffs[agent_i][idx] = actions[agent_i]
+            self.rew_buffs[agent_i][idx] = rewards[agent_i]
+            self.next_obs_buffs[agent_i][idx] = next_observations[agent_i]
+            self.done_buffs[agent_i][idx] = dones[agent_i]
+
+        # Advance pointer circularly
+        self.curr_i = (idx + 1) % self.max_steps
         if self.filled_i < self.max_steps:
-            self.filled_i += nentries
-        if self.curr_i == self.max_steps:
-            self.curr_i = 0
+            self.filled_i += 1
+
+    def update_reward_statistics(self):
+        """
+        Call this ONCE right before your optimization loop/epoch begins. 
+        Caches the true population stats across active elements, ensuring O(1) sampling.
+        """
+        if self.filled_i == 0:
+            return
+            
+        for i in range(self.num_agents):
+            valid_rews = self.rew_buffs[i][:self.filled_i]
+            self._cached_means[i] = valid_rews.mean()
+            # Guard against zero variance on step 1 or flat rewards
+            std = valid_rews.std()
+            self._cached_stds[i] = std if std > 1e-8 else 1.0
 
     def sample(self, N, device='cpu', norm_rews=False):
-        inds = np.random.choice(self.filled_i, size=N, replace=False)
-        cast = lambda x: torch.from_numpy(x).to(device=device, dtype=torch.float32)
+        """
+        Fast uniform sampling using zero-copy tensor wrapping and cached metrics.
+        """
+        if self.filled_i == 0:
+            raise ValueError("Cannot sample from an empty replay buffer.")
+
+        # Vectorized generation of unique indices
+        inds = np.random.choice(self.filled_i, size=min(N, self.filled_i), replace=False)
+
+        # Zero-copy tensor utility
+        def cast(arr):
+            return torch.as_tensor(arr, dtype=torch.float32, device=device)
+
         if norm_rews:
-            ret_rews = []
-            for i in range(self.num_agents):
-                rew_window = self.rew_buffs[i][:self.filled_i]
-                rew_std = rew_window.std()
-                if rew_std < 1e-6:
-                    rew_std = 1e-6
-                ret_rews.append(cast((self.rew_buffs[i][inds] - rew_window.mean()) / rew_std))
+            ret_rews = [
+                (cast(self.rew_buffs[i][inds]) - self._cached_means[i]) / self._cached_stds[i]
+                for i in range(self.num_agents)
+            ]
         else:
             ret_rews = [cast(self.rew_buffs[i][inds]) for i in range(self.num_agents)]
         return ([cast(self.obs_buffs[i][inds]) for i in range(self.num_agents)],
@@ -854,27 +799,6 @@ class ReplayBuffer:
                 [cast(self.done_buffs[i][inds]) for i in range(self.num_agents)])
     
 ## MISCILLANEOUS UTILITIES
-
-# https://github.com/ikostrikov/pytorch-ddpg-naf/blob/master/ddpg.py#L11
-def soft_update(target, source, tau):
-    """
-    Perform DDPG soft update (move target params toward source based on weight
-    factor tau)
-    Inputs:
-        target (torch.nn.Module): Net to copy parameters to
-        source (torch.nn.Module): Net whose parameters to copy
-        tau (float, 0 < x < 1): Weight factor for update
-    """
-    for target_param, param in zip(target.parameters(), source.parameters()):
-        target_param.data.copy_(target_param.data * (1.0 - tau) + param.data * tau)
-
-# https://github.com/ikostrikov/pytorch-ddpg-naf/blob/master/ddpg.py#L15
-def hard_update(target, source):
-    """
-    Copy network parameters from source to target
-    """
-    for target_param, param in zip(target.parameters(), source.parameters()):
-        target_param.data.copy_(param.data)
 
 def onehot_from_logits(logits):
     """
