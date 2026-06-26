@@ -76,6 +76,12 @@ class ScootScatsStrategy(Strategy):
         self._detector_lane_lengths = {}
         self._all_numerical_detectors = set()
 
+        # Phase occurrence and duration tracking (same as FixedTimeStrategy)
+        self.phases_occurences = {tl_id: {} for tl_id in self.intelligent_intersections}
+        self.phases_durations = {tl_id: [] for tl_id in self.intelligent_intersections}
+        self.current_phase_duration = {tl_id: 0 for tl_id in self.intelligent_intersections}
+        self.nb_switch = {tl_id: 0 for tl_id in self.intelligent_intersections}
+
     @staticmethod
     def _is_yellow_or_all_red(state):
         lowered = state.lower()
@@ -167,11 +173,8 @@ class ScootScatsStrategy(Strategy):
         cached = self._detector_lane_lengths.get(detector_id)
         if cached is not None:
             return cached
-        try:
-            lane_id = self.traci.lanearea.getLaneID(detector_id)
-            lane_length = float(self.traci.lane.getLength(lane_id))
-        except Exception:
-            lane_length = 10.0
+        lane_id = self.traci.lanearea.getLaneID(detector_id)
+        lane_length = float(self.traci.lane.getLength(lane_id))
         self._detector_lane_lengths[detector_id] = max(1.0, lane_length)
         return self._detector_lane_lengths[detector_id]
 
@@ -506,8 +509,39 @@ class ScootScatsStrategy(Strategy):
             self._start_agents()
             return True
 
-        self.zeus_monitor.begin_window('all_agents')
-        try:
+        else:
+            self.zeus_monitor.begin_window('all_agents')
+            # Phase occurrence and duration tracking (same as FixedTimeStrategy)
+            for tl_id in self.intelligent_intersections:
+                current_phase = self.traci.trafficlight.getPhase(tl_id)
+                current_state = self.traci.trafficlight.getRedYellowGreenState(tl_id)
+
+                # Track phase duration
+                if 'y' not in current_state.lower():
+                    self.current_phase_duration[tl_id] += 1
+
+                    # Count phase occurrence
+                    if current_phase not in self.phases_occurences[tl_id]:
+                        self.phases_occurences[tl_id][current_phase] = 1
+                    else:
+                        self.phases_occurences[tl_id][current_phase] += 1
+
+                    # Check if phase ended (duration exceeded green time)
+                    if current_phase in self.measurement_data['greentimes'].get(tl_id, []):
+                        phase_idx = list(self.measurement_data['greentimes'][tl_id]).index(current_phase)
+                        green_time = self.measurement_data['greentimes'][tl_id][phase_idx]
+                        if self.current_phase_duration[tl_id] >= green_time:
+                            self.nb_switch[tl_id] += 1
+                            self.phases_durations[tl_id].append((current_phase, self.current_phase_duration[tl_id]))
+                            self.current_phase_duration[tl_id] = 0
+                else:
+                    # Yellow phase tracking
+                    self.current_phase_duration[tl_id] += 1
+                    if self.current_phase_duration[tl_id] >= self.yellow_time[tl_id]:
+                        self.nb_switch[tl_id] += 1
+                        self.phases_durations[tl_id].append((current_phase, self.current_phase_duration[tl_id]))
+                        self.current_phase_duration[tl_id] = 0
+
             self.measurement_data['measurement_counter'] += 1
             if self.measurement_data['measurement_counter'] == int(self.params['measurement_period']):
                 self.measurement_data['measurement_counter'] = 0
@@ -555,6 +589,5 @@ class ScootScatsStrategy(Strategy):
                         current_time,
                         int(self.measurement_data['cycle_length']),
                     ])
-        finally:
             results = self.zeus_monitor.end_window('all_agents')
             self.energy_consumption += self.get_energy_consumption(results)
