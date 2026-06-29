@@ -279,7 +279,8 @@ class MADDPGStrategy(IntellilightStrategy):
         dones = [(sim_time % self.episode_duration) == 0 for _ in self.intelligent_intersections]
         scores = [self.get_score(tl_id, self.changed_phase[i]) for i, tl_id in enumerate(self.intelligent_intersections)]
 
-        rewards = np.ones_like(rewards) * np.mean(rewards)
+        # Preserve per-agent reward signals (do not replace with the mean)
+        rewards = np.array(rewards, dtype=np.float32)
 
         if self.states is not None and self.action_indices is not None and not dones[0]:
             self.replay_buffer.push(self.states, self.action_indices, rewards, next_states, dones=dones)
@@ -734,6 +735,8 @@ class ReplayBuffer:
         # Lazy epoch caching for O(1) batch normalization
         self._cached_means = np.zeros(num_agents, dtype=np.float32)
         self._cached_stds = np.ones(num_agents, dtype=np.float32)
+        # Maintain running M2 for stable online variance updates when buffer not full
+        self._cached_M2 = np.zeros(num_agents, dtype=np.float32)
 
     def __len__(self):
         return self.filled_i
@@ -743,7 +746,10 @@ class ReplayBuffer:
         Inserts data at the circular pointer in O(1) time without shifting arrays.
         """
         idx = self.curr_i
-        
+
+        # detect whether this write will overwrite an existing entry
+        buffer_was_full = (self.filled_i == self.max_steps)
+
         for agent_i in range(self.num_agents):
             self.obs_buffs[agent_i][idx] = observations[agent_i]
             self.ac_buffs[agent_i][idx] = actions[agent_i]
@@ -751,10 +757,34 @@ class ReplayBuffer:
             self.next_obs_buffs[agent_i][idx] = next_observations[agent_i]
             self.done_buffs[agent_i][idx] = dones[agent_i]
 
+            # Maintain running reward stats when buffer is still filling
+            if not buffer_was_full:
+                # Welford online update
+                new_r = float(np.asarray(rewards[agent_i]).reshape(-1)[0])
+                n = self.filled_i + 1
+                delta = new_r - self._cached_means[agent_i]
+                self._cached_means[agent_i] += delta / n
+                delta2 = new_r - self._cached_means[agent_i]
+                self._cached_M2[agent_i] += delta * delta2
+                if n > 1:
+                    self._cached_stds[agent_i] = float(np.sqrt(self._cached_M2[agent_i] / (n - 1)))
+                else:
+                    self._cached_stds[agent_i] = 1.0
+
         # Advance pointer circularly
         self.curr_i = (idx + 1) % self.max_steps
-        if self.filled_i < self.max_steps:
+        if not buffer_was_full:
+            # still filling
             self.filled_i += 1
+        else:
+            # we overwrote an old sample; recompute stats for affected agents
+            for i in range(self.num_agents):
+                valid_rews = self.rew_buffs[i][:self.filled_i]
+                # recompute population stats for stability on overwrite
+                self._cached_means[i] = valid_rews.mean()
+                std = valid_rews.std()
+                self._cached_stds[i] = std if std > 1e-8 else 1.0
+                self._cached_M2[i] = float(np.sum((valid_rews - self._cached_means[i]) ** 2))
 
     def update_reward_statistics(self):
         """
