@@ -61,7 +61,7 @@ class ChampsElyseesNetwork(Network):
 
 
 
-    def __init__(self, intensity=1, starting_time=0, ending_time=24, seed=42):
+    def __init__(self, intensity=1, starting_time=0, ending_time=24, seed=42, train_duration=None):
         """
         Init of class
         :param intensity: The intensity of the normal flow. A coefficient to multiply the number of vehicle for each flow.
@@ -89,7 +89,7 @@ class ChampsElyseesNetwork(Network):
         self.GRAPH = self.net_to_graph()
         self.flows = FlowBuilder()
         self.flows.add_v_type(id='car0')
-        self.generate_flows(intensity, seed)
+        self.generate_flows(intensity, seed, train_duration)
         self.generate_detectors()
         self.generate_config_file()
         self.TLS_DETECTORS = {
@@ -139,7 +139,7 @@ class ChampsElyseesNetwork(Network):
         self.clean_files()
         return res
 
-    def generate_flows(self, intensity=1, seed=42):
+    def generate_flows(self, intensity=1, seed=42, train_duration=None):
         """
         Generate flows for the network.
         :param intensity: The intensity of the normal flow. A coefficient to multiply the number of vehicle for each flow.
@@ -154,9 +154,10 @@ class ChampsElyseesNetwork(Network):
             entry = route[0]
             exit = route[1]
             freq = self.FLOWS[route] * intensity#) / 3600
+            end = 3600 if train_duration is None else train_duration
             self.flows.add_flow(id=str(cpt),
                                 begin=0,
-                                end=3600,
+                                end=end,
                                 from_edge=entry,
                                 to_edge=exit,
                                 frequency=freq,
