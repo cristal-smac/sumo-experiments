@@ -385,7 +385,6 @@ class IntellilightStrategy(Strategy):
         for det in detectors:
             waiting_time = 0
             veh_ids = self.traci.lanearea.getLastStepVehicleIDs(det)
-            mean_time_loss = self.traci.lanearea.getLastStep
             for veh_id in veh_ids:
                 waiting_time += self.traci.vehicle.getAccumulatedWaitingTime(veh_id)
             waiting_times.append(waiting_time)
