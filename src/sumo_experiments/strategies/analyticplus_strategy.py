@@ -344,34 +344,38 @@ class AnalyticPlusAgent():
         in_lanes = set()
         out_lanes = set()
         _move_id_mapper = {}
-        for sumo_idx, [(in_lane, out_lane, internal)] in enumerate(connections):
-            self.in_lanes_length.update(
-                {in_lane: self.traci.lane.getLength(in_lane)})
-            self.out_lanes_length.update(
-                {out_lane: self.traci.lane.getLength(out_lane)})
-            in_edge = self.traci.lane.getEdgeID(in_lane)
-            out_edge = self.traci.lane.getEdgeID(out_lane)
-            in_lane_length = self.traci.lane.getLength(in_lane)
-            out_lane_length = self.traci.lane.getLength(out_lane)
-            up_max_speed = self.traci.lane.getMaxSpeed(in_lane)
-            down_max_speed = self.traci.lane.getMaxSpeed(in_lane)
-            max_speed = min([up_max_speed, down_max_speed])
-            move_tuple = (in_edge, out_edge)
-            move_id = _move_id_mapper.setdefault(move_tuple, len(_move_id_mapper))
-            movement = self.movements.setdefault(move_id, Movement(move_id, self, in_lane_length, out_lane_length, max_speed))
-            movement.in_lanes.add(in_lane)
-            movement.out_lanes.add(out_lane)
-            movement.sumo_movement_idxs.add(sumo_idx)
+        # Each entry of getControlledLinks corresponds to one signal index and
+        # may contain zero, one, or several connection tuples. Iterate over all
+        # of them instead of assuming exactly one connection per signal.
+        for sumo_idx, links in enumerate(connections):
+            for (in_lane, out_lane, internal) in links:
+                self.in_lanes_length.update(
+                    {in_lane: self.traci.lane.getLength(in_lane)})
+                self.out_lanes_length.update(
+                    {out_lane: self.traci.lane.getLength(out_lane)})
+                in_edge = self.traci.lane.getEdgeID(in_lane)
+                out_edge = self.traci.lane.getEdgeID(out_lane)
+                in_lane_length = self.traci.lane.getLength(in_lane)
+                out_lane_length = self.traci.lane.getLength(out_lane)
+                up_max_speed = self.traci.lane.getMaxSpeed(in_lane)
+                down_max_speed = self.traci.lane.getMaxSpeed(in_lane)
+                max_speed = min([up_max_speed, down_max_speed])
+                move_tuple = (in_edge, out_edge)
+                move_id = _move_id_mapper.setdefault(move_tuple, len(_move_id_mapper))
+                movement = self.movements.setdefault(move_id, Movement(move_id, self, in_lane_length, out_lane_length, max_speed))
+                movement.in_lanes.add(in_lane)
+                movement.out_lanes.add(out_lane)
+                movement.sumo_movement_idxs.add(sumo_idx)
 
-            in_lanes.add(in_lane)
-            out_lanes.add(out_lane)
+                in_lanes.add(in_lane)
+                out_lanes.add(out_lane)
 
-            # associate phases to movements, only use green phases
-            for action_phase_id, sumo_phase_id in self.action_phases.items():
-                phase = self.sumo_phases[sumo_phase_id]
-                if sumo_idx in phase['sumo_movement_idxs']:
-                    movement.phases.add(action_phase_id)
-                    phase['movement_ids'].add(move_id)  # phases serve movements
+                # associate phases to movements, only use green phases
+                for action_phase_id, sumo_phase_id in self.action_phases.items():
+                    phase = self.sumo_phases[sumo_phase_id]
+                    if sumo_idx in phase['sumo_movement_idxs']:
+                        movement.phases.add(action_phase_id)
+                        phase['movement_ids'].add(move_id)  # phases serve movements
 
         for mid, movement in self.movements.items():
             movement.max_saturation *= len(movement.in_lanes)
