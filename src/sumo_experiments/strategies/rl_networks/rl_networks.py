@@ -40,6 +40,23 @@ class RecurrentPolicyNetwork(nn.Module):
             return out, (h_n.detach(), c_n.detach())
         return out
 
+    def forward_sequence(self, x):
+        """Run the LSTM over a full (batch, seq_len, input) sequence with a zero
+        initial hidden state and return per-timestep logits (batch, seq_len, out).
+
+        This is the training-time entry point: it keeps the whole sequence in the
+        autograd graph so gradients flow through the recurrence (BPTT). The zero
+        initial hidden state matches the rollout convention, where the hidden
+        state is reset at every episode boundary, so training and acting use the
+        same recurrence regime.
+        """
+        if x.dim() == 2:
+            x = x.unsqueeze(1)  # (batch, input) -> (batch, 1, input)
+        lstm_out, _ = self.lstm(x)              # (batch, seq_len, hidden), zero init
+        h = torch.relu(self.fc1(lstm_out))      # (batch, seq_len, hidden)
+        out = self.fc3(h)                       # (batch, seq_len, out)
+        return out
+
 
 
 class RelativePositionCommunicationLayer(nn.Module):

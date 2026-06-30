@@ -169,12 +169,32 @@ class MADDPGStrategy(IntellilightStrategy):
             self.__name__ = "MADDPGStrategy"
 
     def reset_recurrent_states(self):
+        # Called at every episode boundary (and on load). Finalize the current
+        # trajectory into the sequence buffer before clearing the actors' hidden
+        # state, so stored episodes align exactly with the rollout's hidden-state
+        # reset. No-op for the flat buffer / non-recurrent agents.
+        buf = getattr(self, 'replay_buffer', None)
+        end_fn = getattr(buf, 'end_episode', None)
+        if callable(end_fn):
+            end_fn()
         if self.maddpg is None:
             return
         for agent in self.maddpg.agents:
             reset_fn = getattr(agent, 'reset_recurrent_state', None)
             if callable(reset_fn):
                 reset_fn()
+
+    def _recurrent_seq_len(self):
+        """Max number of action decisions in one episode, so a sampled sequence
+        can span a whole episode and be replayed from t=0 with zero hidden."""
+        period = self.period
+        if isinstance(period, dict):
+            period = min(period.values())
+        period = max(int(period), 1)
+        duration = self.episode_duration
+        if isinstance(duration, dict):
+            duration = max(duration.values())
+        return int(duration // period) + 2
 
 
     def run_all_agents(self, traci):
@@ -190,14 +210,22 @@ class MADDPGStrategy(IntellilightStrategy):
                 self._start_agent(tl_id)
 
             if self.maddpg is None: # not loading a saved model
-                self.maddpg = MADDPG(agents=list(self.agents.values()), alg_types=['MADDPG' for _ in self.intelligent_intersections],
+                maddpg_cls = RecurrentMADDPG if self.recurrent_policy else MADDPG
+                self.maddpg = maddpg_cls(agents=list(self.agents.values()), alg_types=['MADDPG' for _ in self.intelligent_intersections],
                                     gamma=self.gamma[tl_id],
                                     discrete_action=True,
                                     tau=self.tau)
             if self.shared_policy:
                 self._share_policies()
-            self.replay_buffer = ReplayBuffer(max_steps=self.buffer_size, num_agents=self.maddpg.nagents, obs_dims=list(self.observation_sizes.values()),
-                                               ac_dims=[len(self.action_space[tl_id]) for tl_id in self.intelligent_intersections])
+            obs_dims = list(self.observation_sizes.values())
+            ac_dims = [len(self.action_space[tl_id]) for tl_id in self.intelligent_intersections]
+            if self.recurrent_policy:
+                self.replay_buffer = RecurrentReplayBuffer(max_steps=self.buffer_size, num_agents=self.maddpg.nagents,
+                                                           obs_dims=obs_dims, ac_dims=ac_dims,
+                                                           seq_len=self._recurrent_seq_len())
+            else:
+                self.replay_buffer = ReplayBuffer(max_steps=self.buffer_size, num_agents=self.maddpg.nagents,
+                                                  obs_dims=obs_dims, ac_dims=ac_dims)
             self.started = True
 
             # self.states = [self.get_state(tl_id) for tl_id in self.network.TL_IDS]
@@ -331,6 +359,7 @@ class MADDPGStrategy(IntellilightStrategy):
 
     def train(self):
         # Train the MADDPG model once buffer reaches minimum size
+        # self.replay_buffer.update_reward_statistics() # do once for all 
         self.maddpg.prep_training(device=self.device)
         for tl_id in self.intelligent_intersections:
             self.number_of_trainings[tl_id] += 1
@@ -447,7 +476,8 @@ class MADDPGStrategy(IntellilightStrategy):
             dict,
         ])
         if self.maddpg is None:
-            self.maddpg = MADDPG(agents=[], alg_types=['MADDPG' for _ in self.intelligent_intersections],
+            maddpg_cls = RecurrentMADDPG if self.recurrent_policy else MADDPG
+            self.maddpg = maddpg_cls(agents=[], alg_types=['MADDPG' for _ in self.intelligent_intersections],
                                  gamma=list(self.gamma.values())[0], # TODO: refactor?
                                  discrete_action=True,
                                  tau=self.tau)
@@ -759,8 +789,6 @@ class ReplayBuffer:
         # Lazy epoch caching for O(1) batch normalization
         self._cached_means = np.zeros(num_agents, dtype=np.float32)
         self._cached_stds = np.ones(num_agents, dtype=np.float32)
-        # Maintain running M2 for stable online variance updates when buffer not full
-        self._cached_M2 = np.zeros(num_agents, dtype=np.float32)
 
     def __len__(self):
         return self.filled_i
@@ -770,10 +798,7 @@ class ReplayBuffer:
         Inserts data at the circular pointer in O(1) time without shifting arrays.
         """
         idx = self.curr_i
-
-        # detect whether this write will overwrite an existing entry
-        buffer_was_full = (self.filled_i == self.max_steps)
-
+        
         for agent_i in range(self.num_agents):
             self.obs_buffs[agent_i][idx] = observations[agent_i]
             self.ac_buffs[agent_i][idx] = actions[agent_i]
@@ -781,34 +806,10 @@ class ReplayBuffer:
             self.next_obs_buffs[agent_i][idx] = next_observations[agent_i]
             self.done_buffs[agent_i][idx] = dones[agent_i]
 
-            # Maintain running reward stats when buffer is still filling
-            if not buffer_was_full:
-                # Welford online update
-                new_r = float(np.asarray(rewards[agent_i]).reshape(-1)[0])
-                n = self.filled_i + 1
-                delta = new_r - self._cached_means[agent_i]
-                self._cached_means[agent_i] += delta / n
-                delta2 = new_r - self._cached_means[agent_i]
-                self._cached_M2[agent_i] += delta * delta2
-                if n > 1:
-                    self._cached_stds[agent_i] = float(np.sqrt(self._cached_M2[agent_i] / (n - 1)))
-                else:
-                    self._cached_stds[agent_i] = 1.0
-
         # Advance pointer circularly
         self.curr_i = (idx + 1) % self.max_steps
-        if not buffer_was_full:
-            # still filling
+        if self.filled_i < self.max_steps:
             self.filled_i += 1
-        else:
-            # we overwrote an old sample; recompute stats for affected agents
-            for i in range(self.num_agents):
-                valid_rews = self.rew_buffs[i][:self.filled_i]
-                # recompute population stats for stability on overwrite
-                self._cached_means[i] = valid_rews.mean()
-                std = valid_rews.std()
-                self._cached_stds[i] = std if std > 1e-8 else 1.0
-                self._cached_M2[i] = float(np.sum((valid_rews - self._cached_means[i]) ** 2))
 
     def update_reward_statistics(self):
         """
@@ -851,7 +852,252 @@ class ReplayBuffer:
                 ret_rews,
                 [cast(self.next_obs_buffs[i][inds]) for i in range(self.num_agents)],
                 [cast(self.done_buffs[i][inds]) for i in range(self.num_agents)])
-    
+
+
+class RecurrentReplayBuffer:
+    """Episode/sequence replay buffer for recurrent MADDPG (BPTT).
+
+    Unlike the flat ``ReplayBuffer``, this stores whole episodes so the recurrent
+    actor can be trained on ordered sequences with the hidden state threaded
+    through time. Sequences are always replayed from the *start* of an episode
+    with a zero initial hidden state, which exactly matches the rollout
+    convention (hidden state reset at every episode boundary). This eliminates
+    the train/rollout hidden-state mismatch that makes a single-transition buffer
+    incompatible with a recurrent policy.
+
+    API is a drop-in superset of ``ReplayBuffer``: ``push`` / ``__len__`` /
+    ``update_reward_statistics`` / ``sample``, plus ``end_episode`` which the
+    strategy calls at every episode boundary to finalize the current trajectory.
+    ``sample`` returns a 6-tuple ``(obs, acs, rews, next_obs, dones, mask)`` where
+    obs/acs/next_obs are ``(batch, seq_len, dim)``, rews/dones are
+    ``(batch, seq_len)`` and ``mask`` is ``(batch, seq_len)`` marking valid steps.
+    """
+
+    def __init__(self, max_steps, num_agents, obs_dims, ac_dims, seq_len):
+        self.max_steps = int(max_steps)
+        self.num_agents = num_agents
+        self.obs_dims = list(obs_dims)
+        self.ac_dims = list(ac_dims)
+        self.seq_len = int(seq_len)
+
+        self.episodes = []   # list of finalized episode dicts
+        self._cur = None     # in-progress episode (per-agent python lists)
+        self._total = 0      # number of stored steps across finalized episodes
+
+        self._cached_means = np.zeros(num_agents, dtype=np.float32)
+        self._cached_stds = np.ones(num_agents, dtype=np.float32)
+
+    def __len__(self):
+        # Only finalized (sampleable) steps count, so the strategy's
+        # samples_before_update gate waits for complete episodes.
+        return self._total
+
+    def _blank_episode(self):
+        return {
+            'obs': [[] for _ in range(self.num_agents)],
+            'acs': [[] for _ in range(self.num_agents)],
+            'rews': [[] for _ in range(self.num_agents)],
+            'next_obs': [[] for _ in range(self.num_agents)],
+            'dones': [[] for _ in range(self.num_agents)],
+        }
+
+    def push(self, observations, actions, rewards, next_observations, dones):
+        if self._cur is None:
+            self._cur = self._blank_episode()
+        for i in range(self.num_agents):
+            self._cur['obs'][i].append(np.asarray(observations[i], dtype=np.float32).reshape(-1))
+            self._cur['acs'][i].append(np.asarray(actions[i], dtype=np.float32).reshape(-1))
+            self._cur['rews'][i].append(float(np.asarray(rewards[i]).reshape(-1)[0]))
+            self._cur['next_obs'][i].append(np.asarray(next_observations[i], dtype=np.float32).reshape(-1))
+            self._cur['dones'][i].append(float(np.asarray(dones[i]).reshape(-1)[0]))
+
+    def end_episode(self):
+        """Finalize the in-progress trajectory into a stored episode."""
+        if self._cur is None:
+            return
+        ep_len = len(self._cur['rews'][0]) if self.num_agents else 0
+        if ep_len == 0:
+            self._cur = None
+            return
+        episode = {
+            'obs': [np.asarray(self._cur['obs'][i], dtype=np.float32) for i in range(self.num_agents)],
+            'acs': [np.asarray(self._cur['acs'][i], dtype=np.float32) for i in range(self.num_agents)],
+            'rews': [np.asarray(self._cur['rews'][i], dtype=np.float32) for i in range(self.num_agents)],
+            'next_obs': [np.asarray(self._cur['next_obs'][i], dtype=np.float32) for i in range(self.num_agents)],
+            'dones': [np.asarray(self._cur['dones'][i], dtype=np.float32) for i in range(self.num_agents)],
+            'len': ep_len,
+        }
+        self.episodes.append(episode)
+        self._total += ep_len
+        self._cur = None
+        # Evict oldest episodes once capacity is exceeded (always keep >= 1).
+        while self._total > self.max_steps and len(self.episodes) > 1:
+            old = self.episodes.pop(0)
+            self._total -= old['len']
+
+    def update_reward_statistics(self):
+        if not self.episodes:
+            return
+        for i in range(self.num_agents):
+            all_rews = np.concatenate([ep['rews'][i] for ep in self.episodes])
+            self._cached_means[i] = all_rews.mean()
+            std = all_rews.std()
+            self._cached_stds[i] = std if std > 1e-8 else 1.0
+
+    def sample(self, N, device='cpu', norm_rews=False):
+        if not self.episodes:
+            raise ValueError("Cannot sample from an empty recurrent replay buffer.")
+        T = self.seq_len
+        B = int(N)
+        na = self.num_agents
+
+        obs = [np.zeros((B, T, self.obs_dims[i]), dtype=np.float32) for i in range(na)]
+        acs = [np.zeros((B, T, self.ac_dims[i]), dtype=np.float32) for i in range(na)]
+        next_obs = [np.zeros((B, T, self.obs_dims[i]), dtype=np.float32) for i in range(na)]
+        rews = [np.zeros((B, T), dtype=np.float32) for i in range(na)]
+        dones = [np.zeros((B, T), dtype=np.float32) for i in range(na)]
+        mask = np.zeros((B, T), dtype=np.float32)
+
+        ep_idx = np.random.randint(0, len(self.episodes), size=B)
+        for b, ei in enumerate(ep_idx):
+            ep = self.episodes[ei]
+            length = min(ep['len'], T)  # replay from episode start; pad tail if shorter
+            for i in range(na):
+                obs[i][b, :length] = ep['obs'][i][:length]
+                acs[i][b, :length] = ep['acs'][i][:length]
+                next_obs[i][b, :length] = ep['next_obs'][i][:length]
+                if norm_rews:
+                    rews[i][b, :length] = (ep['rews'][i][:length] - self._cached_means[i]) / self._cached_stds[i]
+                else:
+                    rews[i][b, :length] = ep['rews'][i][:length]
+                dones[i][b, :length] = ep['dones'][i][:length]
+            mask[b, :length] = 1.0
+
+        def cast(a):
+            return torch.as_tensor(a, dtype=torch.float32, device=device)
+
+        return ([cast(o) for o in obs], [cast(a) for a in acs],
+                [cast(r) for r in rews], [cast(n) for n in next_obs],
+                [cast(d) for d in dones], cast(mask))
+
+
+class RecurrentMADDPG(MADDPG):
+    """MADDPG variant that trains recurrent actors with BPTT over stored episode
+    sequences sampled from a ``RecurrentReplayBuffer``.
+
+    The actor (``RecurrentPolicyNetwork``) is unrolled over the whole sequence via
+    ``forward_sequence`` so gradients flow through the recurrence. The critic is
+    treated as feed-forward and evaluated per-timestep on the flattened
+    ``(batch * seq_len)`` joint observations/actions. Padded timesteps are removed
+    from every loss through the per-step ``mask``.
+    """
+
+    @staticmethod
+    def _flat(x):
+        # (B, T, D) -> (B*T, D); (B, T) must be unsqueezed by the caller first.
+        return x.reshape(-1, x.shape[-1])
+
+    def _policy_seq(self, policy, obs_seq):
+        """Per-timestep logits (B, T, out) for a (recurrent) policy over a seq."""
+        fn = getattr(policy, 'forward_sequence', None)
+        if fn is not None:
+            return fn(obs_seq)
+        return policy(obs_seq)  # fallback: a feed-forward policy handles (B,T,·)
+
+    def _target_actions(self, next_obs):
+        if self.discrete_action:
+            return [nn.functional.gumbel_softmax(self._flat(self._policy_seq(pi, nobs)), hard=True)
+                    for pi, nobs in zip(self.target_policies, next_obs)]
+        return [self._flat(self._policy_seq(pi, nobs))
+                for pi, nobs in zip(self.target_policies, next_obs)]
+
+    def _critic_target(self, sample, agent_i):
+        """Masked Huber critic loss for agent_i (shared by update/update_critic)."""
+        obs, acs, rews, next_obs, dones, mask = sample
+        curr_agent = self.agents[agent_i]
+        mask_flat = mask.reshape(-1, 1)
+        denom = mask_flat.sum().clamp(min=1.0)
+
+        all_trgt_acs = self._target_actions(next_obs)
+        trgt_vf_in = torch.cat((*[self._flat(n) for n in next_obs], *all_trgt_acs), dim=1)
+        target_value = (self._flat(rews[agent_i].unsqueeze(-1)) + self.gamma *
+                        curr_agent.target_critic(trgt_vf_in) *
+                        (1 - self._flat(dones[agent_i].unsqueeze(-1))))
+        vf_in = torch.cat((*[self._flat(o) for o in obs], *[self._flat(a) for a in acs]), dim=1)
+        actual_value = curr_agent.critic(vf_in)
+        per_step = nn.functional.huber_loss(actual_value, target_value.detach(), reduction='none')
+        return (per_step * mask_flat).sum() / denom
+
+    def _policy_objective(self, sample, agent_i):
+        """Masked deterministic policy-gradient loss for agent_i (BPTT actor)."""
+        obs, acs, rews, next_obs, dones, mask = sample
+        curr_agent = self.agents[agent_i]
+        mask_flat = mask.reshape(-1, 1)
+        denom = mask_flat.sum().clamp(min=1.0)
+
+        curr_pol_out = self._flat(self._policy_seq(curr_agent.policy, obs[agent_i]))
+        if self.discrete_action:
+            curr_pol_vf_in = nn.functional.gumbel_softmax(curr_pol_out, hard=False)
+        else:
+            curr_pol_vf_in = curr_pol_out
+
+        all_pol_acs = []
+        for i, pi, ob in zip(range(self.nagents), self.policies, obs):
+            if i == agent_i:
+                all_pol_acs.append(curr_pol_vf_in)
+            else:  # other agents' actions are fixed (no grad) one-hot encodings
+                all_pol_acs.append(onehot_from_logits(self._flat(self._policy_seq(pi, ob))))
+
+        vf_in = torch.cat((*[self._flat(o) for o in obs], *all_pol_acs), dim=1)
+        q = curr_agent.critic(vf_in)
+        pol_loss = -(q * mask_flat).sum() / denom
+        pol_loss = pol_loss + ((curr_pol_out ** 2) * mask_flat).sum() / denom * 1e-3
+        return pol_loss
+
+    def update(self, sample, agent_i, logger=None):
+        curr_agent = self.agents[agent_i]
+
+        # --- critic ---
+        curr_agent.critic_optimizer.zero_grad()
+        vf_loss = self._critic_target(sample, agent_i)
+        vf_loss.backward()
+        torch.nn.utils.clip_grad_norm_(curr_agent.critic.parameters(), 0.5)
+        curr_agent.critic_optimizer.step()
+
+        # --- actor (BPTT through the recurrence) ---
+        curr_agent.policy_optimizer.zero_grad()
+        pol_loss = self._policy_objective(sample, agent_i)
+        pol_loss.backward()
+        torch.nn.utils.clip_grad_norm_(curr_agent.policy.parameters(), 0.5)
+        curr_agent.policy_optimizer.step()
+
+        if logger is not None:
+            logger.add_scalars('agent%i/losses' % agent_i,
+                               {'vf_loss': vf_loss, 'pol_loss': pol_loss}, self.niter)
+        return vf_loss.cpu().detach().numpy(), pol_loss.cpu().detach().numpy()
+
+    def update_critic(self, sample, agent_i):
+        curr_agent = self.agents[agent_i]
+        curr_agent.critic_optimizer.zero_grad()
+        vf_loss = self._critic_target(sample, agent_i)
+        vf_loss.backward()
+        torch.nn.utils.clip_grad_norm_(curr_agent.critic.parameters(), 0.5)
+        curr_agent.critic_optimizer.step()
+        return vf_loss.cpu().detach().numpy()
+
+    def update_shared_policy(self, sample):
+        mask = sample[5]
+        self.agents[0].policy_optimizer.zero_grad()
+        total = torch.zeros((), device=mask.device)
+        for agent_i in range(self.nagents):
+            total = total + self._policy_objective(sample, agent_i)
+        avg = total / self.nagents
+        avg.backward()
+        torch.nn.utils.clip_grad_norm_(self.agents[0].policy.parameters(), 0.5)
+        self.agents[0].policy_optimizer.step()
+        return avg.cpu().detach().numpy()
+
+
 ## MISCILLANEOUS UTILITIES
 
 def onehot_from_logits(logits):
