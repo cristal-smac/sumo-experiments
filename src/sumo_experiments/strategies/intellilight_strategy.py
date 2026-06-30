@@ -21,7 +21,10 @@ class IntellilightStrategy(Strategy):
     """
     DEBUG_REWARD = 10000  # ridiculously large value for debugging
 
-    def __init__(self, network, period=10, reward_coeffs=(1, 1, 1, 1), gamma=0.99, episode_duration=300, batch_size=64, buffer_size=1000, update_target_frequency=10, learning_rate=1 * 10 ** -2, exploration_prob=1, cooling_rate=10 ** -3, hidden_layer_size=64, yellow_time=3, intelligent_intersections=None, shared_network=False):
+    def __init__(self, network, period=10, reward_coeffs=(1, 1, 1, 1), gamma=0.99, episode_duration=300, 
+                 batch_size=64, buffer_size=1000, update_target_frequency=10, learning_rate=1 * 10 ** -2, 
+                 exploration_prob=1, cooling_rate=10 ** -3, hidden_layer_size=64, yellow_time=3, 
+                 intelligent_intersections=None, shared_network=False, measure_energy=True):
         """
         Init of class.
         :param network: The network to deploy the strategy
@@ -49,7 +52,7 @@ class IntellilightStrategy(Strategy):
         :param shared_network: If True, identical intersections (same state dim, action space, hidden size) share a single neural network and replay buffer, improving sample efficiency.
         :type shared_network: bool
         """
-        super().__init__()
+        super().__init__(measure_energy=measure_energy)
         self.shared_network = shared_network
         self._trained_this_step = set()
         self.network = network
@@ -382,6 +385,7 @@ class IntellilightStrategy(Strategy):
         for det in detectors:
             waiting_time = 0
             veh_ids = self.traci.lanearea.getLastStepVehicleIDs(det)
+            mean_time_loss = self.traci.lanearea.getLastStep
             for veh_id in veh_ids:
                 waiting_time += self.traci.vehicle.getAccumulatedWaitingTime(veh_id)
             waiting_times.append(waiting_time)

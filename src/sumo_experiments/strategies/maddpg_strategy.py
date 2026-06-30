@@ -51,9 +51,10 @@ class MADDPGStrategy(IntellilightStrategy):
     """
     REWARD_REFERENCE_EPISODE_DURATION = 1000.0
 
-    def __init__(self, network, period=10, episode_duration=300, reward_coeffs=(1, 1, 1, 1), gamma=0.99, buffer_size=10000, batch_size=32, 
+    def __init__(self, network, period=10, episode_duration=1800, reward_coeffs=(1, 1, 1, 1), gamma=0.99, buffer_size=10000, batch_size=32, 
                  steps_per_update=10, samples_before_update=1024, 
-                 learning_rate=1e-2, tau=0.01, hidden_layer_size=64, yellow_time=3, intelligent_intersections=None, shared_policy=False, recurrent_policy=True):
+                 learning_rate=1e-2, tau=0.01, hidden_layer_size=64, yellow_time=3, intelligent_intersections=None, shared_policy=False, recurrent_policy=True,
+                 debug=True, simulation_time=500000, measure_energy=True):
         """
         Init of class.
         :param network: The network to deploy the strategy
@@ -83,7 +84,7 @@ class MADDPGStrategy(IntellilightStrategy):
         :param shared_policy: If True, identical agents share policy/target_policy networks, improving sample efficiency for homogeneous intersections.
         :type shared_policy: bool
         """
-        Strategy.__init__(self)
+        Strategy.__init__(self, measure_energy=measure_energy)
         self.shared_policy = shared_policy
         self.network = network
         if type(yellow_time) is dict:
@@ -134,15 +135,27 @@ class MADDPGStrategy(IntellilightStrategy):
         self.current_phase = {tl_id: 0 for tl_id in self.network.TLS_DETECTORS}
 
         self.number_of_trainings = {tl_id: 0 for tl_id in self.network.TLS_DETECTORS}
-        self.mean_scores = []
 
         if intelligent_intersections is None:
             self.intelligent_intersections = network.TL_IDS
         else:
             self.intelligent_intersections = intelligent_intersections
 
-        self.val_losses = []
-        self.pol_losses = []
+        self.debug = debug
+        # Preallocate the loss telemetry as fixed numpy arrays sized from the run
+        # length, so there is no unbounded growth or reallocation. train() runs at
+        # most once every steps_per_update steps; each run records one critic loss
+        # per agent, and one actor loss per agent (or one total when the policy is
+        # shared). _val_i / _pol_i are write cursors; read the filled prefix via
+        # val_losses[:_val_i] (e.g. for plotting).
+        n_agents = len(self.intelligent_intersections)
+        max_trainings = int(simulation_time) // max(int(steps_per_update), 1) + 1
+        self.mean_scores = np.zeros(max_trainings, dtype=np.float32)
+        self.val_losses = np.zeros(max_trainings * n_agents, dtype=np.float32)
+        self.pol_losses = np.zeros(max_trainings * (1 if shared_policy else n_agents), dtype=np.float32)
+        self._val_i = 0
+        self._pol_i = 0
+        self._mean_score_i = 0
         self.rewards = []
         self.scores = []
         self.times = []
@@ -152,6 +165,8 @@ class MADDPGStrategy(IntellilightStrategy):
         self.recurrent_policy = recurrent_policy
         if self.recurrent_policy:
             self.__name__ = "MARDDPGStrategy"
+        else:
+            self.__name__ = "MADDPGStrategy"
 
     def reset_recurrent_states(self):
         if self.maddpg is None:
@@ -195,22 +210,24 @@ class MADDPGStrategy(IntellilightStrategy):
         else:
             self.zeus_monitor.begin_window("all_agents")
             if self.traci.simulation.getTime() % self.episode_duration == 0:
-                self.mean_scores.append(np.mean(self.scores))
+                if self._mean_score_i < self.mean_scores.size:
+                    self.mean_scores[self._mean_score_i] = np.mean(self.scores)
+                    self._mean_score_i += 1
                 self.scores = []
                 # reset states and action
                 self.states = None
                 self.action_indices = None
                 self.changed_phase = [None for _ in self.intelligent_intersections]
-                if self.network.TL_IDS:
+                if self.debug and self.network.TL_IDS and (self._mean_score_i % 10 == 0):
                     if not hasattr(self, '_debug_fig'):
                         self._debug_fig, self._debug_ax = plt.subplots()
                         self._debug_line, = self._debug_ax.plot([], [])
                         self._debug_ax.set_xlabel('Episode')
                         self._debug_ax.set_ylabel('Mean Score')
-                    self._debug_line.set_data(range(len(self.mean_scores)), self.mean_scores)
+                    self._debug_line.set_data(range(self._mean_score_i), self.mean_scores[:self._mean_score_i])
                     self._debug_ax.relim()
                     self._debug_ax.autoscale_view()
-                    self._debug_fig.savefig('strategy_debug.png')
+                    self._debug_fig.savefig(f'strategy_debug_{self.__name__}.png')
             for tl_id in self.intelligent_intersections:
                 # assert self.time_step == self.traci.simulation.getTime(), print(self.time_step, self.traci.simulation.getTime())
                 if 'y' in self.traci.trafficlight.getRedYellowGreenState(tl_id):
@@ -325,15 +342,23 @@ class MADDPGStrategy(IntellilightStrategy):
             for a_i in range(self.maddpg.nagents):
 
                 val_loss = self.maddpg.update_critic(sample, a_i)
-                self.val_losses.append(val_loss)
+                if self._val_i < self.val_losses.size:
+                    self.val_losses[self._val_i] = val_loss
+                    self._val_i += 1
             # Phase 2: Accumulate policy gradients from all critics, step once
             pol_loss = self.maddpg.update_shared_policy(sample)
-            self.pol_losses.append(pol_loss)
+            if self._pol_i < self.pol_losses.size:
+                self.pol_losses[self._pol_i] = pol_loss
+                self._pol_i += 1
         else:
             for a_i in range(self.maddpg.nagents):
                 val_loss, pol_loss = self.maddpg.update(sample, a_i)
-                self.val_losses.append(val_loss)
-                self.pol_losses.append(pol_loss)
+                if self._val_i < self.val_losses.size:
+                    self.val_losses[self._val_i] = val_loss
+                    self._val_i += 1
+                if self._pol_i < self.pol_losses.size:
+                    self.pol_losses[self._pol_i] = pol_loss
+                    self._pol_i += 1
         self.maddpg.update_all_targets()
         self.maddpg.prep_rollouts(device=self.rollout_device)
 
