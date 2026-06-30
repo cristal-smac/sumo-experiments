@@ -14,6 +14,7 @@ import collections
 from .rl_networks import *
 from .rl_agents import *
 from .rl_networks import *
+from .rl_util import episode_reward_scale
 
 import torch
 import torch.distributed as dist
@@ -280,8 +281,9 @@ class MADDPGStrategy(IntellilightStrategy):
         scores = [self.get_score(tl_id, self.changed_phase[i]) for i, tl_id in enumerate(self.intelligent_intersections)]
 
         # Preserve per-agent reward signals (do not replace with the mean)
-        rewards = np.array(rewards, dtype=np.float32)
-
+        # rewards = np.array(rewards, dtype=np.float32)
+        rewards = np.ones_like(rewards, dtype=np.float32) * np.mean(rewards)
+        
         if self.states is not None and self.action_indices is not None and not dones[0]:
             self.replay_buffer.push(self.states, self.action_indices, rewards, next_states, dones=dones)
             if "c" in self.network.TL_IDS:
@@ -312,26 +314,23 @@ class MADDPGStrategy(IntellilightStrategy):
 
     def train(self):
         # Train the MADDPG model once buffer reaches minimum size
-        self.replay_buffer.update_reward_statistics() # do once for all 
         self.maddpg.prep_training(device=self.device)
         for tl_id in self.intelligent_intersections:
             self.number_of_trainings[tl_id] += 1
+        
+        sample = self.replay_buffer.sample(self.batch_size,
+                            device=self.device, norm_rews=False)
         if self.shared_policy:
             # Phase 1: Update all critics independently
             for a_i in range(self.maddpg.nagents):
-                sample = self.replay_buffer.sample(self.batch_size,
-                                            device=self.device, norm_rews=False)
+
                 val_loss = self.maddpg.update_critic(sample, a_i)
                 self.val_losses.append(val_loss)
             # Phase 2: Accumulate policy gradients from all critics, step once
-            sample = self.replay_buffer.sample(self.batch_size,
-                                        device=self.device, norm_rews=False)
             pol_loss = self.maddpg.update_shared_policy(sample)
             self.pol_losses.append(pol_loss)
         else:
             for a_i in range(self.maddpg.nagents):
-                sample = self.replay_buffer.sample(self.batch_size,
-                                            device=self.device, norm_rews=False)
                 val_loss, pol_loss = self.maddpg.update(sample, a_i)
                 self.val_losses.append(val_loss)
                 self.pol_losses.append(pol_loss)

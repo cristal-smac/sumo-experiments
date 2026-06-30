@@ -8,7 +8,6 @@ import collections
 import random
 import math
 import xml.etree.ElementTree as ET
-from sumo_experiments.strategies.rl_util import *
 
 class RecurrentPolicyNetwork(nn.Module):
     """LSTM actor used to approximate recurrent MADDPG behavior."""
@@ -139,15 +138,11 @@ class TCMQNetwork(nn.Module):
 
 
 class DeepNN(nn.Module):
-    def __init__(self, input_dim, out_dim, hidden_dim=64, nonlin=nn.functional.relu, recurrent=True):
+    def __init__(self, input_dim, out_dim, hidden_dim=64, nonlin=nn.functional.relu):
         super().__init__()
-        self.recurrent = recurrent
         self.hidden_dim = hidden_dim
         self.device = None
-        if not recurrent:
-            self.fc1 = nn.Linear(input_dim, hidden_dim)
-        else:
-            self.fc1 = nn.LSTM(input_size=input_dim, hidden_size=hidden_dim, batch_first=True)
+        self.fc1 = nn.Linear(input_dim, hidden_dim)
         self.fc2 = nn.Linear(hidden_dim, hidden_dim)
         self.fc3 = nn.Linear(hidden_dim, out_dim)
         self.nonlin = nonlin
@@ -155,13 +150,6 @@ class DeepNN(nn.Module):
         # Persistent hidden state for recurrent networks (maintained across timesteps in rollouts)
         self.h_n = None
         self.c_n = None
-
-    def reset_hidden_state(self, batch_size=1):
-        """Reset LSTM hidden state. Call this at episode start or when needed."""
-        if self.recurrent:
-            device = next(self.parameters()).device
-            self.h_n = torch.zeros(1, batch_size, self.hidden_dim, device=device)
-            self.c_n = torch.zeros(1, batch_size, self.hidden_dim, device=device)
 
     def forward(self, X, use_hidden_state=False):
         """
@@ -172,24 +160,10 @@ class DeepNN(nn.Module):
             use_hidden_state: If True and recurrent, use persistent hidden state (for rollouts).
                              If False, use fresh hidden state (for replay buffer training).
         """
-        if self.recurrent:
-            # Ensure X has sequence dimension
-            if X.dim() == 2:
-                X = X.unsqueeze(1)  # (batch_size, input_dim) -> (batch_size, 1, input_dim)
-
-            if use_hidden_state and self.h_n is not None:
-                # Use persistent hidden state from previous timestep
-                lstm_out, (self.h_n, self.c_n) = self.fc1(X, (self.h_n, self.c_n))
-            else:
-                # Fresh hidden state (for training on replay buffer)
-                lstm_out, (self.h_n, self.c_n) = self.fc1(X)
-
-            h = self.nonlin(lstm_out[:, -1])  # take last timestep
-        else:  # not used as of now.
-            # Remove sequence dimension if present for linear networks
-            if X.dim() == 3:
-                X = X.squeeze(1)
-            h = self.nonlin(self.fc1(X))
+        # Remove sequence dimension if present for linear networks
+        if X.dim() == 3:
+            X = X.squeeze(1)
+        h = self.nonlin(self.fc1(X))
 
         h = self.nonlin(self.fc2(h))
         out = self.fc3(h)
