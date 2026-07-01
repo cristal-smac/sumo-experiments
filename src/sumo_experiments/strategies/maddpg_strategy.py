@@ -54,7 +54,8 @@ class MADDPGStrategy(IntellilightStrategy):
     def __init__(self, network, period=10, episode_duration=1800, reward_coeffs=(1, 1, 1, 1), gamma=0.99, buffer_size=10000, batch_size=32, 
                  steps_per_update=10, samples_before_update=1024, 
                  learning_rate=1e-2, tau=0.01, hidden_layer_size=64, yellow_time=3, intelligent_intersections=None, shared_policy=False, recurrent_policy=True,
-                 debug=True, simulation_time=500000, measure_energy=True):
+                 debug=True, simulation_time=500000, measure_energy=True,
+                 recurrent_seq_len=32, cooperative_reward_weight=1.0):
         """
         Init of class.
         :param network: The network to deploy the strategy
@@ -83,6 +84,10 @@ class MADDPGStrategy(IntellilightStrategy):
         :type yellow_time: int or dict
         :param shared_policy: If True, identical agents share policy/target_policy networks, improving sample efficiency for homogeneous intersections.
         :type shared_policy: bool
+        :param recurrent_seq_len: Sequence length used for recurrent replay/BPTT. If None, defaults to one-episode horizon in decisions.
+        :type recurrent_seq_len: int or None
+        :param cooperative_reward_weight: Blend factor between per-agent reward and mean-team reward. 0.0 keeps per-agent rewards, 1.0 uses full mean-team reward.
+        :type cooperative_reward_weight: float
         """
         Strategy.__init__(self, measure_energy=measure_energy)
         self.shared_policy = shared_policy
@@ -128,6 +133,10 @@ class MADDPGStrategy(IntellilightStrategy):
         self.steps_per_update = steps_per_update# if isinstance(update_target_frequency, dict) else {tl_id: update_target_frequency for tl_id in network.TLS_DETECTORS}
         self.samples_before_update = samples_before_update
         self.learning_rate = learning_rate if isinstance(learning_rate, dict) else {tl_id: learning_rate for tl_id in network.TLS_DETECTORS}
+        self.recurrent_seq_len = recurrent_seq_len
+        self.cooperative_reward_weight = float(cooperative_reward_weight)
+        if not (0.0 <= self.cooperative_reward_weight <= 1.0):
+            raise ValueError(f"cooperative_reward_weight must be in [0, 1], got {cooperative_reward_weight}")
 
         self.maddpg = None
         self.agents = {}
@@ -184,17 +193,6 @@ class MADDPGStrategy(IntellilightStrategy):
             if callable(reset_fn):
                 reset_fn()
 
-    def _recurrent_seq_len(self):
-        """Max number of action decisions in one episode, so a sampled sequence
-        can span a whole episode and be replayed from t=0 with zero hidden."""
-        period = self.period
-        if isinstance(period, dict):
-            period = min(period.values())
-        period = max(int(period), 1)
-        duration = self.episode_duration
-        if isinstance(duration, dict):
-            duration = max(duration.values())
-        return int(duration // period) + 2
 
 
     def run_all_agents(self, traci):
@@ -222,7 +220,7 @@ class MADDPGStrategy(IntellilightStrategy):
             if self.recurrent_policy:
                 self.replay_buffer = RecurrentReplayBuffer(max_steps=self.buffer_size, num_agents=self.maddpg.nagents,
                                                            obs_dims=obs_dims, ac_dims=ac_dims,
-                                                           seq_len=self._recurrent_seq_len())
+                                                           seq_len=self.recurrent_seq_len)
             else:
                 self.replay_buffer = ReplayBuffer(max_steps=self.buffer_size, num_agents=self.maddpg.nagents,
                                                   obs_dims=obs_dims, ac_dims=ac_dims)
@@ -242,10 +240,6 @@ class MADDPGStrategy(IntellilightStrategy):
                     self.mean_scores[self._mean_score_i] = np.mean(self.scores)
                     self._mean_score_i += 1
                 self.scores = []
-                # reset states and action
-                self.states = None
-                self.action_indices = None
-                self.changed_phase = [None for _ in self.intelligent_intersections]
                 if self.debug and self.network.TL_IDS and (self._mean_score_i % 10 == 0):
                     if not hasattr(self, '_debug_fig'):
                         self._debug_fig, self._debug_ax = plt.subplots()
@@ -322,14 +316,17 @@ class MADDPGStrategy(IntellilightStrategy):
         sim_time = int(self.traci.simulation.getTime())
         next_states = [self.get_state(tl_id) for tl_id in self.intelligent_intersections]
         rewards = [self.get_reward(tl_id, self.changed_phase[i]) for i, tl_id in enumerate(self.intelligent_intersections)]
-        dones = [(sim_time % self.episode_duration) == 0 for _ in self.intelligent_intersections]
+        episode_done = (sim_time % self.episode_duration) == 0
+        wrapper_done = bool(getattr(self.traci, '_sumo_experiments_episode_reset', False))
+        done_flag = episode_done or wrapper_done
+        dones = [done_flag for _ in self.intelligent_intersections]
         scores = [self.get_score(tl_id, self.changed_phase[i]) for i, tl_id in enumerate(self.intelligent_intersections)]
 
-        # Preserve per-agent reward signals (do not replace with the mean)
-        # rewards = np.array(rewards, dtype=np.float32)
-        rewards = np.ones_like(rewards, dtype=np.float32) * np.mean(rewards)
+        rewards = ((1.0 - self.cooperative_reward_weight) * np.asarray(rewards, dtype=np.float32) +
+                   self.cooperative_reward_weight  * np.mean(rewards))
+        # rewards = np.ones_like(rewards, dtype=np.float32) * np.mean(rewards)
         
-        if self.states is not None and self.action_indices is not None and not dones[0]:
+        if self.states is not None and self.action_indices is not None:
             self.replay_buffer.push(self.states, self.action_indices, rewards, next_states, dones=dones)
             if "c" in self.network.TL_IDS:
                 assert rewards[0] > -(self.c4 * self.DEBUG_REWARD), (rewards, self.changed_phase)
@@ -352,8 +349,16 @@ class MADDPGStrategy(IntellilightStrategy):
                 np.argmax(action_indices[i]) != np.argmax(self.action_indices[i])
                 for i, tl_id in enumerate(self.intelligent_intersections)
             ]
-        self.states = next_states
-        self.action_indices = action_indices
+        # On episode/reset boundaries, do not carry transition caches into the
+        # next call: this avoids stitching pre-reset state/action with the first
+        # post-reset state when the environment performs a hard reset.
+        if dones[0]:
+            self.states = None
+            self.action_indices = None
+            self.changed_phase = [None for _ in self.intelligent_intersections]
+        else:
+            self.states = next_states
+            self.action_indices = action_indices
 
         return {tl_id: self.action_space[tl_id][action_indices[i].argmax()] for i, tl_id in enumerate(self.intelligent_intersections)}
 

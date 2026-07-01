@@ -174,14 +174,8 @@ class TraciWrapper:
             flows[(from_junction, to_junction, edge)] = set()
 
         while resume:
-
-            if step in self.vehicles_deletion_timesteps:
-                for vehicle_id in traci.vehicle.getIDList():
-                    traci.vehicle.remove(vehicle_id)
-                if self.scale_factors is not None:
-                    index = self.vehicles_deletion_timesteps.index(step)
-                    factor = self.scale_factors[index]
-                    traci.simulation.setScale(factor)
+            reset_this_step = step in self.vehicles_deletion_timesteps
+            setattr(traci, '_sumo_experiments_episode_reset', reset_this_step)
 
             # Store the current state network as a graph
             # if self.graph_representation:
@@ -287,12 +281,24 @@ class TraciWrapper:
                 #flows[flow].append(traci.edge.getLastStepOccupancy(edge))
                 flows[flow].update(traci.edge.getLastStepVehicleIDs(edge))
 
+            # Defer hard reset until after this step's control/stats so terminal
+            # transition uses pre-reset environment dynamics.
+            if reset_this_step:
+                for vehicle_id in traci.vehicle.getIDList():
+                    traci.vehicle.remove(vehicle_id)
+                if self.scale_factors is not None:
+                    index = self.vehicles_deletion_timesteps.index(step)
+                    factor = self.scale_factors[index]
+                    traci.simulation.setScale(factor)
+
             step += 1
 
             if self.simulation_duration is None:
                 resume = traci.simulation.getMinExpectedNumber() > 0
             else:
                 resume = (step < self.simulation_duration) and (traci.simulation.getMinExpectedNumber()>0)
+
+        setattr(traci, '_sumo_experiments_episode_reset', False)
 
         if self.save_phases:
             pd.DataFrame(self.tl_phases).to_csv(self.phases_file)
