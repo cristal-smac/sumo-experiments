@@ -299,8 +299,9 @@ class TransformerDQNStrategy(DQNStrategy):
 
         reward = self.get_reward(tl_id, change_phase=self.last_action[tl_id])
         done = (self.traci.simulation.getTime() % self.episode_duration[tl_id] == 0)
+        done = done or bool(getattr(self.traci, '_sumo_experiments_episode_reset', False))
 
-        if self.last_global_state[tl_id] is not None and self.last_action[tl_id] is not None and not done:
+        if self.last_global_state[tl_id] is not None and self.last_action[tl_id] is not None:
             self.replay_buffer[tl_id].append(
                 (
                     self.last_global_state[tl_id],
@@ -320,9 +321,14 @@ class TransformerDQNStrategy(DQNStrategy):
                 if self.last_action[tls_id] is not None
             ]
 
-        self.last_state[tl_id] = global_state[self.tls_index[tl_id]]
-        self.last_global_state[tl_id] = global_state.copy()
-        self.last_action[tl_id] = action
+        if done:
+            self.last_state[tl_id] = None
+            self.last_global_state[tl_id] = None
+            self.last_action[tl_id] = None
+        else:
+            self.last_state[tl_id] = global_state[self.tls_index[tl_id]]
+            self.last_global_state[tl_id] = global_state.copy()
+            self.last_action[tl_id] = action
         return action
 
     def _sample_global_memory(self):
