@@ -21,7 +21,7 @@ class TraciWrapper:
     in terms of simulation time and visualization.
     """
 
-    def __init__(self, max_simulation_duration=None, data_frequency=1, graph_representation=False, print_timestep=500, vehicle_deletion_timesteps=[], scale_factors=None, save_phases=False, phases_file='phases.csv'):
+    def __init__(self, max_simulation_duration=None, data_frequency=1, graph_representation=False, print_timestep=500, vehicle_deletion_timesteps=[], scale_factors=None, save_phases=False, phases_file='phases.csv', track_edge_flows=True):
         """
         Init of class
         Two conditions can trigger the end of the simulation : the maximum simulation duration is reached or there are no vehicles to run.
@@ -39,6 +39,10 @@ class TraciWrapper:
         :type save_phases: bool
         :param phases_file: Name of the file to store the current phase of each traffic light. Used only if save_phases is set to True.
         :type phases_file: str
+        :param track_edge_flows: If True, collect the set of distinct vehicle IDs seen on each edge during the whole simulation. Adds one TraCI call per edge per step, so disable it on large networks if not needed.
+        :type track_edge_flows: bool
+        :param flows_file: Name of the file to store the per-edge flow counts. Used only if track_edge_flows is set to True.
+        :type flows_file: str
         """
         self.stats_functions = []
         self.behavioural_functions = []
@@ -54,6 +58,7 @@ class TraciWrapper:
         self.tl_phases = {}
         self.save_phases = save_phases
         self.phases_file = phases_file
+        self.track_edge_flows = bool(track_edge_flows)
 
     def add_stats_function(self, function):
         """
@@ -168,16 +173,19 @@ class TraciWrapper:
 
         # if self.get_flows:
         flows = {}
-        for edge in traci.edge.getIDList():
-            #if '_' not in edge:
-            from_junction = traci.edge.getFromJunction(edge)
-            if '#' in from_junction:
-                from_junction = from_junction.split('#')[0]
-            to_junction = traci.edge.getToJunction(edge)
-            if '#' in to_junction:
-                to_junction = to_junction.split('#')[0]
-            #flows[(from_junction, to_junction, edge)] = []
-            flows[(from_junction, to_junction, edge)] = set()
+        if self.track_edge_flows:
+            # Built once here: edges don't change during a run, so there's no
+            # need to call traci.edge.getIDList() again on every step.
+            for edge in traci.edge.getIDList():
+                #if '_' not in edge:
+                from_junction = traci.edge.getFromJunction(edge)
+                if '#' in from_junction:
+                    from_junction = from_junction.split('#')[0]
+                to_junction = traci.edge.getToJunction(edge)
+                if '#' in to_junction:
+                    to_junction = to_junction.split('#')[0]
+                #flows[(from_junction, to_junction, edge)] = []
+                flows[(from_junction, to_junction, edge)] = set()
 
         with tqdm(total=pbar_total, desc='SUMO simulation', unit='step', disable=False, miniters=100, mininterval=1.0) as pbar:
             while resume:
@@ -231,12 +239,6 @@ class TraciWrapper:
                     travel_times.append(simulation_time - record['simulation_time'])
                     co2_emissions.append(record['sum_co2'])
 
-            # Updating running list
-                currently_running = set(traci.vehicle.getIDList())
-                for vid in list(running_vehicles.keys()):
-                    if vid not in currently_running:
-                        del running_vehicles[vid]
-
                 current_travel_times.append(np.nanmean(travel_times) if travel_times else np.nan)
                 current_co2_travel.append(np.nanmean(co2_emissions) if co2_emissions else np.nan)
                 current_exiting_vehicles.append(len(travel_times))
@@ -285,10 +287,11 @@ class TraciWrapper:
                         self.tl_phases[tl_id].append(traci.trafficlight.getPhase(tl_id))
 
             #if self.get_flows:
-                for flow in flows:
-                    edge = flow[2]
-                    #flows[flow].append(traci.edge.getLastStepOccupancy(edge))
-                    flows[flow].update(traci.edge.getLastStepVehicleIDs(edge))
+                if self.track_edge_flows:
+                    for flow in flows:
+                        edge = flow[2]
+                        #flows[flow].append(traci.edge.getLastStepOccupancy(edge))
+                        flows[flow].update(traci.edge.getLastStepVehicleIDs(edge))
 
             # Defer hard reset until after this step's control/stats so terminal
             # transition uses pre-reset environment dynamics.
@@ -312,15 +315,15 @@ class TraciWrapper:
         if self.save_phases:
             pd.DataFrame(self.tl_phases).to_csv(self.phases_file)
 
-        #if self.get_flows:
-        flow_values = {}
-        for flow in flows:
-            flows[flow] = len(flows[flow])
-            flow_values[(flow[0], flow[1])] = flows[flow]
-        #print(flow_values)
+        if self.track_edge_flows:
+            flow_values = {}
+            for flow in flows:
+                flows[flow] = len(flows[flow])
+                flow_values[(flow[0], flow[1])] = flows[flow]
+            #print(flow_values)
 
-        with open("occupancies.txt", "w") as f:
-            f.write(str(flows))
+            with open("occupancies.txt", "w") as f:
+                f.write(str(flows))
 
         tl_nodes = {}
         for tl in traci.trafficlight.getIDList():
