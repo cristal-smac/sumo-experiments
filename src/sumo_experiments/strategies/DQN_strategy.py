@@ -1,4 +1,4 @@
-from sumo_experiments.strategies.rl_util import *
+from .rl_util import episode_reward_scale
 from . import IntellilightStrategy, MaxPressureStrategy
 import copy
 import torch

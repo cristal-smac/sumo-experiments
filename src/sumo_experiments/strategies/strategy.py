@@ -68,6 +68,16 @@ class MultiprocessSafeZeusMonitor:
                 self._logged_end_error = True
             return _ZeroZeusMeasurement()
 
+class _NullZeusMonitor:
+    """No-op replacement for the Zeus monitor. begin/end_window do nothing, so
+    there is zero per-step measurement overhead (used to debug Zeus-induced
+    slowdown / disable energy measurement during training)."""
+
+    def begin_window(self, *args, **kwargs):
+        pass
+
+    def end_window(self, *args, **kwargs):
+        return _ZeroZeusMeasurement()
 
 class Strategy(ABC):
     """
@@ -77,10 +87,15 @@ class Strategy(ABC):
     _zeus_monitor_id_counter = count()
     _zeus_monitor_id_lock = Lock()
 
-    def __init__(self):
+    def __init__(self, measure_energy=True):
         self.zeus_monitor_id = self._next_zeus_monitor_id()
         raw_monitor = self._create_zeus_monitor(self.zeus_monitor_id)
-        self.zeus_monitor = MultiprocessSafeZeusMonitor(raw_monitor, self.zeus_monitor_id)
+        # Disable Zeus energy measurement entirely (no-op begin/end_window) to avoid per-step 
+        # measurement overhead. Suitable for many running replicates. Default keeps measurement on.
+        if not measure_energy:
+            self.zeus_monitor = _NullZeusMonitor()
+        else:
+            self.zeus_monitor = MultiprocessSafeZeusMonitor(raw_monitor, self.zeus_monitor_id)
         self.energy_consumption = 0
 
     @classmethod

@@ -21,7 +21,10 @@ class IntellilightStrategy(Strategy):
     """
     DEBUG_REWARD = 10000  # ridiculously large value for debugging
 
-    def __init__(self, network, period=10, reward_coeffs=(1, 1, 1, 1), gamma=0.99, episode_duration=300, batch_size=64, buffer_size=1000, update_target_frequency=10, learning_rate=1 * 10 ** -2, exploration_prob=1, cooling_rate=10 ** -3, hidden_layer_size=64, yellow_time=3, intelligent_intersections=None, shared_network=False):
+    def __init__(self, network, period=10, reward_coeffs=(1, 1, 1, 1), gamma=0.99, episode_duration=300, 
+                 batch_size=64, buffer_size=1000, update_target_frequency=10, learning_rate=1 * 10 ** -2, 
+                 exploration_prob=1, cooling_rate=10 ** -3, hidden_layer_size=64, yellow_time=3, 
+                 intelligent_intersections=None, shared_network=False, measure_energy=True):
         """
         Init of class.
         :param network: The network to deploy the strategy
@@ -49,7 +52,7 @@ class IntellilightStrategy(Strategy):
         :param shared_network: If True, identical intersections (same state dim, action space, hidden size) share a single neural network and replay buffer, improving sample efficiency.
         :type shared_network: bool
         """
-        super().__init__()
+        super().__init__(measure_energy=measure_energy)
         self.shared_network = shared_network
         self._trained_this_step = set()
         self.network = network
@@ -175,10 +178,10 @@ class IntellilightStrategy(Strategy):
                     self._debug_ax.autoscale_view()
                     self._debug_fig.savefig('strategy_debug.png')
             for tl_id in self.intelligent_intersections:
-                if timestep % self.episode_duration[tl_id] == 0 and self.trainnn[tl_id]:
-                    self.exploration_prob[tl_id] = self.exploration_prob[tl_id] - (self.exploration_prob[tl_id] * self.cooling_rate[tl_id])
-                    self.last_state[tl_id] = None
-                    self.last_action[tl_id] = None
+                # if (timestep % self.episode_duration[tl_id] == 0 or wrapper_reset) and self.trainnn[tl_id]:
+                #     self.exploration_prob[tl_id] = self.exploration_prob[tl_id] - (self.exploration_prob[tl_id] * self.cooling_rate[tl_id])
+                #     self.last_state[tl_id] = None
+                #     self.last_action[tl_id] = None
                 if 'y' in self.traci.trafficlight.getRedYellowGreenState(tl_id):
                     if self.current_yellow_time[tl_id] >= self.yellow_time[tl_id]:
                         self.traci.trafficlight.setPhase(tl_id, int(self.next_phase[tl_id]))
@@ -251,17 +254,22 @@ class IntellilightStrategy(Strategy):
                 action = torch.argmax(q_values).item()
 
         reward = self.get_reward(tl_id, change_phase=self.last_action[tl_id])  # rewards should be based on last action
-        done = (self.traci.simulation.getTime() % 1000 == 0)
+        done = ((self.traci.simulation.getTime() % self.episode_duration[tl_id]) == 0)
+        done = done or bool(getattr(self.traci, '_sumo_experiments_episode_reset', False))
 
-        if self.last_state[tl_id] is not None and self.last_action[tl_id] is not None and not done:
+        if self.last_state[tl_id] is not None and self.last_action[tl_id] is not None:
             #assert reward > -self.c4 * self.DEBUG_REWARD
             self.replay_buffer[tl_id].append((self.last_state[tl_id], self.last_action[tl_id], reward, state, phase, done))
             if tl_id == self.network.TL_IDS[0]:  # debugging for anchor intersection
                 self.rewards.append(reward)
                 self.times.append(self.traci.simulation.getTime())
             self.scores = [self.get_score(tl_id, self.last_action[tl_id]) for i, tl_id in enumerate(self.network.TLS_DETECTORS)]
-        self.last_state[tl_id] = state
-        self.last_action[tl_id] = action
+        if done:
+            self.last_state[tl_id] = None
+            self.last_action[tl_id] = None
+        else:
+            self.last_state[tl_id] = state
+            self.last_action[tl_id] = action
 
         return action
 

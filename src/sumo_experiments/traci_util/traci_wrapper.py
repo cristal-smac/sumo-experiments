@@ -3,6 +3,7 @@ import numpy as np
 import networkx as nx
 import xml.etree.ElementTree as ET
 import matplotlib.pyplot as plt
+from tqdm import tqdm
 
 class TraciWrapper:
     """
@@ -20,7 +21,7 @@ class TraciWrapper:
     in terms of simulation time and visualization.
     """
 
-    def __init__(self, max_simulation_duration=None, data_frequency=1, graph_representation=False, print_timestep=500, vehicle_deletion_timesteps=[], scale_factors=None, save_phases=False, phases_file='phases.csv'):
+    def __init__(self, max_simulation_duration=None, data_frequency=1, graph_representation=False, print_timestep=500, vehicle_deletion_timesteps=[], scale_factors=None, save_phases=False, phases_file='phases.csv', track_edge_flows=True):
         """
         Init of class
         Two conditions can trigger the end of the simulation : the maximum simulation duration is reached or there are no vehicles to run.
@@ -38,6 +39,10 @@ class TraciWrapper:
         :type save_phases: bool
         :param phases_file: Name of the file to store the current phase of each traffic light. Used only if save_phases is set to True.
         :type phases_file: str
+        :param track_edge_flows: If True, collect the set of distinct vehicle IDs seen on each edge during the whole simulation. Adds one TraCI call per edge per step, so disable it on large networks if not needed.
+        :type track_edge_flows: bool
+        :param flows_file: Name of the file to store the per-edge flow counts. Used only if track_edge_flows is set to True.
+        :type flows_file: str
         """
         self.stats_functions = []
         self.behavioural_functions = []
@@ -53,6 +58,7 @@ class TraciWrapper:
         self.tl_phases = {}
         self.save_phases = save_phases
         self.phases_file = phases_file
+        self.track_edge_flows = bool(track_edge_flows)
 
     def add_stats_function(self, function):
         """
@@ -143,17 +149,22 @@ class TraciWrapper:
         current_travel_times = []
         current_exiting_vehicles = []
         current_co2_travel = []
-        current_phase = {tls: traci.trafficlight.getPhase(tls) for tls in traci.trafficlight.getIDList()}
-        current_phase_durations = {tls: 0 for tls in traci.trafficlight.getIDList()}
+        tl_ids = traci.trafficlight.getIDList()
+        current_phase = {tls: traci.trafficlight.getPhase(tls) for tls in tl_ids}
+        current_phase_durations = {tls: 0 for tls in tl_ids}
         phase_durations = []
+        dt = 1
+        deletion_step_to_index = {s: i for i, s in enumerate(self.vehicles_deletion_timesteps)}
+        pbar_total = self.simulation_duration if self.simulation_duration is not None else None
+        _t = {"sumo": 0.0, "behav": 0.0}
 
         if self.graph_representation:
             G, pos = self.net_to_graph(traci)
             nx.write_adjlist(G, path="lille_graph_adjacency.txt")
 
         if self.save_phases:
-            for tl in traci.trafficlight.getIDList():
-                self.tl_phases[tl] = []
+            for tl_id in tl_ids:
+                self.tl_phases[tl_id] = []
 
         if self.simulation_duration is None:
             resume = traci.simulation.getMinExpectedNumber() > 0
@@ -162,26 +173,25 @@ class TraciWrapper:
 
         # if self.get_flows:
         flows = {}
-        for edge in traci.edge.getIDList():
-            #if '_' not in edge:
-            from_junction = traci.edge.getFromJunction(edge)
-            if '#' in from_junction:
-                from_junction = from_junction.split('#')[0]
-            to_junction = traci.edge.getToJunction(edge)
-            if '#' in to_junction:
-                to_junction = to_junction.split('#')[0]
-            #flows[(from_junction, to_junction, edge)] = []
-            flows[(from_junction, to_junction, edge)] = set()
+        if self.track_edge_flows:
+            # Built once here: edges don't change during a run, so there's no
+            # need to call traci.edge.getIDList() again on every step.
+            for edge in traci.edge.getIDList():
+                #if '_' not in edge:
+                from_junction = traci.edge.getFromJunction(edge)
+                if '#' in from_junction:
+                    from_junction = from_junction.split('#')[0]
+                to_junction = traci.edge.getToJunction(edge)
+                if '#' in to_junction:
+                    to_junction = to_junction.split('#')[0]
+                #flows[(from_junction, to_junction, edge)] = []
+                flows[(from_junction, to_junction, edge)] = set()
 
-        while resume:
-
-            if step in self.vehicles_deletion_timesteps:
-                for vehicle_id in traci.vehicle.getIDList():
-                    traci.vehicle.remove(vehicle_id)
-                if self.scale_factors is not None:
-                    index = self.vehicles_deletion_timesteps.index(step)
-                    factor = self.scale_factors[index]
-                    traci.simulation.setScale(factor)
+        with tqdm(total=pbar_total, desc='SUMO simulation', unit='step', disable=False, miniters=100, mininterval=1.0) as pbar:
+            while resume:
+                deletion_index = deletion_step_to_index.get(step)
+                reset_this_step = deletion_index is not None
+                setattr(traci, '_sumo_experiments_episode_reset', reset_this_step)
 
             # Store the current state network as a graph
             # if self.graph_representation:
@@ -198,114 +208,122 @@ class TraciWrapper:
             #     plt.savefig(f'./Graphs/{step}.png')
 
 
-            
-            traci.simulationStep()
+                traci.simulationStep()
 
-            simulation_time = traci.simulation.getTime()
-            if simulation_time % self.print_timestep == 0:
-                print(f"Simulation time : {simulation_time} s")
+                simulation_time = traci.simulation.getTime()
+                pbar.update(1)
+                if self.print_timestep and simulation_time % self.print_timestep == 0:
+                    pbar.set_postfix(active_vehicles=len(running_vehicles))
             # We catch each inserted vehicle ID
-            for id in traci.simulation.getDepartedIDList():
-                running_vehicles[id] = {'simulation_time': simulation_time, 'sum_co2': 0}
+                for id in traci.simulation.getDepartedIDList():
+                    running_vehicles[id] = {'simulation_time': simulation_time, 'sum_co2': 0}
+
+                arrived_ids = traci.simulation.getArrivedIDList()
+                arrived_set = set(arrived_ids)
 
             # Updating CO2 emissions
-            for id in traci.vehicle.getIDList():
-                try:
-                    running_vehicles[id]['sum_co2'] += traci.vehicle.getCO2Emission(id)
-                except:
-                    pass
+                for vid, record in list(running_vehicles.items()):
+                    try:
+                        record['sum_co2'] += traci.vehicle.getCO2Emission(vid) * dt
+                    except Exception:
+                        if vid not in arrived_set:
+                            running_vehicles.pop(vid, None)
 
             # We add travel time and co2 emissions for each leaving vehicle
-            travel_times = []
-            co2_emissions = []
-            for id in traci.simulation.getArrivedIDList():
-                try:
-                    travel_times.append(simulation_time - running_vehicles[id]['simulation_time'])
-                    co2_emissions.append(running_vehicles[id]['sum_co2'])
-                except:
-                    pass
+                travel_times = []
+                co2_emissions = []
+                for vid in arrived_ids:
+                    record = running_vehicles.pop(vid, None)
+                    if record is None:
+                        continue
+                    travel_times.append(simulation_time - record['simulation_time'])
+                    co2_emissions.append(record['sum_co2'])
 
-            # Updating running list
-            currently_running = traci.vehicle.getIDList()
-            to_be_deleted = []
-            for id in running_vehicles:
-                if id not in currently_running:
-                    to_be_deleted.append(id)
-            for id in to_be_deleted:
-                del running_vehicles[id]
-
-            current_travel_times.append(np.nanmean(travel_times) if len(travel_times) > 0 else np.nan)
-            current_co2_travel.append(np.nanmean(co2_emissions) if len(co2_emissions) > 0 else np.nan)
-            current_exiting_vehicles.append(len(travel_times))
+                current_travel_times.append(np.nanmean(travel_times) if travel_times else np.nan)
+                current_co2_travel.append(np.nanmean(co2_emissions) if co2_emissions else np.nan)
+                current_exiting_vehicles.append(len(travel_times))
 
             # We store the phase time if the phase switches
             # NOT USED ?????
-            for tls in traci.trafficlight.getIDList():
-                if 'y' in traci.trafficlight.getRedYellowGreenState(tls) and current_phase_durations[tls] != 0:
-                    current_phase[tls] = traci.trafficlight.getPhase(tls)
-                    phase_durations.append(current_phase_durations[tls])
-                    current_phase_durations[tls] = 0
-                elif 'y' not in traci.trafficlight.getRedYellowGreenState(tls):
-                    current_phase_durations[tls] += 1
+                for tls in tl_ids:
+                    state = traci.trafficlight.getRedYellowGreenState(tls)
+                    if 'y' in state and current_phase_durations[tls] != 0:
+                        current_phase[tls] = traci.trafficlight.getPhase(tls)
+                        phase_durations.append(current_phase_durations[tls])
+                        current_phase_durations[tls] = 0
+                    elif 'y' not in state:
+                        current_phase_durations[tls] += 1
 
-            if step % self.data_frequency == 0:
+                if step % self.data_frequency == 0:
 
                 # Statistical functions
-                for stats_function in self.stats_functions:
-                    res = stats_function(traci)
-                    for key in res:
-                        if key in self.data:
-                            self.data[key].append(res[key])
-                        else:
-                            self.data[key] = [res[key]]
+                    for stats_function in self.stats_functions:
+                        res = stats_function(traci)
+                        for key in res:
+                            if key in self.data:
+                                self.data[key].append(res[key])
+                            else:
+                                self.data[key] = [res[key]]
 
-                self.data['simulation_step'].append(step + 1)
-                filter = [False if i == 0 else True for i in current_exiting_vehicles]
-                current_travel_times = np.array(current_travel_times)
-                current_co2_travel = np.array(current_co2_travel)
-                current_exiting_vehicles = np.array(current_exiting_vehicles)
-                self.data['mean_travel_time'].append(np.average(current_travel_times[filter], weights=current_exiting_vehicles[filter]) if np.any(filter) else np.nan)
-                self.data['mean_CO2_per_travel'].append(np.average(current_co2_travel[filter], weights=current_exiting_vehicles[filter]) if np.any(filter) else np.nan)
-                self.data['exiting_vehicles'].append(np.nansum(current_exiting_vehicles))
-                self.data['mean_phase_time'].append(np.average(phase_durations))
-                current_travel_times = []
-                current_co2_travel = []
-                current_exiting_vehicles = []
-                phase_durations = []
+                    self.data['simulation_step'].append(step + 1)
+                    cev = np.array(current_exiting_vehicles)
+                    ctt = np.array(current_travel_times)
+                    cco2 = np.array(current_co2_travel)
+                    valid = cev > 0
+                    self.data['mean_travel_time'].append(np.average(ctt[valid], weights=cev[valid]) if np.any(valid) else np.nan)
+                    self.data['mean_CO2_per_travel'].append(np.average(cco2[valid], weights=cev[valid]) if np.any(valid) else np.nan)
+                    self.data['exiting_vehicles'].append(np.nansum(cev))
+                    self.data['mean_phase_time'].append(np.average(phase_durations) if phase_durations else np.nan)
+                    current_travel_times = []
+                    current_co2_travel = []
+                    current_exiting_vehicles = []
+                    phase_durations = []
 
             # Behavioural functions
-            for behavioural_function in self.behavioural_functions:
-                behavioural_function(traci)
-
-            if self.save_phases:
-                for tl in traci.trafficlight.getIDList():
-                    self.tl_phases[tl].append(traci.trafficlight.getPhase(tl))
+                for behavioural_function in self.behavioural_functions:
+                    behavioural_function(traci)
+                if self.save_phases:
+                    for tl_id in tl_ids:
+                        self.tl_phases[tl_id].append(traci.trafficlight.getPhase(tl_id))
 
             #if self.get_flows:
-            for flow in flows:
-                edge = flow[2]
-                #flows[flow].append(traci.edge.getLastStepOccupancy(edge))
-                flows[flow].update(traci.edge.getLastStepVehicleIDs(edge))
+                if self.track_edge_flows:
+                    for flow in flows:
+                        edge = flow[2]
+                        #flows[flow].append(traci.edge.getLastStepOccupancy(edge))
+                        flows[flow].update(traci.edge.getLastStepVehicleIDs(edge))
 
-            step += 1
+            # Defer hard reset until after this step's control/stats so terminal
+            # transition uses pre-reset environment dynamics.
+                if reset_this_step:
+                    for vehicle_id in traci.vehicle.getIDList():
+                        traci.vehicle.remove(vehicle_id)
+                    running_vehicles.clear()
+                    if self.scale_factors is not None:
+                        factor = self.scale_factors[deletion_index]
+                        traci.simulation.setScale(factor)
 
-            if self.simulation_duration is None:
-                resume = traci.simulation.getMinExpectedNumber() > 0
-            else:
-                resume = (step < self.simulation_duration) and (traci.simulation.getMinExpectedNumber()>0)
+                step += 1
+
+                if self.simulation_duration is None:
+                    resume = traci.simulation.getMinExpectedNumber() > 0
+                else:
+                    resume = (step < self.simulation_duration) and (traci.simulation.getMinExpectedNumber() > 0)
+
+        setattr(traci, '_sumo_experiments_episode_reset', False)
 
         if self.save_phases:
             pd.DataFrame(self.tl_phases).to_csv(self.phases_file)
 
-        #if self.get_flows:
-        flow_values = {}
-        for flow in flows:
-            flows[flow] = len(flows[flow])
-            flow_values[(flow[0], flow[1])] = flows[flow]
-        #print(flow_values)
+        if self.track_edge_flows:
+            flow_values = {}
+            for flow in flows:
+                flows[flow] = len(flows[flow])
+                flow_values[(flow[0], flow[1])] = flows[flow]
+            #print(flow_values)
 
-        with open("occupancies.txt", "w") as f:
-            f.write(str(flows))
+            with open("occupancies.txt", "w") as f:
+                f.write(str(flows))
 
         tl_nodes = {}
         for tl in traci.trafficlight.getIDList():
