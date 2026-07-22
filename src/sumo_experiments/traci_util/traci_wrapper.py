@@ -298,6 +298,10 @@ class TraciWrapper:
                 if reset_this_step:
                     for vehicle_id in traci.vehicle.getIDList():
                         traci.vehicle.remove(vehicle_id)
+                    # Drain the pending insertion backlog too: getIDList() returns
+                    # only running vehicles, so undeparted vehicles would otherwise
+                    # accumulate forever and make every simulationStep O(backlog).
+                    traci.simulation.clearPending()
                     running_vehicles.clear()
                     if self.scale_factors is not None:
                         factor = self.scale_factors[deletion_index]
