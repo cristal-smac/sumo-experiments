@@ -589,13 +589,13 @@ class LineNetwork(ArtificialNetwork):
                     'boolean': [f'b_c{i-1}c{i}_{n_lane}' for n_lane in range(nb_lanes_main)] + [f'b_c{i+1}c{i}_{n_lane}' for n_lane in range(nb_lanes_main)],
                     'saturation': [f's_c{i-1}c{i}_{n_lane}' for n_lane in range(nb_lanes_main)] + [f's_c{i+1}c{i}_{n_lane}' for n_lane in range(nb_lanes_main)],
                     'numerical': [f'n_c{i-1}c{i}_{n_lane}' for n_lane in range(nb_lanes_main)] + [f'n_c{i+1}c{i}_{n_lane}' for n_lane in range(nb_lanes_main)],
-                    'exit': [f'e_c{i}c{i-1}_{n_lane}' for n_lane in range(nb_lanes_main)] + [f'e_c{i}c{i+1}_{n_lane}' for n_lane in range(nb_lanes_main)] + [f'e_n{i}c{i}_{n_lane}' for n_lane in range(nb_lanes_minor)] + [f'e_s{i}c{i}_{n_lane}' for n_lane in range(nb_lanes_minor)]
+                    'exit': [f'e_c{i}c{i-1}_{n_lane}' for n_lane in range(nb_lanes_main)] + [f'e_c{i}c{i+1}_{n_lane}' for n_lane in range(nb_lanes_main)] + [f'e_c{i}n{i}_{n_lane}' for n_lane in range(nb_lanes_minor)] + [f'e_c{i}s{i}_{n_lane}' for n_lane in range(nb_lanes_minor)]
                 },
                 2: {
                     'boolean': [f'b_n{i}c{i}_{n_lane}' for n_lane in range(nb_lanes_minor)] + [f'b_s{i}c{i}_{n_lane}' for n_lane in range(nb_lanes_minor)],
                     'saturation': [f's_n{i}c{i}_{n_lane}' for n_lane in range(nb_lanes_minor)] + [f's_s{i}c{i}_{n_lane}' for n_lane in range(nb_lanes_minor)],
                     'numerical': [f'n_n{i}c{i}_{n_lane}' for n_lane in range(nb_lanes_minor)] + [f'n_s{i}c{i}_{n_lane}' for n_lane in range(nb_lanes_minor)],
-                    'exit': [f'e_n{i}c{i}_{n_lane}' for n_lane in range(nb_lanes_minor)] + [f'e_s{i}c{i}_{n_lane}' for n_lane in range(nb_lanes_minor)] + [f'e_c{i}c{i-1}_{n_lane}' for n_lane in range(nb_lanes_main)] + [f'e_c{i}c{i+1}_{n_lane}' for n_lane in range(nb_lanes_main)]
+                    'exit': [f'e_c{i}n{i}_{n_lane}' for n_lane in range(nb_lanes_minor)] + [f'e_c{i}s{i}_{n_lane}' for n_lane in range(nb_lanes_minor)] + [f'e_c{i}c{i-1}_{n_lane}' for n_lane in range(nb_lanes_main)] + [f'e_c{i}c{i+1}_{n_lane}' for n_lane in range(nb_lanes_main)]
                 },
             }
             self.TLS_DETECTORS[f'c{i}'] = detectors
