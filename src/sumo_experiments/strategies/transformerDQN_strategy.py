@@ -55,13 +55,18 @@ class TransformerDQNStrategy(DQNStrategy):
         return {tl_id: cast_fn(value) for tl_id in self.network.TLS_DETECTORS}
 
     def _estimate_axis_scale(self, values):
+        # A degenerate axis (all TLS share one coordinate, e.g. a collinear line
+        # network on the y axis) has no spread to infer a grid step from. That is
+        # fine: every delta on that axis is 0, so 0 / scale == 0 regardless of the
+        # scale value. Return a harmless unit scale instead of raising, so line
+        # networks work while grid networks still get a real per-axis scale.
         uniq = sorted({round(float(v), 6) for v in values})
         if len(uniq) < 2:
-            raise ValueError("Relative position encoding requires at least two distinct coordinates per axis.")
+            return 1.0
         diffs = [abs(uniq[i + 1] - uniq[i]) for i in range(len(uniq) - 1)]
         diffs = [d for d in diffs if d > 1e-6]
         if not diffs:
-            raise ValueError("Unable to infer coordinate grid scale from TLS junction positions.")
+            return 1.0
         return float(np.median(diffs))
 
     def _resolve_network_path(self):
